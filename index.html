@@ -5,103 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My 2026 Garden Hub</title>
     <style>
-        :root { --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; --cream: #f8f9fa; --sky: #00b4d8; }
+        :root { --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; --cream: #f8f9fa; --sky: #00b4d8; --seed: #e9c46a; }
         body { font-family: 'Segoe UI', sans-serif; background-color: #e9edc9; margin: 0; padding: 15px; }
         .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--leaf); margin-bottom: 20px; flex-wrap: wrap; }
         h1 { color: var(--dark); margin: 10px 0; }
 
-        /* Weather Widget Styling */
-        .weather-box { background: var(--sky); color: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; min-width: 200px; text-align: center; }
-
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
 
         section { background: var(--cream); padding: 15px; border-radius: 8px; border-left: 5px solid var(--leaf); margin-bottom: 20px; }
-        h2 { font-size: 1.1rem; color: var(--dirt); margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        h2 { font-size: 1.1rem; color: var(--dirt); margin-top: 0; }
 
-        /* Photo Gallery */
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
-        .gallery-item { background: #ddd; border-radius: 5px; overflow: hidden; height: 120px; position: relative; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* Calculator Styling */
+        .calc-input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; margin: 10px 0; font-size: 1rem; }
+        .calc-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 5px; overflow: hidden; }
+        .calc-table th { background: var(--dark); color: white; padding: 10px; text-align: left; font-size: 0.85rem; }
+        .calc-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+
+        /* Existing UI Elements */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .gallery-item { background: #ddd; border-radius: 5px; overflow: hidden; height: 100px; border: 2px solid white; }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-        .gallery-item span { position: absolute; bottom: 0; background: rgba(0,0,0,0.6); color: white; width: 100%; font-size: 0.7rem; padding: 2px; text-align: center; }
-
-        /* UI Elements */
-        .inventory-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85rem; }
-        .inventory-table th { background: #e9c46a; padding: 8px; text-align: left; }
-        .inventory-table td { padding: 8px; border-bottom: 1px solid #eee; }
-        textarea { width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; font-family: inherit; }
-        .save-btn { background: var(--dark); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%; }
+        textarea { width: 100%; height: 80px; border-radius: 5px; padding: 10px; box-sizing: border-box; }
+        .save-btn { background: var(--dark); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>🌱 My 2026 Garden</h1>
-        <div class="weather-box">
-            <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="MY GARDEN" data-label_2="WEATHER" data-theme="pure" >MY GARDEN WEATHER</a>
-            <script>
-            !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-            </script>
+        <h1>🌱 My Garden Hub</h1>
+        <div style="font-size: 0.8rem; text-align: right; color: var(--dirt);">
+            <strong>Today:</strong> <span id="currentDate"></span>
         </div>
     </header>
 
-    <div class="grid">
-        <section>
-            <h2>📸 Monthly Progress</h2>
-            <div class="gallery">
-                <div class="gallery-item">
-                    <img src="https://via.placeholder.com/150/4f772d/ffffff?text=March+Prep" alt="Garden March">
-                    <span>March: Soil Prep</span>
-                </div>
-                <div class="gallery-item">
-                    <img src="https://via.placeholder.com/150/4f772d/ffffff?text=April+Seeds" alt="Garden April">
-                    <span>April: Sprouts</span>
-                </div>
-                <div class="gallery-item">
-                    <img src="https://via.placeholder.com/150/4f772d/ffffff?text=May+Planting" alt="Garden May">
-                    <span>May: Planting</span>
-                </div>
-            </div>
-            <p style="font-size: 0.7rem; color: #666; margin-top: 10px;">To add real photos, upload them to GitHub and update the img src.</p>
-        </section>
-
-        <section>
-            <h2>✅ Chores</h2>
-            <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
-                <li><input type="checkbox"> Fertilize citrus</li>
-                <li><input type="checkbox"> Clean irrigation filters</li>
-                <li><input type="checkbox"> Sow spring peas</li>
-            </ul>
-        </section>
-    </div>
-
-    <section>
-        <h2>📦 Seed Inventory</h2>
-        <table class="inventory-table">
+    <section style="border-left-color: var(--seed); background-color: #fffcf2;">
+        <h2>🧮 Seed Starting Calculator</h2>
+        <label for="frostDate">Select your <strong>Last Spring Frost Date</strong>:</label>
+        <input type="date" id="frostDate" class="calc-input" onchange="calculateDates()">
+        
+        <table class="calc-table" id="calcTable" style="display:none;">
             <thead>
-                <tr><th>Variety</th><th>Year</th><th>Stock</th></tr>
+                <tr>
+                    <th>Plant Variety</th>
+                    <th>Weeks Before Frost</th>
+                    <th>Target Sowing Date</th>
+                </tr>
             </thead>
-            <tbody>
-                <tr><td>Early Girl Tomato</td><td>2025</td><td>1/2 Pack</td></tr>
-                <tr><td>SunGold Cherry</td><td>2026</td><td>Full</td></tr>
-                <tr><td style="color:red;">Bell Peppers</td><td>2023</td><td>Empty</td></tr>
-            </tbody>
+            <tbody id="calcBody">
+                </tbody>
         </table>
     </section>
 
-    <section>
-        <h2>📝 Observations</h2>
-        <textarea id="gardenNotes" placeholder="Write about pests, weather, or what's blooming..."></textarea>
-        <button class="save-btn" onclick="saveNotes()">Save Observations</button>
-        <p id="status" style="font-size: 0.8rem; color: var(--dark); text-align:center;"></p>
-    </section>
+    <div class="grid">
+        <section>
+            <h2>📸 Progress Photos</h2>
+            <div class="gallery">
+                <div class="gallery-item"><img src="https://via.placeholder.com/150/4f772d/ffffff?text=March" alt="Garden March"></div>
+                <div class="gallery-item"><img src="https://via.placeholder.com/150/4f772d/ffffff?text=April" alt="Garden April"></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>📝 Observations</h2>
+            <textarea id="gardenNotes" placeholder="Notes..."></textarea>
+            <button class="save-btn" onclick="saveNotes()">Save Notes</button>
+        </section>
+    </div>
 </div>
 
 <script>
-    document.getElementById('gardenNotes').value = localStorage.getItem('myGarden
+    // Set Current Date
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString();
+
+    // Data for the calculator (Weeks before last frost)
+    const plantData = [
+        { name: "Peppers & Eggplant", weeks: 10 },
+        { name: "Tomatoes", weeks: 8 },
+        { name: "Broccoli & Cabbage", weeks: 6 },
+        { name: "Lettuce & Greens", weeks: 4 },
+        { name: "Cucumbers & Squash", weeks: 2 }
+    ];
+
+    function calculateDates() {
+        const frostInput = document.getElementById('frostDate').value;
+        if (!frostInput) return;
+
+        const frostDate = new Date(frostInput);
+        const table = document.getElementById('calcTable');
+        const tbody = document.getElementById('calcBody');
+        
+        tbody.innerHTML = ""; // Clear old data
+        table.style.display = "table";
+
+        plantData.forEach(plant => {
+            let targetDate = new Date(frostDate);
+            targetDate.setDate(frostDate.getDate() - (plant.weeks * 7));
+            
+            let row = `<tr>
+                <td><strong>${plant.name}</strong></td>
+                <td>${plant.weeks} Weeks</td>
+                <td>${targetDate.toDateString()}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Storage for notes
+    document.getElementById('gardenNotes').value = localStorage.getItem('myGardenNotes') || "";
+    function saveNotes() {
+        localStorage.setItem('myGardenNotes', document.getElementById('gardenNotes').value);
+        alert("Notes saved to your browser!");
+    }
+</script>
 
 </body>
 </html>
