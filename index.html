@@ -3,111 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My 2026 Garden Hub</title>
+    <title>Garden OS 2026</title>
     <style>
         :root { 
             --leaf: #4f772d; 
             --dark: #31572c; 
             --dirt: #604d3f; 
             --cream: #f8f9fa; 
-            --sky: #00b4d8; 
             --seed: #e9c46a; 
             --harvest: #e76f51;
+            --bg: #e9edc9;
         }
         
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #e9edc9; 
-            margin: 0; 
-            padding: 15px; 
-            line-height: 1.6;
-            color: #333;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; padding: 10px; color: #333;
         }
 
         .container { 
-            max-width: 1000px; 
-            margin: auto; 
-            background: white; 
-            padding: 25px; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            max-width: 900px; margin: auto; background: white; 
+            padding: 20px; border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            min-height: 90vh;
         }
         
+        /* Smooth Header */
         header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 2px solid var(--leaf); 
-            margin-bottom: 20px; 
-            flex-wrap: wrap; 
-            padding-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center; 
+            padding-bottom: 15px; border-bottom: 2px solid #eee; margin-bottom: 15px;
         }
 
-        h1 { color: var(--dark); margin: 0; font-size: 2rem; }
-
-        nav { margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid #eee; }
-        nav a { margin-right: 15px; font-weight: bold; color: var(--leaf); text-decoration: none; }
-        nav a:hover { color: var(--dark); text-decoration: underline; }
-
-        .weather-container { 
-            min-width: 280px; 
-            background: #fff;
-            border-radius: 8px;
-            overflow: hidden;
+        /* Tab Navigation */
+        .tab-bar { 
+            display: flex; gap: 5px; background: #f0f0f0; 
+            padding: 5px; border-radius: 12px; margin-bottom: 20px;
+        }
+        .tab-btn { 
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            background: none; cursor: pointer; font-weight: 600;
+            color: #666; transition: 0.3s; font-size: 0.9rem;
+        }
+        .tab-btn.active { 
+            background: white; color: var(--dark); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
         }
 
-        .grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 20px; 
-            margin-bottom: 20px;
-        }
+        /* Content Sections */
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
 
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Card Styling */
         section { 
-            background: var(--cream); 
-            padding: 20px; 
-            border-radius: 8px; 
-            border-left: 6px solid var(--leaf); 
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: var(--cream); padding: 20px; border-radius: 15px; 
+            border-left: 6px solid var(--leaf); margin-bottom: 20px;
         }
 
-        h2 { font-size: 1.25rem; color: var(--dirt); margin-top: 0; display: flex; align-items: center; gap: 10px; }
-
-        /* Harvest Tracker Styling */
-        .harvest-section { border-left-color: var(--harvest); }
-        .harvest-form { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .harvest-form input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1; min-width: 120px; }
-        .add-btn { background: var(--harvest); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .add-btn:hover { background: #cf5d40; }
-
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 10px; 
-            background: white; 
-            font-size: 0.9rem;
-            border-radius: 8px;
-            overflow: hidden;
+        /* Smooth Inputs */
+        input, textarea { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; 
+            border-radius: 8px; margin-top: 8px; box-sizing: border-box;
         }
-        th { background: var(--leaf); color: white; padding: 12px; text-align: left; }
+
+        /* Harvest & Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 10px; overflow: hidden; }
+        th { background: var(--dark); color: white; padding: 12px; text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
 
-        /* Gallery Styling */
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 10px; }
-        .gallery-item { background: #eee; border-radius: 8px; overflow: hidden; height: 130px; position: relative; border: 3px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-        .gallery-item span { position: absolute; bottom: 0; background: rgba(49, 87, 44, 0.85); color: white; width: 100%; font-size: 0.75rem; padding: 4px 0; text-align: center; }
+        .btn-main { 
+            background: var(--dark); color: white; border: none; padding: 15px; 
+            border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        .btn-harvest { background: var(--harvest); }
 
-        /* General UI */
-        .task-list { list-style: none; padding: 0; margin: 0; }
-        .task-list li { background: white; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        textarea { width: 100%; height: 150px; border: 1px solid #ccc; border-radius: 8px; padding: 15px; box-sizing: border-box; font-family: inherit; font-size: 1rem; resize: vertical; }
-        .save-btn { background: var(--dark); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
-        .save-btn:hover { background: var(--leaf); }
+        .weather-small { font-size: 0.8rem; text-align: right; color: var(--dirt); }
     </style>
 </head>
 <body>
@@ -115,183 +86,139 @@
 <div class="container">
     <header>
         <div>
-            <h1>🌱 My Garden Hub</h1>
-            <p style="margin:0; color: var(--dirt);">Logged in as <strong>Personal Admin</strong></p>
+            <h1 style="margin:0; color:var(--dark)">🌱 GardenHub</h1>
+            <div class="weather-small">Hartford, CT | 2026 Season</div>
         </div>
-        <div class="weather-container">
-            <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="GARDEN" data-label_2="WEATHER" data-theme="pure" >WEATHER</a>
-            <script>
-            !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-            </script>
-        </div>
+        <nav>
+            <a href="map.html" style="text-decoration:none; font-weight:bold; color:var(--leaf)">🗺️ Map</a>
+        </nav>
     </header>
 
-    <nav>
-        <a href="index.html">🏠 Dashboard</a>
-        <a href="map.html">🗺️ Garden Map</a>
-    </nav>
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="openTab(event, 'dash')">Dashboard</button>
+        <button class="tab-btn" onclick="openTab(event, 'calc')">Planning</button>
+        <button class="tab-btn" onclick="openTab(event, 'harvest')">Harvest</button>
+        <button class="tab-btn" onclick="openTab(event, 'notes')">Notes</button>
+    </div>
 
-    <section class="harvest-section">
-        <h2>🧺 Harvest Log</h2>
-        <div class="harvest-form">
-            <input type="date" id="harvestDate">
-            <input type="text" id="harvestCrop" placeholder="What did you pick?">
-            <input type="text" id="harvestWeight" placeholder="How much? (e.g. 5lbs)">
-            <button class="add-btn" onclick="addHarvest()">Add Entry</button>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Crop</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody id="harvestBody">
-                </tbody>
-        </table>
-        <button onclick="clearHarvests()" style="background:none; border:none; color:#999; font-size:0.7rem; cursor:pointer; margin-top:10px;">Clear all harvests</button>
-    </section>
-
-    <section style="border-left-color: var(--seed);">
-        <h2>🧮 Seed Starting Calculator</h2>
-        <div style="background:white; padding:15px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
-            <label><strong>Last Spring Frost Date:</strong></label>
-            <input type="date" id="frostDate" style="padding:10px; width:100%; margin-top:5px;" onchange="calculateDates()">
-        </div>
-        <table id="calcTable" style="display:none;">
-            <thead>
-                <tr><th>Plant</th><th>Weeks Before</th><th>Sow Date</th></tr>
-            </thead>
-            <tbody id="calcBody"></tbody>
-        </table>
-    </section>
-
-    <div class="grid">
+    <div id="dash" class="tab-content active">
         <section>
             <h2>✅ Priority Chores</h2>
-            <ul class="task-list">
-                <li><input type="checkbox"> Check irrigation lines</li>
-                <li><input type="checkbox"> Fertilize heavy feeders</li>
-                <li><input type="checkbox"> Stake the tomatoes</li>
-                <li><input type="checkbox"> Weed the garlic bed</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>📸 Monthly Progress</h2>
-            <div class="gallery">
-                <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=300" alt="Prep">
-                    <span>March: Prep</span>
-                </div>
-                <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=300" alt="Sprouts">
-                    <span>April: Sprouts</span>
-                </div>
-                <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=300" alt="Garden">
-                    <span>May: Growth</span>
-                </div>
+            <div id="choreList">
+                <p><input type="checkbox"> Check soil moisture in Bed A</p>
+                <p><input type="checkbox"> Prune tomato suckers</p>
+                <p><input type="checkbox"> Apply organic neem oil</p>
             </div>
+        </section>
+        
+        <div style="text-align:center; padding: 20px;">
+            <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="GARDEN" data-label_2="FORECAST" data-theme="pure" style="pointer-events: none;">WEATHER</a>
+        </div>
+    </div>
+
+    <div id="calc" class="tab-content">
+        <section style="border-left-color: var(--seed);">
+            <h2>🧮 Seed Calculator</h2>
+            <label>Last Spring Frost Date:</label>
+            <input type="date" id="frostDate" onchange="runCalc()">
+            <table id="calcTable" style="display:none">
+                <thead><tr><th>Plant</th><th>Sow Date</th></tr></thead>
+                <tbody id="calcBody"></tbody>
+            </table>
         </section>
     </div>
 
-    <section>
-        <h2>📝 Seasonal Observations</h2>
-        <textarea id="gardenNotes" placeholder="Record your observations here..."></textarea>
-        <button class="save-btn" onclick="saveAll()">Save Hub Data</button>
-        <p id="status" style="text-align: center; color: var(--dark); font-weight: bold;"></p>
-    </section>
+    <div id="harvest" class="tab-content">
+        <section style="border-left-color: var(--harvest);">
+            <h2>🧺 Harvest Log</h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="text" id="hCrop" placeholder="Crop Name">
+                <input type="text" id="hAmt" placeholder="Amount (e.g. 3 lbs)">
+            </div>
+            <button class="btn-main btn-harvest" onclick="addHarvest()">Log Harvest</button>
+            <table id="hTable">
+                <thead><tr><th>Crop</th><th>Amount</th></tr></thead>
+                <tbody id="hBody"></tbody>
+            </table>
+        </section>
+    </div>
+
+    <div id="notes" class="tab-content">
+        <section style="border-left-color: var(--dirt);">
+            <h2>📝 Seasonal Observations</h2>
+            <textarea id="gardenNotes" rows="10" placeholder="What's happening today?"></textarea>
+            <button class="btn-main" onclick="saveData()">Save All Data</button>
+            <p id="saveStatus" style="text-align:center; font-size:0.8rem; color:var(--leaf)"></p>
+        </section>
+    </div>
+
 </div>
 
 <script>
-    // 1. DATA LOADING ON START
-    window.onload = function() {
-        // Load Notes
-        document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
+    // TAB LOGIC
+    function openTab(evt, tabName) {
+        let contents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
         
-        // Load Frost Date
-        const savedFrost = localStorage.getItem('frostDate');
-        if (savedFrost) {
-            document.getElementById('frostDate').value = savedFrost;
-            calculateDates();
-        }
-
-        // Load Harvests
-        renderHarvests();
-    };
-
-    // 2. SEED CALCULATOR LOGIC
-    const plants = [
-        { name: "Peppers", wks: 10 },
-        { name: "Tomatoes", wks: 8 },
-        { name: "Lettuce", wks: 4 },
-        { name: "Squash", wks: 2 }
-    ];
-
-    function calculateDates() {
-        const frostVal = document.getElementById('frostDate').value;
-        if (!frostVal) return;
-        const frostDate = new Date(frostVal);
-        const tbody = document.getElementById('calcBody');
-        const table = document.getElementById('calcTable');
+        let tabs = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active");
         
-        tbody.innerHTML = "";
-        table.style.display = "table";
-
-        plants.forEach(p => {
-            let sowDate = new Date(frostDate);
-            sowDate.setDate(frostDate.getDate() - (p.wks * 7));
-            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.wks} wks</td><td>${sowDate.toDateString()}</td></tr>`;
-        });
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
     }
 
-    // 3. HARVEST LOG LOGIC
+    // HARVEST LOGIC
     function addHarvest() {
-        const date = document.getElementById('harvestDate').value;
-        const crop = document.getElementById('harvestCrop').value;
-        const weight = document.getElementById('harvestWeight').value;
+        const crop = document.getElementById('hCrop').value;
+        const amt = document.getElementById('hAmt').value;
+        if(!crop || !amt) return;
 
-        if (!date || !crop || !weight) return alert("Fill out all harvest fields!");
-
-        const harvestList = JSON.parse(localStorage.getItem('harvestList')) || [];
-        harvestList.push({ date, crop, weight });
-        localStorage.setItem('harvestList', JSON.stringify(harvestList));
-        
+        let logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        logs.push({ crop, amt, date: new Date().toLocaleDateString() });
+        localStorage.setItem('harvestLogs', JSON.stringify(logs));
         renderHarvests();
-        document.getElementById('harvestCrop').value = "";
-        document.getElementById('harvestWeight').value = "";
+        document.getElementById('hCrop').value = ""; document.getElementById('hAmt').value = "";
     }
 
     function renderHarvests() {
-        const harvestList = JSON.parse(localStorage.getItem('harvestList')) || [];
-        const tbody = document.getElementById('harvestBody');
-        tbody.innerHTML = harvestList.map(h => `
-            <tr>
-                <td>${h.date}</td>
-                <td>${h.crop}</td>
-                <td>${h.weight}</td>
-            </tr>
-        `).reverse().join('');
+        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        document.getElementById('hBody').innerHTML = logs.map(l => 
+            `<tr><td>${l.crop} <small>(${l.date})</small></td><td>${l.amt}</td></tr>`
+        ).reverse().join('');
     }
 
-    function clearHarvests() {
-        if(confirm("Clear all harvest entries?")) {
-            localStorage.removeItem('harvestList');
-            renderHarvests();
-        }
+    // CALCULATOR LOGIC
+    function runCalc() {
+        const frostVal = document.getElementById('frostDate').value;
+        if(!frostVal) return;
+        const frostDate = new Date(frostVal);
+        const plants = [{n:"Tomatoes", w:8}, {n:"Peppers", w:10}, {n:"Cukes", w:3}];
+        
+        document.getElementById('calcTable').style.display = "table";
+        document.getElementById('calcBody').innerHTML = plants.map(p => {
+            let d = new Date(frostDate);
+            d.setDate(frostDate.getDate() - (p.w * 7));
+            return `<tr><td>${p.n}</td><td>${d.toDateString()}</td></tr>`;
+        }).join('');
     }
 
-    // 4. GLOBAL SAVE
-    function saveAll() {
+    // PERSISTENCE
+    function saveData() {
         localStorage.setItem('gardenNotes', document.getElementById('gardenNotes').value);
         localStorage.setItem('frostDate', document.getElementById('frostDate').value);
-        
-        const status = document.getElementById('status');
-        status.innerText = "✓ Dashboard Saved!";
-        setTimeout(() => { status.innerText = ""; }, 3000);
+        document.getElementById('saveStatus').innerText = "✓ Sync Complete";
+        setTimeout(() => { document.getElementById('saveStatus').innerText = ""; }, 2000);
     }
+
+    window.onload = () => {
+        document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
+        document.getElementById('frostDate').value = localStorage.getItem('frostDate') || "";
+        renderHarvests();
+        runCalc();
+    };
+
+    // Weather Widget Script
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
 
 </body>
