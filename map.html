@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garden Layout Map</title>
+    <style>
+        :root { --grass: #7fb069; --dirt: #604d3f; --wood: #a67c52; --leaf: #4f772d; }
+        body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; text-align: center; padding: 20px; }
+        
+        .nav { margin-bottom: 20px; }
+        .nav a { text-decoration: none; color: var(--leaf); font-weight: bold; padding: 10px; }
+
+        h1 { color: #31572c; }
+
+        /* The Garden Plot Grid */
+        .garden-container {
+            display: grid;
+            grid-template-columns: repeat(4, 120px); /* 4 beds wide */
+            grid-gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .bed {
+            width: 120px;
+            height: 200px;
+            background: var(--dirt);
+            border: 8px solid var(--wood);
+            border-radius: 5px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .bed:hover { transform: scale(1.05); border-color: #8b5e34; }
+
+        .bed span { font-weight: bold; margin-bottom: 5px; }
+        
+        /* Modal (Pop-up) for bed details */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            z-index: 10;
+            width: 300px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <a href="index.html">← Back to Dashboard</a>
+    </div>
+
+    <h1>🗺️ My Raised Bed Layout</h1>
+    <p>Click a bed to see details or plan what to plant.</p>
+
+    <div class="garden-container">
+        <div class="bed" onclick="openBed('Bed 1', 'Tomatoes & Basil', 'Planted: May 12')">
+            <span>BED 1</span>
+            <small>🍅 Tomatoes</small>
+        </div>
+        <div class="bed" onclick="openBed('Bed 2', 'Peppers & Marigolds', 'Planted: May 15')">
+            <span>BED 2</span>
+            <small>🫑 Peppers</small>
+        </div>
+        <div class="bed" onclick="openBed('Bed 3', 'Empty - Fallow', 'Notes: Adding compost')">
+            <span>BED 3</span>
+            <small>🕳️ Fallow</small>
+        </div>
+        <div class="bed" onclick="openBed('Bed 4', 'Zucchini & Squash', 'Sown: June 1')">
+            <span>BED 4</span>
+            <small>🥒 Squash</small>
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay" onclick="closeBed()"></div>
+    <div id="modal" class="modal">
+        <h2 id="modalTitle">Bed Details</h2>
+        <p id="modalContent"></p>
+        <p id="modalNotes" style="font-style: italic; color: #666;"></p>
+        <button onclick="closeBed()" style="background: var(--leaf); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer;">Close</button>
+    </div>
+
+    <script>
+        function openBed(title, content, notes) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalContent').innerText = "Contents: " + content;
+            document.getElementById('modalNotes').innerText = notes;
+            document.getElementById('modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeBed() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
