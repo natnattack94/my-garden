@@ -1,21 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Garden Planner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My 2026 Garden Planner</title>
     <style>
-        body { font-family: sans-serif; background: #f0f4f0; text-align: center; padding: 50px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
-        h1 { color: #2d5a27; }
+        :root { --leaf-green: #4f772d; --dark-green: #31572c; --dirt: #604d3f; --cream: #f8f9fa; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9edc9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: var(--dark-green); border-bottom: 2px solid var(--leaf-green); padding-bottom: 10px; }
+        
+        /* Layout Grid */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+        /* Styling Sections */
+        section { background: var(--cream); padding: 15px; border-radius: 8px; border-left: 5px solid var(--leaf-green); }
+        h2 { font-size: 1.2rem; color: var(--dirt); margin-top: 0; }
+
+        /* Task List */
+        ul { list-style: none; padding: 0; }
+        li { background: #fff; margin: 5px 0; padding: 10px; border-radius: 5px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        input[type="checkbox"] { margin-right: 10px; accent-color: var(--leaf-green); }
+
+        /* Simple Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9rem; }
+        th { background: var(--leaf-green); color: white; }
+
+        /* Notes Area */
+        textarea { width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: vertical; }
+        .save-btn { background: var(--dark-green); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .save-btn:hover { background: var(--leaf-green); }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🌱 My 2026 Garden</h1>
-        <p>This site is live! Time to start planning.</p>
-        <ul style="text-align: left;">
-            <li><input type="checkbox"> Buy Tomato Seeds</li>
-            <li><input type="checkbox"> Prep the North Bed</li>
-        </ul>
+
+<div class="container">
+    <h1>🌱 My 2026 Garden Hub</h1>
+    <p>Logged in as: <strong>Garden Master</strong></p>
+
+    <div class="grid">
+        <section>
+            <h2>🗓️ Planting Schedule</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plant</th>
+                        <th>Sow Date</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Tomatoes</td><td>March 15</td><td>Indoor Start</td></tr>
+                    <tr><td>Peppers</td><td>March 01</td><td>Indoor Start</td></tr>
+                    <tr><td>Lettuce</td><td>April 10</td><td>Direct Sow</td></tr>
+                    <tr><td>Zucchini</td><td>May 15</td><td>Direct Sow</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>✅ Weekly Chores</h2>
+            <ul>
+                <li><input type="checkbox"> Test soil pH</li>
+                <li><input type="checkbox"> Order seed potatoes</li>
+                <li><input type="checkbox"> Clean seed trays</li>
+                <li><input type="checkbox"> Prune fruit trees</li>
+            </ul>
+        </section>
     </div>
+
+    <section style="margin-top: 20px;">
+        <h2>📝 Seasonal Observations</h2>
+        <textarea id="gardenNotes" placeholder="Write notes about pests, weather, or successes here..."></textarea>
+        <button class="save-btn" onclick="saveNotes()">Save Notes to Browser</button>
+        <p id="status" style="font-size: 0.8rem; color: green;"></p>
+    </section>
+</div>
+
+<script>
+    // Load notes when the page opens
+    document.getElementById('gardenNotes').value = localStorage.getItem('myGardenNotes') || "";
+
+    function saveNotes() {
+        const notes = document.getElementById('gardenNotes').value;
+        localStorage.setItem('myGardenNotes', notes);
+        document.getElementById('status').innerText = "Saved successfully!";
+        setTimeout(() => { document.getElementById('status').innerText = ""; }, 2000);
+    }
+</script>
+
 </body>
 </html>
