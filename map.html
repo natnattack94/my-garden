@@ -3,118 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garden Layout Map</title>
+    <title>Garden Map | GardenHub</title>
     <style>
-        :root { --grass: #7fb069; --dirt: #604d3f; --wood: #a67c52; --leaf: #4f772d; }
-        body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; text-align: center; padding: 20px; }
+        :root { 
+            --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
+            --grass: #aacc00; --wood: #bc8a5f; --cream: #f8f9fa;
+        }
         
-        .nav { margin-bottom: 20px; }
-        .nav a { text-decoration: none; color: var(--leaf); font-weight: bold; padding: 10px; }
-
-        h1 { color: #31572c; }
-
-        /* The Garden Plot Grid */
-        .garden-container {
-            display: grid;
-            grid-template-columns: repeat(4, 120px); /* 4 beds wide */
-            grid-gap: 20px;
-            justify-content: center;
-            margin-top: 30px;
+        body { 
+            font-family: 'Segoe UI', sans-serif; background-color: #e9edc9; 
+            margin: 0; padding: 20px; display: flex; justify-content: center;
         }
 
-        .bed {
-            width: 120px;
-            height: 200px;
-            background: var(--dirt);
-            border: 8px solid var(--wood);
-            border-radius: 5px;
+        .container { 
+            max-width: 900px; width: 100%; background: white; 
+            padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-link { text-decoration: none; color: var(--leaf); font-weight: bold; }
+
+        /* THE MAP CANVAS */
+        .garden-plot {
             position: relative;
+            width: 100%;
+            height: 500px;
+            background-color: var(--grass);
+            border-radius: 15px;
+            border: 10px solid var(--wood);
+            overflow: hidden;
+            background-image: radial-gradient(var(--dark) 1px, transparent 1px);
+            background-size: 30px 30px; /* Grid look */
+        }
+
+        /* GARDEN BEDS (The Hotspots) */
+        .bed {
+            position: absolute;
+            background: var(--dirt);
+            border: 4px solid #4e3b31;
+            border-radius: 4px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            color: white;
-            font-size: 0.8rem;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            justify-content: center;
+            color: rgba(255,255,255,0.3);
+            font-weight: bold;
         }
 
-        .bed:hover { transform: scale(1.05); border-color: #8b5e34; }
-
-        .bed span { font-weight: bold; margin-bottom: 5px; }
-        
-        /* Modal (Pop-up) for bed details */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        .bed:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
             z-index: 10;
-            width: 300px;
         }
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 5;
+
+        /* THE TOOLTIP (The Smooth Factor) */
+        .bed::after {
+            content: attr(data-info);
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            width: 200px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 100;
         }
+
+        .bed:hover::after { opacity: 1; }
+
+        /* BED POSITIONS (Customize these for your actual garden) */
+        .bed-1 { top: 50px; left: 50px; width: 300px; height: 100px; }
+        .bed-2 { top: 200px; left: 50px; width: 300px; height: 100px; }
+        .bed-3 { top: 50px; right: 50px; width: 150px; height: 350px; }
+        .pot { top: 400px; left: 100px; width: 60px; height: 60px; border-radius: 50%; }
+
+        .legend { margin-top: 20px; font-size: 0.9rem; color: #555; }
     </style>
 </head>
 <body>
 
-    <div class="nav">
-        <a href="index.html">← Back to Dashboard</a>
+<div class="container">
+    <header>
+        <h1 style="margin:0; color:var(--dark)">🗺️ Visual Garden Map</h1>
+        <a href="index.html" class="back-link">← Back to Dashboard</a>
+    </header>
+
+    <div class="garden-plot">
+        <div class="bed bed-1" 
+             data-info="🌱 Bed A: Heirloom Tomatoes&#10;📅 Fertilized: Feb 15&#10;💧 Water: High">
+             Bed A
+        </div>
+
+        <div class="bed bed-2" 
+             data-info="🥬 Bed B: Kale & Spinach&#10;📅 Planted: Jan 20&#10;⚠️ Watch for: Aphids">
+             Bed B
+        </div>
+
+        <div class="bed bed-3" 
+             data-info="🥕 Bed C: Carrots & Garlic&#10;📅 Harvest: June 2026&#10;🚜 Soil: Sandy Mix">
+             Bed C
+        </div>
+
+        <div class="bed pot" 
+             data-info="🪴 Herb Pot: Basil&#10;📍 Move to sun daily">
+        </div>
     </div>
 
-    <h1>🗺️ My Raised Bed Layout</h1>
-    <p>Click a bed to see details or plan what to plant.</p>
-
-    <div class="garden-container">
-        <div class="bed" onclick="openBed('Bed 1', 'Tomatoes & Basil', 'Planted: May 12')">
-            <span>BED 1</span>
-            <small>🍅 Tomatoes</small>
-        </div>
-        <div class="bed" onclick="openBed('Bed 2', 'Peppers & Marigolds', 'Planted: May 15')">
-            <span>BED 2</span>
-            <small>🫑 Peppers</small>
-        </div>
-        <div class="bed" onclick="openBed('Bed 3', 'Empty - Fallow', 'Notes: Adding compost')">
-            <span>BED 3</span>
-            <small>🕳️ Fallow</small>
-        </div>
-        <div class="bed" onclick="openBed('Bed 4', 'Zucchini & Squash', 'Sown: June 1')">
-            <span>BED 4</span>
-            <small>🥒 Squash</small>
-        </div>
+    <div class="legend">
+        <p><strong>Pro-Tip:</strong> Hover over the beds to see plant varieties and maintenance dates without leaving the page.</p>
     </div>
+</div>
 
-    <div id="overlay" class="overlay" onclick="closeBed()"></div>
-    <div id="modal" class="modal">
-        <h2 id="modalTitle">Bed Details</h2>
-        <p id="modalContent"></p>
-        <p id="modalNotes" style="font-style: italic; color: #666;"></p>
-        <button onclick="closeBed()" style="background: var(--leaf); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer;">Close</button>
-    </div>
-
-    <script>
-        function openBed(title, content, notes) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalContent').innerText = "Contents: " + content;
-            document.getElementById('modalNotes').innerText = notes;
-            document.getElementById('modal').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-        }
-
-        function closeBed() {
-            document.getElementById('modal').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
-    </script>
 </body>
 </html>
