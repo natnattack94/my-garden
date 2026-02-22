@@ -44,10 +44,10 @@
 
         h1 { color: var(--dark); margin: 0; font-size: 2rem; }
 
-        <nav style="margin-bottom: 20px;">
-    <a href="index.html" style="margin-right: 15px; font-weight: bold; color: #4f772d;">🏠 Dashboard</a>
-    <a href="map.html" style="font-weight: bold; color: #4f772d;">🗺️ Garden Map</a>
-</nav>
+        /* Navigation Styling */
+        nav { margin-bottom: 20px; padding: 10px 0; }
+        nav a { margin-right: 15px; font-weight: bold; color: var(--leaf); text-decoration: none; }
+        nav a:hover { text-decoration: underline; color: var(--dark); }
 
         .weather-container { 
             min-width: 280px; 
@@ -179,6 +179,11 @@
         </div>
     </header>
 
+    <nav>
+        <a href="index.html">🏠 Dashboard</a>
+        <a href="map.html">🗺️ Garden Map</a>
+    </nav>
+
     <section style="margin-bottom: 25px; border-left-color: var(--seed);">
         <h2>🧮 Seed Starting Calculator</h2>
         <div class="calc-input-group">
@@ -290,10 +295,8 @@
 
     // 2. Browser Storage (LocalStorage)
     window.onload = function() {
-        // Load saved notes
         document.getElementById('gardenNotes').value = localStorage.getItem('myGardenNotes') || "";
         
-        // Load saved frost date if user previously entered it
         const savedFrost = localStorage.getItem('myFrostDate');
         if (savedFrost) {
             document.getElementById('frostDate').value = savedFrost;
@@ -314,9 +317,6 @@
         setTimeout(() => { status.innerText = ""; }, 3000);
     }
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
