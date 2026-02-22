@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garden Map | Seed Bin</title>
+    <title>9x9 Grid Planner | GardenHub</title>
     <style>
         :root { 
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
@@ -12,139 +12,129 @@
         
         body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* SIDEBAR SEED BIN */
-        #seedBin {
-            width: 250px; background: white; padding: 20px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10;
+        /* SEED BIN SIDEBAR */
+        #sidebar {
+            width: 200px; background: white; padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;
         }
         .seed-card {
-            background: var(--seed); padding: 12px; border-radius: 8px;
+            background: var(--seed); padding: 10px; border-radius: 6px;
             margin-bottom: 10px; cursor: grab; font-weight: bold;
-            color: #5d4a1e; border: 2px solid transparent; transition: 0.2s;
-            text-align: center;
+            text-align: center; border: 2px solid transparent; font-size: 0.9rem;
         }
-        .seed-card:active { cursor: grabbing; border-color: var(--dark); }
+        .seed-card:hover { border-color: var(--leaf); }
 
-        /* MAIN GARDEN AREA */
-        .main-view { flex-grow: 1; padding: 40px; position: relative; }
-        header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-
-        .garden-plot {
-            position: relative; width: 100%; height: 600px;
-            background-color: var(--grass); border: 12px solid var(--wood);
-            border-radius: 20px; overflow: hidden;
-            background-image: radial-gradient(var(--dark) 1px, transparent 1px);
-            background-size: 40px 40px;
+        /* GRID CANVAS */
+        .main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(9, 50px); /* 9 columns */
+            grid-template-rows: repeat(9, 50px);    /* 9 rows */
+            gap: 2px;
+            background: var(--wood);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
-        .bed {
-            position: absolute; background: var(--dirt); border: 4px solid #4e3b31;
-            border-radius: 6px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; color: white;
-            text-align: center; transition: 0.3s; padding: 10px; box-sizing: border-box;
+        .grid-spot {
+            width: 50px; height: 50px;
+            background: var(--dirt);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; cursor: pointer; transition: 0.2s;
+            border-radius: 2px;
         }
-        .bed.drag-over { background: var(--leaf); transform: scale(1.05); }
+        .grid-spot:hover { filter: brightness(1.2); }
+        .grid-spot.occupied { background: #556b2f; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
 
-        .bed small { font-size: 0.7rem; opacity: 0.8; margin-top: 5px; }
-
-        /* POSITIONS */
-        .bed-a { top: 50px; left: 50px; width: 200px; height: 150px; }
-        .bed-b { top: 250px; left: 50px; width: 200px; height: 150px; }
-        .bed-c { top: 50px; right: 50px; width: 150px; height: 450px; }
+        .controls { margin-top: 20px; }
+        .btn { padding: 10px 20px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="seedBin">
-    <h2 style="color:var(--dark)">🧺 Seed Bin</h2>
-    <p style="font-size: 0.8rem; color: #666;">Drag a crop onto a bed to plant it.</p>
+<div id="sidebar">
+    <h3 style="color:var(--dark)">Seed Bin</h3>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍅" data-name="Tomato">🍅 Tomato</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥬" data-name="Kale">🥬 Kale</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot">🥕 Carrot</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌶️" data-name="Pepper">🌶️ Pepper</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🧅" data-name="Onion">🧅 Onion</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌻" data-name="Flower">🌻 Flower</div>
     
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-crop="Tomato" data-dtm="75">🍅 Tomato</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-crop="Kale" data-dtm="50">🥬 Kale</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-crop="Carrot" data-dtm="70">🥕 Carrot</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-crop="Zucchini" data-dtm="55">🥒 Zucchini</div>
-    
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-    <button onclick="clearMap()" style="width:100%; padding:10px; cursor:pointer; background:#eee; border:none; border-radius:5px;">Clear Map</button>
-</div>
-
-<div class="main-view">
-    <header>
-        <h1 style="margin:0; color:var(--dark)">🗺️ Visual Planner</h1>
-        <a href="index.html" style="text-decoration:none; color:var(--leaf); font-weight:bold;">🏠 Dashboard</a>
-    </header>
-
-    <div class="garden-plot">
-        <div class="bed bed-a" ondrop="drop(event, 'bedA')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">Bed A</div>
-        <div class="bed bed-b" ondrop="drop(event, 'bedB')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">Bed B</div>
-        <div class="bed bed-c" ondrop="drop(event, 'bedC')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">Bed C</div>
+    <div style="margin-top:auto">
+        <button class="btn" style="background:var(--dirt); color:white; width:100%" onclick="clearGrid()">Clear Grid</button>
+        <a href="index.html" style="display:block; text-align:center; margin-top:10px; color:var(--leaf); text-decoration:none; font-weight:bold;">Dashboard</a>
     </div>
 </div>
 
-<script>
-    function allowDrop(ev) {
-        ev.preventDefault();
-        ev.target.classList.add('drag-over');
-    }
+<div class="main-view">
+    <h2 style="margin-bottom:10px; color:var(--dark)">9x9 Garden Plot</h2>
+    <div class="grid-container" id="gardenGrid">
+        </div>
+    <p style="color:var(--dirt); font-size: 0.8rem; margin-top:15px;">Drag plants into a square. Refreshing will keep your layout.</p>
+</div>
 
-    function dragLeave(ev) {
-        ev.target.classList.remove('drag-over');
+<script>
+    const GRID_SIZE = 81; // 9x9
+
+    // Generate the Grid
+    const gridContainer = document.getElementById('gardenGrid');
+    function createGrid() {
+        const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
+        
+        for (let i = 0; i < GRID_SIZE; i++) {
+            const spot = document.createElement('div');
+            spot.classList.add('grid-spot');
+            spot.id = `spot-${i}`;
+            
+            // Allow Drop
+            spot.ondragover = (e) => e.preventDefault();
+            spot.ondrop = (e) => drop(e, i);
+            
+            // Fill if data exists
+            if (savedLayout[i]) {
+                spot.innerText = savedLayout[i].emoji;
+                spot.classList.add('occupied');
+                spot.title = savedLayout[i].name;
+            }
+            
+            gridContainer.appendChild(spot);
+        }
     }
 
     function drag(ev) {
-        ev.dataTransfer.setData("crop", ev.target.getAttribute('data-crop'));
-        ev.dataTransfer.setData("dtm", ev.target.getAttribute('data-dtm'));
+        ev.dataTransfer.setData("emoji", ev.target.getAttribute('data-emoji'));
+        ev.dataTransfer.setData("name", ev.target.getAttribute('data-name'));
     }
 
-    function drop(ev, bedId) {
+    function drop(ev, index) {
         ev.preventDefault();
-        ev.target.classList.remove('drag-over');
+        const emoji = ev.dataTransfer.getData("emoji");
+        const name = ev.dataTransfer.getData("name");
         
-        const crop = ev.dataTransfer.getData("crop");
-        const dtm = parseInt(ev.dataTransfer.getData("dtm"));
+        // Save to Storage
+        let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
+        savedLayout[index] = { emoji, name };
+        localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
         
-        // Calculate Harvest Date
-        const today = new Date();
-        const harvestDate = new Date();
-        harvestDate.setDate(today.getDate() + dtm);
-        
-        const dateString = harvestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-        // Save to LocalStorage
-        let mapData = JSON.parse(localStorage.getItem('mapData')) || {};
-        mapData[bedId] = { crop, harvestDate: dateString };
-        localStorage.setItem('mapData', JSON.stringify(mapData));
-
-        renderMap();
+        // Update UI
+        const spot = document.getElementById(`spot-${index}`);
+        spot.innerText = emoji;
+        spot.classList.add('occupied');
+        spot.title = name;
     }
 
-    function renderMap() {
-        const mapData = JSON.parse(localStorage.getItem('mapData')) || {};
-        const beds = {
-            'bedA': document.querySelector('.bed-a'),
-            'bedB': document.querySelector('.bed-b'),
-            'bedC': document.querySelector('.bed-c')
-        };
-
-        for (let id in beds) {
-            if (mapData[id]) {
-                beds[id].innerHTML = `<strong>${mapData[id].crop}</strong><small>Harvest: ${mapData[id].harvestDate}</small>`;
-                beds[id].style.background = "var(--dark)";
-            } else {
-                beds[id].innerHTML = id.replace('bed', 'Bed ');
-                beds[id].style.background = "var(--dirt)";
-            }
+    function clearGrid() {
+        if (confirm("Reset the entire grid?")) {
+            localStorage.removeItem('gardenGridLayout');
+            gridContainer.innerHTML = "";
+            createGrid();
         }
     }
 
-    function clearMap() {
-        if(confirm("Empty all beds?")) {
-            localStorage.removeItem('mapData');
-            renderMap();
-        }
-    }
-
-    window.onload = renderMap;
+    window.onload = createGrid;
 </script>
 
 </body>
