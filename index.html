@@ -5,122 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My 2026 Garden Hub</title>
     <style>
-        :root { --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; --cream: #f8f9fa; --sky: #00b4d8; --seed: #e9c46a; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #e9edc9; margin: 0; padding: 15px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        :root { 
+            --leaf: #4f772d; 
+            --dark: #31572c; 
+            --dirt: #604d3f; 
+            --cream: #f8f9fa; 
+            --sky: #00b4d8; 
+            --seed: #e9c46a; 
+        }
         
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--leaf); margin-bottom: 20px; flex-wrap: wrap; }
-        h1 { color: var(--dark); margin: 10px 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #e9edc9; 
+            margin: 0; 
+            padding: 15px; 
+            line-height: 1.6;
+        }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .container { 
+            max-width: 1000px; 
+            margin: auto; 
+            background: white; 
+            padding: 25px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+        }
+        
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--leaf); 
+            margin-bottom: 20px; 
+            flex-wrap: wrap; 
+            padding-bottom: 10px;
+        }
+
+        h1 { color: var(--dark); margin: 0; }
+
+        /* Weather Widget */
+        .weather-container { min-width: 250px; margin-top: 10px; }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
 
-        section { background: var(--cream); padding: 15px; border-radius: 8px; border-left: 5px solid var(--leaf); margin-bottom: 20px; }
-        h2 { font-size: 1.1rem; color: var(--dirt); margin-top: 0; }
+        section { 
+            background: var(--cream); 
+            padding: 15px; 
+            border-radius: 8px; 
+            border-left: 5px solid var(--leaf); 
+            height: 100%;
+            box-sizing: border-box;
+        }
 
-        /* Calculator Styling */
-        .calc-input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; margin: 10px 0; font-size: 1rem; }
-        .calc-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 5px; overflow: hidden; }
-        .calc-table th { background: var(--dark); color: white; padding: 10px; text-align: left; font-size: 0.85rem; }
-        .calc-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+        h2 { font-size: 1.2rem; color: var(--dirt); margin-top: 0; display: flex; align-items: center; gap: 8px; }
 
-        /* Existing UI Elements */
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .gallery-item { background: #ddd; border-radius: 5px; overflow: hidden; height: 100px; border: 2px solid white; }
+        /* Calculator Styles */
+        .calc-input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; margin: 10px 0; font-family: inherit; }
+        .calc-table, .inventory-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+            background: white; 
+            font-size: 0.9rem;
+        }
+        .calc-table th, .inventory-table th { background: var(--leaf); color: white; padding: 10px; text-align: left; }
+        .inventory-table th { background: var(--seed); color: #333; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+
+        /* Photo Gallery */
+        .gallery { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            gap: 10px; 
+            margin-top: 10px; 
+        }
+        .gallery-item { 
+            background: #ddd; 
+            border-radius: 5px; 
+            overflow: hidden; 
+            height: 120px; 
+            position: relative; 
+            border: 2px solid white;
+        }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-        textarea { width: 100%; height: 80px; border-radius: 5px; padding: 10px; box-sizing: border-box; }
-        .save-btn { background: var(--dark); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .gallery-item span { 
+            position: absolute; bottom: 0; background: rgba(0,0,0,0.6); 
+            color: white; width: 100%; font-size: 0.7rem; padding: 2px; text-align: center; 
+        }
+
+        /* Task List */
+        .task-list { list-style: none; padding: 0; }
+        .task-list li { background: white; margin-bottom: 5px; padding: 8px; border-radius: 4px; display: flex; align-items: center; }
+        .task-list input { margin-right: 10px; }
+
+        /* Notes Area */
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            font-family: inherit;
+        }
+        .save-btn { 
+            background: var(--dark); 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 10px; 
+            font-weight: bold;
+        }
+        .save-btn:hover { background: var(--leaf); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>🌱 My Garden Hub</h1>
-        <div style="font-size: 0.8rem; text-align: right; color: var(--dirt);">
-            <strong>Today:</strong> <span id="currentDate"></span>
+        <div>
+            <h1>🌱 My Garden Hub</h1>
+            <small>Personal Planner & Log</small>
+        </div>
+        <div class="weather-container">
+            <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="GARDEN" data-label_2="WEATHER" data-theme="pure" >WEATHER</a>
+            <script>
+            !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+            </script>
         </div>
     </header>
 
-    <section style="border-left-color: var(--seed); background-color: #fffcf2;">
+    <section style="margin-bottom: 20px; border-left-color: var(--seed);">
         <h2>🧮 Seed Starting Calculator</h2>
-        <label for="frostDate">Select your <strong>Last Spring Frost Date</strong>:</label>
+        <p style="font-size: 0.8rem; margin: 0;">Enter your Last Spring Frost date to generate your schedule:</p>
         <input type="date" id="frostDate" class="calc-input" onchange="calculateDates()">
         
         <table class="calc-table" id="calcTable" style="display:none;">
             <thead>
                 <tr>
                     <th>Plant Variety</th>
-                    <th>Weeks Before Frost</th>
+                    <th>Timing</th>
                     <th>Target Sowing Date</th>
                 </tr>
             </thead>
-            <tbody id="calcBody">
-                </tbody>
+            <tbody id="calcBody"></tbody>
         </table>
     </section>
 
     <div class="grid">
         <section>
-            <h2>📸 Progress Photos</h2>
+            <h2>📸 Monthly Progress</h2>
             <div class="gallery">
-                <div class="gallery-item"><img src="https://via.placeholder.com/150/4f772d/ffffff?text=March" alt="Garden March"></div>
-                <div class="gallery-item"><img src="https://via.placeholder.com/150/4f772d/ffffff?text=April" alt="Garden April"></div>
-            </div>
-        </section>
-
-        <section>
-            <h2>📝 Observations</h2>
-            <textarea id="gardenNotes" placeholder="Notes..."></textarea>
-            <button class="save-btn" onclick="saveNotes()">Save Notes</button>
-        </section>
-    </div>
-</div>
-
-<script>
-    // Set Current Date
-    document.getElementById('currentDate').innerText = new Date().toLocaleDateString();
-
-    // Data for the calculator (Weeks before last frost)
-    const plantData = [
-        { name: "Peppers & Eggplant", weeks: 10 },
-        { name: "Tomatoes", weeks: 8 },
-        { name: "Broccoli & Cabbage", weeks: 6 },
-        { name: "Lettuce & Greens", weeks: 4 },
-        { name: "Cucumbers & Squash", weeks: 2 }
-    ];
-
-    function calculateDates() {
-        const frostInput = document.getElementById('frostDate').value;
-        if (!frostInput) return;
-
-        const frostDate = new Date(frostInput);
-        const table = document.getElementById('calcTable');
-        const tbody = document.getElementById('calcBody');
-        
-        tbody.innerHTML = ""; // Clear old data
-        table.style.display = "table";
-
-        plantData.forEach(plant => {
-            let targetDate = new Date(frostDate);
-            targetDate.setDate(frostDate.getDate() - (plant.weeks * 7));
-            
-            let row = `<tr>
-                <td><strong>${plant.name}</strong></td>
-                <td>${plant.weeks} Weeks</td>
-                <td>${targetDate.toDateString()}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
-    }
-
-    // Storage for notes
-    document.getElementById('gardenNotes').value = localStorage.getItem('myGardenNotes') || "";
-    function saveNotes() {
-        localStorage.setItem('myGardenNotes', document.getElementById('gardenNotes').value);
-        alert("Notes saved to your browser!");
-    }
-</script>
-
-</body>
-</html>
+                <div class="gallery-item">
+                    <img src="https://via
