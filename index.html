@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Task Master</title>
+    <title>GardenHub OS | Unified Dashboard</title>
     <style>
         :root { 
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
@@ -12,47 +12,55 @@
         }
         
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); min-height: 85vh; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); min-height: 85vh; }
 
-        header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
-        h1 { margin: 0; color: var(--dark); font-size: 2.2rem; }
-        .nav-links a { text-decoration: none; color: var(--leaf); font-weight: bold; margin-left: 20px; }
+        /* HEADER */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+        h1 { margin: 0; color: var(--dark); font-size: 2rem; }
+        .nav-links a { text-decoration: none; color: var(--leaf); font-weight: bold; margin-left: 20px; font-size: 0.9rem; }
+        .nav-links a:hover { color: var(--harvest); }
 
         /* STATS */
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--cream); padding: 20px; border-radius: 18px; text-align: center; border: 1px solid #eee; }
-        .stat-card h3 { margin: 0; font-size: 1.8rem; color: var(--dark); }
-        .stat-card p { margin: 5px 0 0; color: #888; font-size: 0.75rem; text-transform: uppercase; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: var(--cream); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #eee; transition: 0.3s; }
+        .stat-card h3 { margin: 0; font-size: 1.6rem; color: var(--dark); }
+        .stat-card p { margin: 5px 0 0; color: #888; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
 
         /* TABS */
-        .tab-bar { display: flex; gap: 10px; background: #f0f2f0; padding: 7px; border-radius: 15px; margin-bottom: 25px; }
-        .tab-btn { flex: 1; padding: 14px; border: none; border-radius: 10px; background: none; cursor: pointer; font-weight: bold; color: #777; }
-        .tab-btn.active { background: white; color: var(--dark); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .tab-content { display: none; animation: slideUp 0.4s ease forwards; }
-        .tab-content.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-bar { display: flex; gap: 8px; background: #f0f2f0; padding: 6px; border-radius: 12px; margin-bottom: 25px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: none; cursor: pointer; font-weight: bold; color: #666; transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--dark); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
 
-        /* TASK MANAGER STYLING */
-        .task-input-group { display: grid; grid-template-columns: 1fr 150px 100px; gap: 10px; margin-bottom: 20px; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* TASK MANAGER */
+        .task-input-group { display: grid; grid-template-columns: 1fr 180px 100px; gap: 10px; margin-bottom: 20px; }
         .task-list { list-style: none; padding: 0; }
         .task-item { 
             display: flex; align-items: center; justify-content: space-between; 
-            background: var(--cream); padding: 15px; border-radius: 12px; margin-bottom: 10px;
-            border-left: 5px solid var(--leaf); transition: 0.3s;
+            background: var(--cream); padding: 12px 18px; border-radius: 10px; margin-bottom: 8px;
+            border-left: 5px solid var(--leaf); 
         }
         .task-item.overdue { border-left-color: var(--harvest); background: #fff5f2; }
-        .task-info { display: flex; align-items: center; gap: 15px; }
-        .task-date { font-size: 0.8rem; color: #888; font-weight: bold; }
-        .delete-task { color: #ccc; cursor: pointer; font-size: 1.2rem; border: none; background: none; }
-        .delete-task:hover { color: var(--harvest); }
+        .task-info { display: flex; align-items: center; gap: 12px; }
+        .task-date { font-size: 0.75rem; color: #999; font-weight: bold; }
+        .delete-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1rem; }
+        .delete-btn:hover { color: var(--harvest); }
 
-        /* FORM ELEMENTS */
-        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .btn-action { background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; }
-        .btn-action:hover { opacity: 0.9; }
+        /* INPUTS & BUTTONS */
+        input, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
+        .btn-action { background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-action:hover { filter: brightness(1.2); }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        td { padding: 15px 10px; border-top: 1px solid #eee; }
+        /* TABLE STYLING */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 0.8rem; color: #777; }
+        td { padding: 12px; border-top: 1px solid #eee; font-size: 0.9rem; }
+
+        /* LIBRARY IFRAME */
+        .library-frame { width: 100%; height: 70vh; border: none; border-radius: 15px; background: white; }
     </style>
 </head>
 <body>
@@ -61,78 +69,78 @@
     <header>
         <div>
             <h1>GardenHub OS</h1>
-            <div style="color: var(--dirt); font-weight: 500;">Feb 22, 2026 | Tasks & Planning</div>
+            <div id="live-date" style="color: var(--dirt); font-size: 0.9rem;">Sunday, February 22, 2026</div>
         </div>
         <nav class="nav-links">
             <a href="map.html">🗺️ Visual Map</a>
+            <a href="library.html">📚 Standalone Library</a>
         </nav>
     </header>
 
     <div class="stat-grid">
-        <div class="stat-card" style="border-top: 5px solid var(--leaf);"><h3 id="stat-planted">0</h3><p>Squares Occupied</p></div>
-        <div class="stat-card" style="border-top: 5px solid var(--harvest);"><h3 id="stat-tasks">0</h3><p>Pending Tasks</p></div>
-        <div class="stat-card" style="border-top: 5px solid var(--sky);"><h3 id="stat-temp">42°F</h3><p>Local Temp</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--leaf);"><h3 id="stat-planted">0</h3><p>Planted Squares</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--harvest);"><h3 id="stat-tasks">0</h3><p>Pending Tasks</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--sky);"><h3 id="stat-temp">42°F</h3><p>Local Temp</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--seed);"><h3 id="stat-harvests">0</h3><p>Total Yields</p></div>
     </div>
 
     <div class="tab-bar">
         <button class="tab-btn active" onclick="openTab(event, 'chores')">Daily Tasks</button>
         <button class="tab-btn" onclick="openTab(event, 'planner')">Seed Planning</button>
         <button class="tab-btn" onclick="openTab(event, 'logs')">Harvest Logs</button>
+        <button class="tab-btn" onclick="openTab(event, 'library-tab')">Encyclopedia</button>
         <button class="tab-btn" onclick="openTab(event, 'notes')">Journal</button>
     </div>
 
     <div id="chores" class="tab-content active">
-        <section>
-            <h2 style="margin-top:0">📋 Task Manager</h2>
-            <div class="task-input-group">
-                <input type="text" id="taskDesc" placeholder="New chore (e.g., Weed Bed A)">
-                <input type="date" id="taskDate">
-                <button class="btn-action" onclick="addTask()">Add</button>
-            </div>
-            <ul id="taskList" class="task-list">
-                </ul>
-        </section>
-        <div class="weather-widget">
+        <div class="task-input-group">
+            <input type="text" id="taskDesc" placeholder="What needs doing?">
+            <input type="date" id="taskDate">
+            <button class="btn-action" onclick="addTask()">Add Task</button>
+        </div>
+        <ul id="taskList" class="task-list"></ul>
+        <div style="margin-top:20px;">
             <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="GARDEN" data-label_2="WEATHER" data-theme="pure">WEATHER</a>
         </div>
     </div>
 
     <div id="planner" class="tab-content">
-        <section>
-            <h2>🧮 Sowing Calculator</h2>
-            <input type="date" id="frostDate" onchange="runCalculator()">
+        <section style="background:var(--cream); padding:20px; border-radius:15px;">
+            <h3>🧮 Sowing Calculator</h3>
+            <label>Expected Last Frost Date:</label>
+            <input type="date" id="frostDate" onchange="runCalculator()" style="margin-bottom:15px;">
             <table id="calcTable" style="display:none">
-                <thead><tr><th>Variety</th><th>Sow Window</th></tr></thead>
+                <thead><tr><th>Variety</th><th>Ideal Sowing Date</th><th>Timeline</th></tr></thead>
                 <tbody id="calcBody"></tbody>
             </table>
         </section>
     </div>
 
     <div id="logs" class="tab-content">
-        <section>
-            <h2>🧺 Harvest Records</h2>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input type="text" id="hCrop" placeholder="Crop">
-                <input type="text" id="hAmt" placeholder="Amount">
-            </div>
-            <button class="btn-action" style="background: var(--harvest); width:100%; margin-top:10px;" onclick="addHarvest()">Log</button>
-            <table id="hTable">
-                <tbody id="hBody"></tbody>
-            </table>
-        </section>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 100px; gap:10px; margin-bottom:20px;">
+            <input type="text" id="hCrop" placeholder="Crop Name">
+            <input type="text" id="hAmt" placeholder="Amount (e.g. 5 lbs)">
+            <button class="btn-action" style="background:var(--harvest)" onclick="addHarvest()">Log</button>
+        </div>
+        <table id="hTable">
+            <thead><tr><th>Crop</th><th>Amount</th><th>Date</th></tr></thead>
+            <tbody id="hBody"></tbody>
+        </table>
+    </div>
+
+    <div id="library-tab" class="tab-content">
+        <iframe src="library.html" class="library-frame"></iframe>
     </div>
 
     <div id="notes" class="tab-content">
-        <section>
-            <h2>📝 Journal</h2>
-            <textarea id="gardenNotes" rows="10" placeholder="Notes..."></textarea>
-            <button class="btn-action" style="width:100%; margin-top:10px;" onclick="saveNotes()">Save Journal</button>
-        </section>
+        <textarea id="gardenNotes" rows="12" style="width:100%; border-radius:15px;" placeholder="Record soil conditions, pest observations, etc..."></textarea>
+        <button class="btn-action" style="width:100%; margin-top:10px;" onclick="saveNotes()">Save Journal Entry</button>
     </div>
+
 </div>
 
 <script>
-    // TAB SYSTEM
+    // TAB LOGIC
     function openTab(evt, tabName) {
         let contents = document.getElementsByClassName("tab-content");
         for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
@@ -142,16 +150,14 @@
         evt.currentTarget.classList.add("active");
     }
 
-    // TASK MANAGEMENT
+    // TASK MASTER
     function addTask() {
         const desc = document.getElementById('taskDesc').value;
         const date = document.getElementById('taskDate').value;
-        if (!desc || !date) return alert("Please add a task and a date!");
-
+        if (!desc || !date) return alert("Fill in task and date!");
         const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
         tasks.push({ id: Date.now(), desc, date, done: false });
         localStorage.setItem('gardenTasks', JSON.stringify(tasks));
-        
         document.getElementById('taskDesc').value = "";
         renderTasks();
     }
@@ -160,22 +166,20 @@
         const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
         const list = document.getElementById('taskList');
         const today = new Date().toISOString().split('T')[0];
-        
-        list.innerHTML = tasks.map(t => {
+        list.innerHTML = tasks.sort((a,b) => new Date(a.date) - new Date(b.date)).map(t => {
             const isOverdue = t.date < today && !t.done;
             return `
             <li class="task-item ${isOverdue ? 'overdue' : ''}">
                 <div class="task-info">
                     <input type="checkbox" ${t.done ? 'checked' : ''} onclick="toggleTask(${t.id})">
-                    <span style="${t.done ? 'text-decoration: line-through; opacity: 0.5' : ''}">${t.desc}</span>
+                    <span style="${t.done ? 'text-decoration:line-through; opacity:0.5' : ''}">${t.desc}</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:15px;">
+                <div style="display:flex; align-items:center; gap:12px;">
                     <span class="task-date">${t.date}</span>
-                    <button class="delete-task" onclick="deleteTask(${t.id})">✕</button>
+                    <button class="delete-btn" onclick="deleteTask(${t.id})">✕</button>
                 </div>
             </li>`;
         }).join('');
-        
         document.getElementById('stat-tasks').innerText = tasks.filter(t => !t.done).length;
     }
 
@@ -193,13 +197,15 @@
         renderTasks();
     }
 
-    // SYNC STATS FROM MAP
-    function syncMapStats() {
+    // SYNC FROM MAP
+    function syncStats() {
         const mapData = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
         document.getElementById('stat-planted').innerText = Object.keys(mapData).length;
+        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        document.getElementById('stat-harvests').innerText = logs.length;
     }
 
-    // OTHER HELPERS (Harvest/Calculator/Notes)
+    // HARVESTS
     function addHarvest() {
         const crop = document.getElementById('hCrop').value;
         const amt = document.getElementById('hAmt').value;
@@ -208,23 +214,33 @@
         logs.push({ crop, amt, date: new Date().toLocaleDateString() });
         localStorage.setItem('harvestLogs', JSON.stringify(logs));
         renderHarvests();
+        syncStats();
+        document.getElementById('hCrop').value = ""; document.getElementById('hAmt').value = "";
     }
+
     function renderHarvests() {
         const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-        document.getElementById('hBody').innerHTML = logs.map(l => `<tr><td>${l.crop}</td><td>${l.amt}</td></tr>`).reverse().join('');
+        document.getElementById('hBody').innerHTML = logs.map(l => `<tr><td>${l.crop}</td><td>${l.amt}</td><td>${l.date}</td></tr>`).reverse().join('');
     }
+
+    // PLANNER
     function runCalculator() {
-        const fv = document.getElementById('frostDate').value; if(!fv) return;
+        const fv = document.getElementById('frostDate').value;
+        if(!fv) return;
         localStorage.setItem('frostDate', fv);
         const fd = new Date(fv);
-        const plants = [{n:"Peppers", w:10}, {n:"Tomatoes", w:8}, {n:"Lettuce", w:4}];
+        const crops = [{n:"Peppers", w:10}, {n:"Tomatoes", w:8}, {n:"Kale", w:4}, {n:"Basil", w:6}];
         document.getElementById('calcTable').style.display = "table";
-        document.getElementById('calcBody').innerHTML = plants.map(p => {
-            let d = new Date(fd); d.setDate(fd.getDate() - (p.w * 7));
-            return `<tr><td>${p.n}</td><td>${d.toLocaleDateString()}</td></tr>`;
+        document.getElementById('calcBody').innerHTML = crops.map(c => {
+            let d = new Date(fd); d.setDate(fd.getDate() - (c.w * 7));
+            return `<tr><td>${c.n}</td><td><strong>${d.toLocaleDateString()}</strong></td><td>${c.w} weeks before frost</td></tr>`;
         }).join('');
     }
-    function saveNotes() { localStorage.setItem('gardenNotes', document.getElementById('gardenNotes').value); alert("Notes Saved!"); }
+
+    function saveNotes() { 
+        localStorage.setItem('gardenNotes', document.getElementById('gardenNotes').value); 
+        alert("Journal Saved!"); 
+    }
 
     window.onload = () => {
         document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
@@ -232,14 +248,11 @@
         renderTasks();
         renderHarvests();
         runCalculator();
-        syncMapStats();
+        syncStats();
     };
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
