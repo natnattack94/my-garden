@@ -12,6 +12,7 @@
             --cream: #f8f9fa; 
             --sky: #00b4d8; 
             --seed: #e9c46a; 
+            --harvest: #e76f51;
         }
         
         body { 
@@ -44,10 +45,9 @@
 
         h1 { color: var(--dark); margin: 0; font-size: 2rem; }
 
-        /* Navigation Styling */
-        nav { margin-bottom: 20px; padding: 10px 0; }
+        nav { margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid #eee; }
         nav a { margin-right: 15px; font-weight: bold; color: var(--leaf); text-decoration: none; }
-        nav a:hover { text-decoration: underline; color: var(--dark); }
+        nav a:hover { color: var(--dark); text-decoration: underline; }
 
         .weather-container { 
             min-width: 280px; 
@@ -70,17 +70,20 @@
             padding: 20px; 
             border-radius: 8px; 
             border-left: 6px solid var(--leaf); 
-            height: 100%;
+            margin-bottom: 20px;
             box-sizing: border-box;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         h2 { font-size: 1.25rem; color: var(--dirt); margin-top: 0; display: flex; align-items: center; gap: 10px; }
 
-        /* Calculator Styling */
-        .calc-input-group { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
-        .calc-input { padding: 12px; border-radius: 5px; border: 1px solid #ccc; width: 100%; margin: 10px 0; font-size: 1rem; box-sizing: border-box; }
-        
+        /* Harvest Tracker Styling */
+        .harvest-section { border-left-color: var(--harvest); }
+        .harvest-form { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .harvest-form input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; flex: 1; min-width: 120px; }
+        .add-btn { background: var(--harvest); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .add-btn:hover { background: #cf5d40; }
+
         table { 
             width: 100%; 
             border-collapse: collapse; 
@@ -90,77 +93,21 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        
         th { background: var(--leaf); color: white; padding: 12px; text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        tr:last-child td { border-bottom: none; }
 
-        /* Inventory specific colors */
-        .inventory-table th { background: var(--seed); color: #312a1e; }
-        .low-stock { color: #d90429; font-weight: bold; background: #fff0f0; }
-
-        /* Photo Gallery */
-        .gallery { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
-            gap: 12px; 
-            margin-top: 10px; 
-        }
-        .gallery-item { 
-            background: #eee; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            height: 130px; 
-            position: relative; 
-            border: 3px solid white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+        /* Gallery Styling */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 10px; }
+        .gallery-item { background: #eee; border-radius: 8px; overflow: hidden; height: 130px; position: relative; border: 3px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-        .gallery-item span { 
-            position: absolute; bottom: 0; background: rgba(49, 87, 44, 0.85); 
-            color: white; width: 100%; font-size: 0.75rem; padding: 4px 0; text-align: center; 
-        }
+        .gallery-item span { position: absolute; bottom: 0; background: rgba(49, 87, 44, 0.85); color: white; width: 100%; font-size: 0.75rem; padding: 4px 0; text-align: center; }
 
-        /* Task List */
+        /* General UI */
         .task-list { list-style: none; padding: 0; margin: 0; }
-        .task-list li { 
-            background: white; 
-            margin-bottom: 8px; 
-            padding: 10px; 
-            border-radius: 6px; 
-            display: flex; 
-            align-items: center; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .task-list input[type="checkbox"] { width: 18px; height: 18px; margin-right: 12px; accent-color: var(--leaf); cursor: pointer; }
-
-        /* Notes Area */
-        textarea { 
-            width: 100%; 
-            height: 150px; 
-            border: 1px solid #ccc; 
-            border-radius: 8px; 
-            padding: 15px; 
-            box-sizing: border-box; 
-            font-family: inherit;
-            font-size: 1rem;
-            resize: vertical;
-        }
-        .save-btn { 
-            background: var(--dark); 
-            color: white; 
-            border: none; 
-            padding: 15px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            width: 100%; 
-            margin-top: 10px; 
-            font-weight: bold;
-            font-size: 1rem;
-            transition: background 0.2s;
-        }
+        .task-list li { background: white; margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        textarea { width: 100%; height: 150px; border: 1px solid #ccc; border-radius: 8px; padding: 15px; box-sizing: border-box; font-family: inherit; font-size: 1rem; resize: vertical; }
+        .save-btn { background: var(--dark); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
         .save-btn:hover { background: var(--leaf); }
-        #status { font-weight: bold; margin-top: 10px; height: 20px; }
     </style>
 </head>
 <body>
@@ -184,27 +131,53 @@
         <a href="map.html">🗺️ Garden Map</a>
     </nav>
 
-    <section style="margin-bottom: 25px; border-left-color: var(--seed);">
-        <h2>🧮 Seed Starting Calculator</h2>
-        <div class="calc-input-group">
-            <label for="frostDate"><strong>Set Your Last Spring Frost Date:</strong></label>
-            <input type="date" id="frostDate" class="calc-input" onchange="calculateDates()">
-            <p style="font-size: 0.8rem; color: #666; margin: 0;">Dates will update automatically based on typical growth cycles.</p>
+    <section class="harvest-section">
+        <h2>🧺 Harvest Log</h2>
+        <div class="harvest-form">
+            <input type="date" id="harvestDate">
+            <input type="text" id="harvestCrop" placeholder="What did you pick?">
+            <input type="text" id="harvestWeight" placeholder="How much? (e.g. 5lbs)">
+            <button class="add-btn" onclick="addHarvest()">Add Entry</button>
         </div>
-        
-        <table id="calcTable" style="display:none;">
+        <table>
             <thead>
                 <tr>
-                    <th>Plant Variety</th>
-                    <th>Standard Timing</th>
-                    <th>Target Sowing Date</th>
+                    <th>Date</th>
+                    <th>Crop</th>
+                    <th>Amount</th>
                 </tr>
+            </thead>
+            <tbody id="harvestBody">
+                </tbody>
+        </table>
+        <button onclick="clearHarvests()" style="background:none; border:none; color:#999; font-size:0.7rem; cursor:pointer; margin-top:10px;">Clear all harvests</button>
+    </section>
+
+    <section style="border-left-color: var(--seed);">
+        <h2>🧮 Seed Starting Calculator</h2>
+        <div style="background:white; padding:15px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
+            <label><strong>Last Spring Frost Date:</strong></label>
+            <input type="date" id="frostDate" style="padding:10px; width:100%; margin-top:5px;" onchange="calculateDates()">
+        </div>
+        <table id="calcTable" style="display:none;">
+            <thead>
+                <tr><th>Plant</th><th>Weeks Before</th><th>Sow Date</th></tr>
             </thead>
             <tbody id="calcBody"></tbody>
         </table>
     </section>
 
     <div class="grid">
+        <section>
+            <h2>✅ Priority Chores</h2>
+            <ul class="task-list">
+                <li><input type="checkbox"> Check irrigation lines</li>
+                <li><input type="checkbox"> Fertilize heavy feeders</li>
+                <li><input type="checkbox"> Stake the tomatoes</li>
+                <li><input type="checkbox"> Weed the garlic bed</li>
+            </ul>
+        </section>
+
         <section>
             <h2>📸 Monthly Progress</h2>
             <div class="gallery">
@@ -214,106 +187,109 @@
                 </div>
                 <div class="gallery-item">
                     <img src="https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=300" alt="Sprouts">
-                    <span>April: Seedlings</span>
+                    <span>April: Sprouts</span>
                 </div>
                 <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=300" alt="Full Garden">
-                    <span>May: Planting Out</span>
+                    <img src="https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=300" alt="Garden">
+                    <span>May: Growth</span>
                 </div>
             </div>
-            <p style="font-size: 0.75rem; margin-top: 15px; color: #777;">Tip: Upload photos to GitHub and replace 'src' to see your own garden.</p>
-        </section>
-
-        <section>
-            <h2>✅ Priority Chores</h2>
-            <ul class="task-list">
-                <li><input type="checkbox"> Check irrigation lines</li>
-                <li><input type="checkbox"> Fertilize heavy feeders</li>
-                <li><input type="checkbox"> Mulch the berry patch</li>
-                <li><input type="checkbox"> Stake the tomatoes</li>
-                <li><input type="checkbox"> Weed the garlic bed</li>
-            </ul>
         </section>
     </div>
 
-    <section style="margin-bottom: 25px; border-left-color: var(--seed);">
-        <h2>📦 Seed Inventory</h2>
-        <table class="inventory-table">
-            <thead>
-                <tr><th>Variety</th><th>Year</th><th>Current Stock</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>Brandywine Tomato</td><td>2025</td><td>~20 Seeds</td></tr>
-                <tr><td>Dino Kale</td><td>2026</td><td>Full Packet</td></tr>
-                <tr class="low-stock"><td>Sweet Bell Pepper</td><td>2024</td><td>OUT - REORDER</td></tr>
-                <tr><td>Genovese Basil</td><td>2026</td><td>Saved Seeds</td></tr>
-            </tbody>
-        </table>
-    </section>
-
     <section>
         <h2>📝 Seasonal Observations</h2>
-        <textarea id="gardenNotes" placeholder="Example: May 15 - First tomato flowers appearing! Noticed some flea beetles on the kale today..."></textarea>
-        <button class="save-btn" onclick="saveNotes()">Save Observations</button>
-        <p id="status" style="text-align: center; color: var(--dark);"></p>
+        <textarea id="gardenNotes" placeholder="Record your observations here..."></textarea>
+        <button class="save-btn" onclick="saveAll()">Save Hub Data</button>
+        <p id="status" style="text-align: center; color: var(--dark); font-weight: bold;"></p>
     </section>
 </div>
 
 <script>
-    // 1. Frost Date Calculator
-    const plantData = [
-        { name: "Peppers & Eggplant", weeks: 10 },
-        { name: "Tomatoes", weeks: 8 },
-        { name: "Broccoli & Cabbage", weeks: 6 },
-        { name: "Lettuce & Greens", weeks: 4 },
-        { name: "Cucumbers & Squash", weeks: 2 }
-    ];
-
-    function calculateDates() {
-        const frostInput = document.getElementById('frostDate').value;
-        if (!frostInput) return;
-
-        const frostDate = new Date(frostInput);
-        const table = document.getElementById('calcTable');
-        const tbody = document.getElementById('calcBody');
-        
-        tbody.innerHTML = ""; 
-        table.style.display = "table";
-
-        plantData.forEach(plant => {
-            let targetDate = new Date(frostDate);
-            targetDate.setDate(frostDate.getDate() - (plant.weeks * 7));
-            
-            let row = `<tr>
-                <td><strong>${plant.name}</strong></td>
-                <td>${plant.weeks} Weeks Before Frost</td>
-                <td>${targetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
-    }
-
-    // 2. Browser Storage (LocalStorage)
+    // 1. DATA LOADING ON START
     window.onload = function() {
-        document.getElementById('gardenNotes').value = localStorage.getItem('myGardenNotes') || "";
+        // Load Notes
+        document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
         
-        const savedFrost = localStorage.getItem('myFrostDate');
+        // Load Frost Date
+        const savedFrost = localStorage.getItem('frostDate');
         if (savedFrost) {
             document.getElementById('frostDate').value = savedFrost;
             calculateDates();
         }
+
+        // Load Harvests
+        renderHarvests();
     };
 
-    function saveNotes() {
-        const notes = document.getElementById('gardenNotes').value;
-        const frost = document.getElementById('frostDate').value;
+    // 2. SEED CALCULATOR LOGIC
+    const plants = [
+        { name: "Peppers", wks: 10 },
+        { name: "Tomatoes", wks: 8 },
+        { name: "Lettuce", wks: 4 },
+        { name: "Squash", wks: 2 }
+    ];
+
+    function calculateDates() {
+        const frostVal = document.getElementById('frostDate').value;
+        if (!frostVal) return;
+        const frostDate = new Date(frostVal);
+        const tbody = document.getElementById('calcBody');
+        const table = document.getElementById('calcTable');
         
-        localStorage.setItem('myGardenNotes', notes);
-        localStorage.setItem('myFrostDate', frost);
+        tbody.innerHTML = "";
+        table.style.display = "table";
+
+        plants.forEach(p => {
+            let sowDate = new Date(frostDate);
+            sowDate.setDate(frostDate.getDate() - (p.wks * 7));
+            tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.wks} wks</td><td>${sowDate.toDateString()}</td></tr>`;
+        });
+    }
+
+    // 3. HARVEST LOG LOGIC
+    function addHarvest() {
+        const date = document.getElementById('harvestDate').value;
+        const crop = document.getElementById('harvestCrop').value;
+        const weight = document.getElementById('harvestWeight').value;
+
+        if (!date || !crop || !weight) return alert("Fill out all harvest fields!");
+
+        const harvestList = JSON.parse(localStorage.getItem('harvestList')) || [];
+        harvestList.push({ date, crop, weight });
+        localStorage.setItem('harvestList', JSON.stringify(harvestList));
+        
+        renderHarvests();
+        document.getElementById('harvestCrop').value = "";
+        document.getElementById('harvestWeight').value = "";
+    }
+
+    function renderHarvests() {
+        const harvestList = JSON.parse(localStorage.getItem('harvestList')) || [];
+        const tbody = document.getElementById('harvestBody');
+        tbody.innerHTML = harvestList.map(h => `
+            <tr>
+                <td>${h.date}</td>
+                <td>${h.crop}</td>
+                <td>${h.weight}</td>
+            </tr>
+        `).reverse().join('');
+    }
+
+    function clearHarvests() {
+        if(confirm("Clear all harvest entries?")) {
+            localStorage.removeItem('harvestList');
+            renderHarvests();
+        }
+    }
+
+    // 4. GLOBAL SAVE
+    function saveAll() {
+        localStorage.setItem('gardenNotes', document.getElementById('gardenNotes').value);
+        localStorage.setItem('frostDate', document.getElementById('frostDate').value);
         
         const status = document.getElementById('status');
-        status.innerText = "✓ Saved to browser storage";
-        
+        status.innerText = "✓ Dashboard Saved!";
         setTimeout(() => { status.innerText = ""; }, 3000);
     }
 </script>
