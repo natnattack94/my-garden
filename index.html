@@ -167,4 +167,99 @@
             <h2>📸 Monthly Progress</h2>
             <div class="gallery">
                 <div class="gallery-item">
-                    <img src="https://via
+                    <img src="https://via.placeholder.com/150/4f772d/ffffff?text=March" alt="March">
+                    <span>March Prep</span>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://via.placeholder.com/150/4f772d/ffffff?text=April" alt="April">
+                    <span>April Sprouting</span>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://via.placeholder.com/150/4f772d/ffffff?text=May" alt="May">
+                    <span>May Planting</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>✅ Priority Chores</h2>
+            <ul class="task-list">
+                <li><input type="checkbox"> Test soil moisture</li>
+                <li><input type="checkbox"> Clean seed trays</li>
+                <li><input type="checkbox"> Check for aphids</li>
+                <li><input type="checkbox"> Prune deadwood</li>
+            </ul>
+        </section>
+    </div>
+
+    <section style="margin-bottom: 20px; border-left-color: var(--seed);">
+        <h2>📦 Seed Inventory</h2>
+        <table class="inventory-table">
+            <thead>
+                <tr><th>Variety</th><th>Year</th><th>Stock</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Cherokee Purple Tomato</td><td>2025</td><td>15 seeds</td></tr>
+                <tr><td>Lacinato Kale</td><td>2026</td><td>Full Pack</td></tr>
+                <tr><td style="color:red;">Bell Peppers</td><td>2023</td><td>LOW STOCK</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>📝 Seasonal Observations</h2>
+        <textarea id="gardenNotes" placeholder="Record what's sprouting, pest sightings, or weather oddities..."></textarea>
+        <button class="save-btn" onclick="saveNotes()">Save Notes to Browser</button>
+        <p id="status" style="font-size: 0.8rem; text-align: center; color: var(--dark);"></p>
+    </section>
+</div>
+
+<script>
+    // 1. Calculator Logic
+    const plantData = [
+        { name: "Peppers & Eggplant", weeks: 10 },
+        { name: "Tomatoes", weeks: 8 },
+        { name: "Broccoli & Cabbage", weeks: 6 },
+        { name: "Lettuce & Greens", weeks: 4 },
+        { name: "Cucumbers & Squash", weeks: 2 }
+    ];
+
+    function calculateDates() {
+        const frostInput = document.getElementById('frostDate').value;
+        if (!frostInput) return;
+
+        const frostDate = new Date(frostInput);
+        const table = document.getElementById('calcTable');
+        const tbody = document.getElementById('calcBody');
+        
+        tbody.innerHTML = ""; 
+        table.style.display = "table";
+
+        plantData.forEach(plant => {
+            let targetDate = new Date(frostDate);
+            targetDate.setDate(frostDate.getDate() - (plant.weeks * 7));
+            
+            let row = `<tr>
+                <td><strong>${plant.name}</strong></td>
+                <td>${plant.weeks} Weeks Before</td>
+                <td>${targetDate.toDateString()}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // 2. Local Storage Logic for Notes
+    window.onload = function() {
+        document.getElementById('gardenNotes').value = localStorage.getItem('myGardenNotes') || "";
+    };
+
+    function saveNotes() {
+        const notes = document.getElementById('gardenNotes').value;
+        localStorage.setItem('myGardenNotes', notes);
+        document.getElementById('status').innerText = "✓ Changes saved to your device!";
+        setTimeout(() => { document.getElementById('status').innerText = ""; }, 3000);
+    }
+</script>
+
+</body>
+</html>
