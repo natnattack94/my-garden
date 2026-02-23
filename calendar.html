@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planting Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom colors to match the app screenshot */
+        .bg-app-dark { background-color: #121212; }
+        .bg-card { background-color: #1e1e1e; }
+        .color-start { background-color: #ff2d55; } /* Pink */
+        .color-transplant { background-color: #ff9500; } /* Orange */
+        .color-sow { background-color: #af52de; } /* Purple */
+        
+        /* Thin vertical grid lines */
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            height: 100%;
+            position: absolute;
+            width: 100%;
+            pointer-events: none;
+        }
+        .grid-line { border-right: 1px solid #333; }
+    </style>
+</head>
+<body class="bg-app-dark text-gray-200 font-sans p-6">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-green-500">Garden Calendar</h1>
+
+        <div class="flex gap-4 mb-8 text-xs font-semibold">
+            <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-start"></span> Start Inside</div>
+            <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-transplant"></span> Transplant</div>
+            <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-sow"></span> Sow Outside</div>
+        </div>
+
+        <div class="space-y-4">
+            
+            <div class="bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800">
+                <div class="w-20 flex flex-col items-center shrink-0">
+                    <span class="text-3xl">🥬</span>
+                    <span class="text-[10px] mt-1 font-bold uppercase tracking-wider text-gray-400">Bok Choy</span>
+                </div>
+                
+                <div class="flex-1 relative">
+                    <div class="grid grid-cols-12 text-[10px] mb-2 text-gray-500 font-medium">
+                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                    </div>
+                    
+                    <div class="h-16 relative bg-[#181818] rounded-lg overflow-hidden border border-gray-800/50">
+                        <div class="month-grid">
+                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
+                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
+                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
+                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
+                        </div>
+
+                        <div id="today-line" class="absolute top-0 bottom-0 w-[2px] bg-white z-10 shadow-[0_0_8px_white]"></div>
+
+                        <div class="absolute top-2 h-3 rounded-full color-start w-[8%] left-[41.6%]"></div>
+                        <div class="absolute top-7 h-3 rounded-full color-transplant w-[16%] left-[0%]"></div>
+                        <div class="absolute top-12 h-3 rounded-full color-sow w-[8%] left-[50%]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800">
+                <div class="w-20 flex flex-col items-center shrink-0">
+                    <span class="text-3xl">🥦</span>
+                    <span class="text-[10px] mt-1 font-bold uppercase tracking-wider text-gray-400">Broccoli</span>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="grid grid-cols-12 text-[10px] mb-2 text-gray-500 font-medium">
+                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                    </div>
+                    <div class="h-16 relative bg-[#181818] rounded-lg overflow-hidden border border-gray-800/50">
+                        <div class="month-grid">
+                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
+                        </div>
+                        <div class="absolute top-7 h-3 rounded-full color-transplant w-[8%] left-[0%]"></div>
+                        <div class="absolute top-12 h-3 rounded-full color-sow w-[16%] left-[75%]"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Move the white line to the current month position
+        const todayLine = document.getElementById('today-line');
+        const now = new Date();
+        const month = now.getMonth(); // 0-11
+        const day = now.getDate();
+        const daysInMonth = new Date(now.getFullYear(), month + 1, 0).getDate();
+        
+        // Calculate percentage across the year
+        const percentage = ((month + (day / daysInMonth)) / 12) * 100;
+        todayLine.style.left = percentage + '%';
+    </script>
+</body>
+</html>
