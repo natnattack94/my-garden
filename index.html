@@ -7,38 +7,35 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
+        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         
-        /* Vital Sign Animations - Adjusted for Light Mode */
-        @keyframes pulse-health {
-            0% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0.2); }
-            70% { box-shadow: 0 0 0 10px rgba(79, 119, 45, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0); }
-        }
-        @keyframes pulse-danger {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
-            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        .seed-card { 
-            background: white;
-            transition: all 0.3s ease; 
+        /* The Garden Grid */
+        .garden-cell { 
+            aspect-ratio: 1/1; 
+            border: 1px solid #f1f5f9; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.5rem; 
             cursor: pointer; 
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            background: #ffffff;
         }
-        .seed-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .garden-cell:hover { background: #f0fdf4; border-color: #bbf7d0; transform: scale(1.05); z-index: 10; border-radius: 8px; }
         
-        /* Companion Matchmaking Visuals */
-        .seed-card.companion-friend { border: 2px solid #4f772d; background: #f0fdf4; }
-        .seed-card.companion-foe { opacity: 0.2; filter: grayscale(1); transform: scale(0.95); }
-        .seed-card.dimmed { opacity: 0.4; }
-        
-        .health-ring { border-radius: 50%; width: 12px; height: 12px; display: inline-block; }
-        .health-good { background: #22c55e; animation: pulse-health 2s infinite; }
-        .health-danger { background: #ef4444; animation: pulse-danger 1.5s infinite; }
+        .palette-btn { 
+            width: 45px; height: 45px; 
+            display: flex; align-items: center; justify-content: center; 
+            border-radius: 12px; border: 2px solid transparent; 
+            transition: all 0.2s; cursor: pointer; background: #f1f5f9;
+        }
+        .palette-btn.active { border-color: #22c55e; background: #f0fdf4; transform: translateY(-2px); }
 
-        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; }
+        /* Sun Map Mini */
+        .sun-cell { height: 12px; border-radius: 2px; }
+        .sun-full { background: #fef3c7; }
+        .sun-partial { background: #ede9fe; }
+        .sun-shade { background: #f1f5f9; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -47,138 +44,108 @@
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-4xl font-black text-slate-800 tracking-tighter">GardenHub <span class="text-green-600">OS</span></h1>
-            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 italic">Hartford, CT | Loading...</p>
+            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 italic">Hartford, CT</p>
         </div>
         <nav class="flex gap-2">
             <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
             <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 ROI Logs</a>
-            <button onclick="resetMatchmaker()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition text-white shadow-lg">🔄 Reset</button>
+            <button onclick="clearGarden()" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition text-slate-500 border border-slate-200">🗑️ Reset Grid</button>
         </nav>
     </header>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <div class="glass-panel p-5">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Crops</p>
-            <h3 id="stat-planted" class="text-3xl font-black text-slate-800">0</h3>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+        
+        <div class="lg:col-span-1 glass-panel p-4 flex lg:flex-col gap-3 justify-center items-center">
+            <p class="text-[8px] font-black text-slate-400 uppercase lg:rotate-180 lg:writing-mode-vertical mb-2">Palette</p>
+            <button onclick="setBrush('🌸')" class="palette-btn" id="btn-🌸">🌸</button>
+            <button onclick="setBrush('🌻')" class="palette-btn" id="btn-🌻">🌻</button>
+            <button onclick="setBrush('🌷')" class="palette-btn" id="btn-🌷">🌷</button>
+            <button onclick="setBrush('🍅')" class="palette-btn" id="btn-🍅">🍅</button>
+            <button onclick="setBrush('🌿')" class="palette-btn" id="btn-🌿">🌿</button>
+            <button onclick="setBrush('')" class="palette-btn text-xs font-bold text-slate-400">X</button>
         </div>
-        <div class="glass-panel p-5">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Tasks</p>
-            <h3 id="stat-tasks" class="text-3xl font-black text-orange-500">0</h3>
-        </div>
-        <div class="glass-panel p-5 relative overflow-hidden">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ground Temp</p>
-            <h3 id="stat-temp" class="text-3xl font-black text-blue-500">42°F</h3>
-            <div id="frost-alert-ui" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[8px] px-2 py-1 font-bold">FROST RISK</div>
-        </div>
-        <div class="glass-panel p-5">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Season Value</p>
-            <h3 id="stat-harvest-val" class="text-3xl font-black text-green-600">$0.00</h3>
-        </div>
-    </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-slate-800">Crop Command</h2>
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Tap to find companions</span>
+        <div class="lg:col-span-7 glass-panel p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Garden Layout Designer</h2>
+                <div id="sun-map-mini" class="flex gap-1">
+                    </div>
             </div>
-            <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="garden-grid" class="grid grid-cols-8 gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+                </div>
         </div>
 
-        <div class="space-y-6">
-            <div class="glass-panel p-6">
-                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
-                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> Live Vitals
-                </h2>
-                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#ffffff" data-accent="rgba(255, 255, 255, 0)" data-textcolor="#334155">WEATHER</a>
+        <div class="lg:col-span-4 space-y-4">
+            <div class="glass-panel p-5 grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p>
+                    <h3 class="text-2xl font-black text-blue-500">42°F</h3>
+                </div>
+                <div>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">ROI</p>
+                    <h3 id="stat-roi" class="text-2xl font-black text-green-600">$0</h3>
+                </div>
             </div>
-
             <div class="glass-panel p-6">
-                <h2 class="text-lg font-bold mb-4 text-slate-800">Urgent Actions</h2>
-                <div id="taskList" class="space-y-3 mb-4"></div>
+                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Urgent Actions</h2>
+                <div id="taskList" class="space-y-2 mb-4"></div>
                 <div class="flex gap-2">
-                    <input type="text" id="taskDesc" placeholder="New task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500 transition-all">
-                    <button onclick="addTask()" class="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold text-xs uppercase transition-colors">Add</button>
+                    <input type="text" id="taskDesc" placeholder="New chore..." class="bg-slate-50 border-none text-xs p-3 rounded-xl flex-1">
+                    <button onclick="addTask()" class="bg-slate-800 text-white px-4 rounded-xl text-[10px] font-bold uppercase">Add</button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="mb-10">
+        <h2 class="text-xl font-bold text-slate-800 mb-6">Crop Health & Companions</h2>
+        <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
     </div>
 </div>
 
 <script>
-    // Logic remains consistent with previous version to ensure data persists
-    const plantLogic = {
-        "Tomatoes": { emoji: "🍅", sensitivity: 45, friends: ["Basil", "Carrots"], foes: ["Broccoli", "Kale"] },
-        "Peppers": { emoji: "🫑", sensitivity: 50, friends: ["Basil", "Bok Choy"], foes: ["Kale"] },
-        "Carrots": { emoji: "🥕", sensitivity: 28, friends: ["Tomatoes", "Lettuce"], foes: ["None"] },
-        "Lettuce": { emoji: "🥬", sensitivity: 32, friends: ["Carrots", "Bok Choy"], foes: ["Broccoli"] },
-        "Kale": { emoji: "🌿", sensitivity: 20, friends: ["Lettuce"], foes: ["Tomatoes", "Peppers"] },
-        "Basil": { emoji: "🌱", sensitivity: 55, friends: ["Tomatoes", "Peppers"], foes: ["None"] },
-        "Bok Choy": { emoji: "🥬", sensitivity: 32, friends: ["Lettuce", "Peppers"], foes: ["None"] },
-        "Broccoli": { emoji: "🥦", sensitivity: 25, friends: ["None"], foes: ["Tomatoes", "Lettuce"] }
-    };
+    let selectedBrush = '🌸';
+    let gardenData = JSON.parse(localStorage.getItem('gardenLayout')) || Array(40).fill('');
 
-    let currentTemp = 42; 
-
-    function renderSeedGrid() {
-        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [
-            {name: "Tomatoes", id: 1}, {name: "Basil", id: 2}, {name: "Broccoli", id: 3}, {name: "Peppers", id: 4}
-        ];
-        const grid = document.getElementById('seed-grid');
-        
-        grid.innerHTML = seeds.map(seed => {
-            const info = plantLogic[seed.name] || { emoji: "🌱", sensitivity: 32, friends: [], foes: [] };
-            const isAtRisk = currentTemp <= info.sensitivity;
-            
-            return `
-                <div id="card-${seed.name}" 
-                     onclick="handleMatchmaker('${seed.name}')"
-                     class="seed-card p-6 rounded-3xl relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-5xl">${info.emoji}</span>
-                        <div class="health-ring ${isAtRisk ? 'health-danger' : 'health-good'}"></div>
-                    </div>
-                    <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
-                    <p class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">${isAtRisk ? 'Protection Required' : 'Condition: Stable'}</p>
-                    ${isAtRisk ? `<div class="mt-3 bg-red-50 text-red-600 text-[9px] text-center font-black py-2 rounded-lg border border-red-100 uppercase">Frost Risk: Cover Now</div>` : ''}
-                </div>
-            `;
-        }).join('');
-        
-        document.getElementById('stat-planted').innerText = seeds.length;
-        updateGlobalStats();
+    function setBrush(emoji) {
+        selectedBrush = emoji;
+        document.querySelectorAll('.palette-btn').forEach(btn => btn.classList.remove('active'));
+        if(emoji) document.getElementById(`btn-${emoji}`).classList.add('active');
     }
 
-    function updateGlobalStats() {
-        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-        const totalVal = logs.reduce((acc, log) => acc + log.value, 0);
-        document.getElementById('stat-harvest-val').innerText = `$${totalVal.toFixed(2)}`;
-    }
-
-    function handleMatchmaker(activeName) {
-        const info = plantLogic[activeName];
-        if (!info) return;
-
-        document.querySelectorAll('.seed-card').forEach(card => {
-            const cardName = card.id.replace('card-', '');
-            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
-
-            if (cardName === activeName) {
-                // Keep active
-            } else if (info.friends.includes(cardName)) {
-                card.classList.add('companion-friend');
-            } else if (info.foes.includes(cardName)) {
-                card.classList.add('companion-foe');
-            } else {
-                card.classList.add('dimmed');
-            }
+    function initGarden() {
+        const grid = document.getElementById('garden-grid');
+        grid.innerHTML = '';
+        gardenData.forEach((emoji, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'garden-cell rounded-lg shadow-sm';
+            cell.innerText = emoji;
+            cell.onclick = () => {
+                gardenData[i] = selectedBrush;
+                localStorage.setItem('gardenLayout', JSON.stringify(gardenData));
+                initGarden();
+            };
+            grid.appendChild(cell);
         });
     }
 
-    function resetMatchmaker() {
-        document.querySelectorAll('.seed-card').forEach(card => {
-            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
-        });
+    function clearGarden() {
+        if(confirm("Clear your garden layout?")) {
+            gardenData = Array(40).fill('');
+            localStorage.setItem('gardenLayout', JSON.stringify(gardenData));
+            initGarden();
+        }
+    }
+
+    // Standard Tasks/Seeds logic from previous versions
+    function renderTasks() {
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        document.getElementById('taskList').innerHTML = tasks.slice(0, 3).map(t => `
+            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded-full text-green-600">
+                <span class="text-[11px] font-semibold text-slate-500 truncate">${t.desc}</span>
+            </div>
+        `).join('');
     }
 
     function addTask() {
@@ -191,28 +158,22 @@
         renderTasks();
     }
 
-    function renderTasks() {
-        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        document.getElementById('taskList').innerHTML = tasks.map(t => `
-            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-sm">
-                <input type="checkbox" onchange="removeTask(${t.id})" class="w-5 h-5 rounded-full border-slate-300 bg-white text-green-600 focus:ring-green-500 cursor-pointer">
-                <span class="text-sm font-semibold text-slate-600 flex-1">${t.desc}</span>
-            </div>
-        `).reverse().join('');
-        document.getElementById('stat-tasks').innerText = tasks.length;
-    }
-
     function removeTask(id) {
         let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
         tasks = tasks.filter(t => t.id !== id);
         localStorage.setItem('gardenTasks', JSON.stringify(tasks));
-        setTimeout(renderTasks, 300);
+        renderTasks();
     }
 
     window.onload = () => {
         document.getElementById('live-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-        renderSeedGrid();
+        initGarden();
         renderTasks();
+        setBrush('🌸');
+        
+        // Dynamic ROI
+        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        document.getElementById('stat-roi').innerText = `$${Math.round(logs.reduce((a,b) => a + b.value, 0))}`;
     };
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
