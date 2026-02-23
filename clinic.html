@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garden Clinic | GardenHub</title>
+    <title>Garden Clinic | GardenHub Hartford</title>
     <style>
         :root {
             --pest-red: #e76f51;
             --disease-blue: #457b9d;
+            --leaf-green: #2a9d8f;
             --bg: #f8fafc;
-            --leaf: #4f772d;
         }
 
         body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: var(--bg); 
             margin: 0; 
             padding: 20px; 
@@ -21,12 +21,10 @@
         }
 
         header {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto 30px;
             text-align: center;
         }
-
-        h1 { color: #1e293b; margin-bottom: 10px; }
 
         .search-container {
             max-width: 600px;
@@ -37,19 +35,21 @@
         #clinicSearch {
             width: 100%;
             padding: 15px 20px;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
             border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             outline: none;
             transition: border-color 0.2s;
         }
 
-        #clinicSearch:focus { border-color: var(--leaf); }
+        #clinicSearch:focus {
+            border-color: var(--leaf-green);
+        }
 
         .clinic-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 25px;
             max-width: 1200px;
             margin: 0 auto;
@@ -59,175 +59,202 @@
             background: white;
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-            border-top: 6px solid #cbd5e1;
-            transition: transform 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             position: relative;
+            transition: transform 0.2s;
+            border-top: 8px solid #ddd;
         }
 
-        .card:hover { transform: translateY(-5px); }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
         .card.pest { border-top-color: var(--pest-red); }
         .card.disease { border-top-color: var(--disease-blue); }
 
         .type-badge {
             position: absolute;
-            top: 20px;
+            top: -15px;
             right: 20px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        .pest .type-badge { background: #fee2e2; color: #991b1b; }
-        .disease .type-badge { background: #e0f2fe; color: #075985; }
+        .pest .type-badge { background: var(--pest-red); }
+        .disease .type-badge { background: var(--disease-blue); }
 
-        h3 { margin-top: 0; color: #0f172a; font-size: 1.4rem; padding-right: 60px; }
+        h3 { margin-top: 10px; color: #1e293b; }
         
-        .info-row { margin: 12px 0; font-size: 0.95rem; line-height: 1.5; }
-        .label { font-weight: 700; color: #64748b; display: block; font-size: 0.8rem; text-transform: uppercase; }
+        .section-label {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .info-block { margin-bottom: 15px; }
 
         .fix-box {
-            background: #f0fdf4;
-            border: 1px dashed #22c55e;
+            background: #f0fdfa;
             padding: 12px;
             border-radius: 8px;
+            border-left: 4px solid var(--leaf-green);
+            font-size: 0.95rem;
+        }
+
+        .peak-season {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            color: #94a3b8;
             margin-top: 15px;
         }
 
-        .fix-box strong { color: #166534; display: block; margin-bottom: 4px; }
-
-        .back-btn {
-            display: inline-block;
+        .back-nav {
             margin-bottom: 20px;
-            color: var(--leaf);
+            display: inline-block;
             text-decoration: none;
+            color: var(--leaf-green);
             font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <a href="map.html" class="back-btn">← Back to Garden Map</a>
-        <h1>🏥 Garden Clinic</h1>
-        <p>Diagnose pests and diseases common to Hartford, CT (Zone 6B)</p>
-    </header>
+<header>
+    <a href="map.html" class="back-nav">← Back to Garden Map</a>
+    <h1>🏥 Hartford Garden Clinic</h1>
+    <p>Identify, Treat, and Prevent common Zone 6B garden issues.</p>
+</header>
 
-    <div class="search-container">
-        <input type="text" id="clinicSearch" placeholder="Search by plant (Tomato) or symptom (holes, yellow)...">
+<div class="search-container">
+    <input type="text" id="clinicSearch" placeholder="Search by plant (Tomato) or symptom (Yellow)...">
+</div>
+
+<div class="clinic-grid" id="clinicGrid">
     </div>
 
-    <div class="clinic-grid" id="clinicGrid"></div>
+<script>
+    const CLINIC_DB = [
+        {
+            name: "Tomato Hornworm",
+            type: "pest",
+            target: "Tomato, Pepper",
+            symptoms: "Large holes in leaves, missing stems, dark green droppings on foliage.",
+            fix: "Hand-pick caterpillars (check under leaves) or use Bacillus thuringiensis (Bt) spray.",
+            peak: "July - August"
+        },
+        {
+            name: "Aphids",
+            type: "pest",
+            target: "Lettuce, Broccoli, Kale",
+            symptoms: "Tiny green/black bugs on undersides of leaves, sticky residue, curling growth.",
+            fix: "Blast plants with a strong stream of water or use insecticidal soap/Neem oil.",
+            peak: "May - June & September"
+        },
+        {
+            name: "Early Blight",
+            type: "disease",
+            target: "Tomato, Potato",
+            symptoms: "Brown spots on older leaves with 'target' ring patterns. Yellowing halos.",
+            fix: "Prune lower branches to prevent soil splash. Use copper-based fungicide if severe.",
+            peak: "July (After heavy rain)"
+        },
+        {
+            name: "Powdery Mildew",
+            type: "disease",
+            target: "Zucchini, Squash, Broccoli",
+            symptoms: "White, flour-like dust covering leaves. Stunted growth.",
+            fix: "Mix 1 part milk with 9 parts water; spray on leaves in direct sunlight. Improve airflow.",
+            peak: "August - September"
+        },
+        {
+            name: "Cabbage Looper",
+            type: "pest",
+            target: "Broccoli, Kale, Lettuce",
+            symptoms: "Small ragged holes in leaves; light green 'inching' caterpillars.",
+            fix: "Cover crops with floating row covers or apply organic Bt spray.",
+            peak: "June - August"
+        },
+        {
+            name: "Septoria Leaf Spot",
+            type: "disease",
+            target: "Tomato",
+            symptoms: "Numerous small circular spots with dark borders and grey centers.",
+            fix: "Avoid overhead watering. Remove infected bottom leaves immediately.",
+            peak: "June - August (High Humidity)"
+        }
+    ];
 
-    <script>
-        const CLINIC_DB = [
-            {
-                name: "Tomato Hornworm",
-                type: "pest",
-                target: "Tomato, Pepper",
-                symptoms: "Huge holes in leaves, missing stems, dark green droppings.",
-                fix: "Hand-pick caterpillars (they glow under UV light!) or use Bt (Bacillus thuringiensis) spray.",
-                peak: "July - August"
-            },
-            {
-                name: "Late Blight",
-                type: "disease",
-                target: "Tomato, Potato",
-                symptoms: "Dark, water-soaked spots on leaves that turn brown/black rapidly.",
-                fix: "Pull and destroy infected plants immediately. Do NOT compost. Improve spacing for airflow.",
-                peak: "August (High Humidity)"
-            },
-            {
-                name: "Aphids",
-                type: "pest",
-                target: "Lettuce, Broccoli, Kale",
-                symptoms: "Tiny green/black bugs on undersides of leaves, sticky residue, yellowing.",
-                fix: "Strong spray of water to dislodge them or organic insecticidal soap.",
-                peak: "May - June"
-            },
-            {
-                name: "Powdery Mildew",
-                type: "disease",
-                target: "Squash, Zucchini, Broccoli",
-                symptoms: "White, flour-like dust on the surface of leaves.",
-                fix: "Spray with a mix of 40% milk and 60% water in bright sunlight.",
-                peak: "July - September"
-            },
-            {
-                name: "Cabbage Looper",
-                type: "pest",
-                target: "Broccoli, Kale, Cabbage",
-                symptoms: "Ragged holes in leaves, small green inch-worm caterpillars.",
-                fix: "Cover crops with floating row covers or use Bt spray.",
-                peak: "June - August"
-            },
-            {
-                name: "Early Blight",
-                type: "disease",
-                target: "Tomato, Eggplant",
-                symptoms: "Yellowing lower leaves with 'target-like' concentric rings in brown spots.",
-                fix: "Prune lower branches to prevent soil splash-back. Mulch heavily around base.",
-                peak: "June - July"
-            }
-        ];
+    const clinicGrid = document.getElementById('clinicGrid');
+    const searchInput = document.getElementById('clinicSearch');
 
-        const searchInput = document.getElementById('clinicSearch');
-        const grid = document.getElementById('clinicGrid');
+    function displayIssues(filter = "") {
+        clinicGrid.innerHTML = "";
+        
+        const filteredData = CLINIC_DB.filter(item => 
+            item.name.toLowerCase().includes(filter.toLowerCase()) ||
+            item.target.toLowerCase().includes(filter.toLowerCase()) ||
+            item.symptoms.toLowerCase().includes(filter.toLowerCase())
+        );
 
-        // Check for URL parameters (if coming from the Map page)
+        filteredData.forEach(issue => {
+            const card = document.createElement('div');
+            card.className = `card ${issue.type}`;
+            
+            card.innerHTML = `
+                <div class="type-badge">${issue.type}</div>
+                <h3>${issue.name}</h3>
+                
+                <div class="info-block">
+                    <span class="section-label">Common Targets</span>
+                    <div>${issue.target}</div>
+                </div>
+
+                <div class="info-block">
+                    <span class="section-label">Symptoms</span>
+                    <div>${issue.symptoms}</div>
+                </div>
+
+                <div class="fix-box">
+                    <span class="section-label" style="color: var(--leaf-green)">Organic Solution</span>
+                    ${issue.fix}
+                </div>
+
+                <div class="peak-season">
+                    📅 <strong>Peak Hartford Season:</strong> ${issue.peak}
+                </div>
+            `;
+            clinicGrid.appendChild(card);
+        });
+
+        if (filteredData.length === 0) {
+            clinicGrid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">No matches found for "${filter}". Try searching for a specific plant like 'Tomato'.</p>`;
+        }
+    }
+
+    // Search Logic with URL Param support
+    searchInput.addEventListener('input', (e) => displayIssues(e.target.value));
+
+    window.onload = () => {
+        // Check if we arrived here from the map with a search query
         const urlParams = new URLSearchParams(window.location.search);
         const initialSearch = urlParams.get('search');
         if (initialSearch) {
             searchInput.value = initialSearch;
+            displayIssues(initialSearch);
+        } else {
+            displayIssues();
         }
+    };
+</script>
 
-        function renderClinic() {
-            const query = searchInput.value.toLowerCase();
-            grid.innerHTML = "";
-
-            const filtered = CLINIC_DB.filter(item => 
-                item.name.toLowerCase().includes(query) || 
-                item.target.toLowerCase().includes(query) ||
-                item.symptoms.toLowerCase().includes(query)
-            );
-
-            if (filtered.length === 0) {
-                grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">No results found for "${query}". Try searching for a specific plant like "Tomato".</p>`;
-                return;
-            }
-
-            filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = `card ${item.type}`;
-                card.innerHTML = `
-                    <span class="type-badge">${item.type}</span>
-                    <h3>${item.name}</h3>
-                    <div class="info-row">
-                        <span class="label">Primary Targets</span>
-                        ${item.target}
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Symptoms</span>
-                        ${item.symptoms}
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Peak Season</span>
-                        ${item.peak}
-                    </div>
-                    <div class="fix-box">
-                        <strong>🛡️ Organic Solution</strong>
-                        ${item.fix}
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        searchInput.addEventListener('input', renderClinic);
-        window.onload = renderClinic;
-    </script>
 </body>
 </html>
