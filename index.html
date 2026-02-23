@@ -55,7 +55,7 @@
         .btn-action:hover { filter: brightness(1.2); }
 
         /* TABLE STYLING */
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
         th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 0.8rem; color: #777; }
         td { padding: 12px; border-top: 1px solid #eee; font-size: 0.9rem; }
 
@@ -73,7 +73,7 @@
         </div>
         <nav class="nav-links">
             <a href="map.html">🗺️ Visual Map</a>
-            <a href="library.html">📚 Standalone Library</a>
+            <a href="library.html" target="_blank">📚 Standalone Library</a>
         </nav>
     </header>
 
@@ -105,13 +105,27 @@
     </div>
 
     <div id="planner" class="tab-content">
-        <section style="background:var(--cream); padding:20px; border-radius:15px;">
+        <section style="background:var(--cream); padding:20px; border-radius:15px; margin-bottom:20px;">
             <h3>🧮 Sowing Calculator</h3>
             <label>Expected Last Frost Date:</label>
             <input type="date" id="frostDate" onchange="runCalculator()" style="margin-bottom:15px;">
             <table id="calcTable" style="display:none">
                 <thead><tr><th>Variety</th><th>Ideal Sowing Date</th><th>Timeline</th></tr></thead>
                 <tbody id="calcBody"></tbody>
+            </table>
+        </section>
+
+        <section style="background:white; padding:20px; border-radius:15px; border: 1px solid #eee;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0">🌱 My Saved Seeds</h3>
+                <button onclick="renderSavedSeeds()" class="btn-action" style="padding: 5px 15px; font-size: 0.8rem;">🔄 Refresh List</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Plant Name</th><th>Date Saved</th><th>Action</th></tr>
+                </thead>
+                <tbody id="savedSeedsBody">
+                    </tbody>
             </table>
         </section>
     </div>
@@ -148,6 +162,35 @@
         for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active");
         document.getElementById(tabName).classList.add("active");
         evt.currentTarget.classList.add("active");
+
+        // Refresh seeds table if planner tab is opened
+        if(tabName === 'planner') renderSavedSeeds();
+    }
+
+    // SAVED SEEDS LOGIC
+    function renderSavedSeeds() {
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        const container = document.getElementById('savedSeedsBody');
+        
+        if (seeds.length === 0) {
+            container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No seeds saved yet. Visit the Encyclopedia to add some!</td></tr>';
+            return;
+        }
+
+        container.innerHTML = seeds.map(s => `
+            <tr>
+                <td><strong>${s.name}</strong></td>
+                <td>${s.dateAdded}</td>
+                <td><button onclick="removeSeed('${s.id}')" style="color:var(--harvest); background:none; border:none; cursor:pointer; font-weight:bold;">✕ Remove</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function removeSeed(id) {
+        let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        seeds = seeds.filter(s => s.id !== id);
+        localStorage.setItem('mySeeds', JSON.stringify(seeds));
+        renderSavedSeeds();
     }
 
     // TASK MASTER
@@ -249,10 +292,14 @@
         renderHarvests();
         runCalculator();
         syncStats();
+        renderSavedSeeds();
     };
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
