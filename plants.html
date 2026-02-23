@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plant Library | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
         .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; }
@@ -30,10 +31,10 @@
                 <option value="Flower">Flower</option>
                 <option value="Herb">Herb</option>
             </select>
-            <input type="text" id="newDepth" placeholder="Planting Depth" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
-            <input type="text" id="newSun" placeholder="Sun Needs" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
+            <input type="text" id="newDepth" placeholder="Planting Depth (optional)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
+            <input type="text" id="newSun" placeholder="Sun Needs (optional)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
             <input type="number" id="newDays" placeholder="Days to Mature (e.g. 60)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
-            <button onclick="saveNewPlant()" class="md:col-span-3 bg-slate-800 text-white p-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-black transition">Save to Library</button>
+            <button onclick="saveNewPlant()" id="saveBtn" class="md:col-span-3 bg-slate-800 text-white p-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-black transition">Save to Cloud Library</button>
         </div>
     </div>
 
@@ -47,34 +48,57 @@
 </div>
 
 <script>
-    // 1. DATABASE LOGIC (Updated defaults with daysToMature and datePlanted)
-    let myPlants = JSON.parse(localStorage.getItem('myGardenLibrary')) || [
-        { name: "Cosmos", emoji: "🌸", type: "Flower", depth: "1/4\"", sun: "Full Sun", spacing: "12\"", daysToMature: 75, datePlanted: new Date().toISOString(), notes: "Great for Hartford pollinators." },
-        { name: "Coneflower", emoji: "🌻", type: "Flower", depth: "1/8\"", sun: "Full Sun", spacing: "18\"", daysToMature: 365, datePlanted: new Date().toISOString(), notes: "Native perennial, very hardy." }
-    ];
+    // 1. SUPABASE INITIALIZATION
+    const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
 
-    function checkRoute() {
+    let myPlants = [];
+
+    // 2. CHECK ROUTE (Handle Detail View or Library View)
+    async function checkRoute() {
+        await fetchPlants(); // Fetch from Supabase first
         const params = new URLSearchParams(window.location.search);
         const nameParam = params.get('name');
         if (nameParam) { showDetail(nameParam); } else { renderLibrary(); }
     }
 
+    // 3. FETCH FROM CLOUD
+    async function fetchPlants() {
+        const { data, error } = await _supabase
+            .from('garden_library')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Fetch Error:", error);
+            return;
+        }
+        myPlants = data;
+    }
+
+    // 4. RENDER GRID
     function renderLibrary() {
         document.getElementById('library-view').classList.remove('hidden');
         document.getElementById('detail-view').classList.add('hidden');
         document.getElementById('addBtn').classList.remove('hidden');
 
         const grid = document.getElementById('plant-grid');
-        grid.innerHTML = myPlants.map((p, index) => `
-            <div class="glass-panel p-6 cursor-pointer card-hover transition-all border-b-4 border-green-500 group relative" onclick="window.location.href='plants.html?name=${p.name}'">
-                <button onclick="event.stopPropagation(); removePlant(${index})" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 bg-red-50 text-red-500 w-8 h-8 rounded-full text-xs hover:bg-red-500 hover:text-white transition">✕</button>
-                <span class="text-5xl">${p.emoji}</span>
+        
+        if (myPlants.length === 0) {
+            grid.innerHTML = `<div class="col-span-full py-20 text-center border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 font-bold uppercase text-xs">No seeds in your cloud vault yet.</div>`;
+            return;
+        }
+
+        grid.innerHTML = myPlants.map((p) => `
+            <div class="glass-panel p-6 cursor-pointer card-hover transition-all border-b-4 border-green-500 group relative" onclick="window.location.href='plants.html?name=${encodeURIComponent(p.name)}'">
+                <button onclick="event.stopPropagation(); removePlant(${p.id}, '${p.name}')" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 bg-red-50 text-red-500 w-8 h-8 rounded-full text-xs hover:bg-red-500 hover:text-white transition shadow-sm">✕</button>
+                <span class="text-5xl">${p.emoji || '🌱'}</span>
                 <h3 class="text-xl font-black text-slate-800 mt-4 uppercase tracking-tighter">${p.name}</h3>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${p.type} • ${p.daysToMature || 0} Days</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${p.days_to_mature || 0} Days to Maturity</p>
             </div>
         `).join('');
     }
 
+    // 5. DETAIL VIEW
     function showDetail(name) {
         const plant = myPlants.find(p => p.name.toLowerCase() === name.toLowerCase());
         if (!plant) { window.location.href = 'plants.html'; return; }
@@ -91,24 +115,24 @@
             <div class="glass-panel overflow-hidden shadow-2xl">
                 <div class="detail-header p-10 text-white flex justify-between items-end">
                     <div>
-                        <span class="text-8xl drop-shadow-lg">${plant.emoji}</span>
+                        <span class="text-8xl drop-shadow-lg">${plant.emoji || '🌱'}</span>
                         <h1 class="text-6xl font-black mt-4 uppercase tracking-tighter">${plant.name}</h1>
                     </div>
-                    <p class="font-black opacity-50 uppercase tracking-widest text-sm mb-2">${plant.type}</p>
+                    <p class="font-black opacity-50 uppercase tracking-widest text-sm mb-2">ZONE 6B ACTIVE</p>
                 </div>
                 
                 <div class="p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Depth</p>
-                        <p class="font-bold text-slate-800 text-lg">${plant.depth}</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Planted On</p>
+                        <p class="font-bold text-slate-800 text-lg">${new Date(plant.date_planted).toLocaleDateString()}</p>
                     </div>
                     <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Maturity</p>
-                        <p class="font-bold text-slate-800 text-lg">${plant.daysToMature || '??'} Days</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Maturity Timeline</p>
+                        <p class="font-bold text-slate-800 text-lg">${plant.days_to_mature || '60'} Days</p>
                     </div>
                     <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sun</p>
-                        <p class="font-bold text-slate-800 text-lg">${plant.sun}</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                        <p class="font-bold text-green-600 text-lg">Active</p>
                     </div>
                     <div class="p-5 bg-blue-50 rounded-2xl border border-blue-100 text-center cursor-pointer hover:bg-blue-100 transition" 
                          onclick="window.location.href='clinic.html?name=${plant.name}'">
@@ -120,42 +144,55 @@
         `;
     }
 
+    // 6. TOGGLE FORM
     function toggleAddForm() {
         document.getElementById('addForm').classList.toggle('hidden');
     }
 
-    // 5. UPDATED SAVE LOGIC: Captures Date and Days
-    function saveNewPlant() {
+    // 7. SAVE TO SUPABASE
+    async function saveNewPlant() {
+        const btn = document.getElementById('saveBtn');
         const name = document.getElementById('newName').value;
         const days = document.getElementById('newDays').value;
         
         if(!name || !days) return alert("Plant name and Days to Mature are required!");
 
-        const newPlant = {
-            name: name,
-            emoji: document.getElementById('newEmoji').value || '🌱',
-            type: document.getElementById('newType').value,
-            depth: document.getElementById('newDepth').value || '1/2"',
-            sun: document.getElementById('newSun').value || 'Full Sun',
-            daysToMature: parseInt(days),
-            datePlanted: new Date().toISOString(), // CRITICAL: Sets the start date
-            notes: "Registered in Hartford Archive."
-        };
+        btn.innerText = "SYNCING TO CLOUD...";
+        btn.disabled = true;
 
-        myPlants.push(newPlant);
-        localStorage.setItem('myGardenLibrary', JSON.stringify(myPlants));
-        renderLibrary();
-        toggleAddForm();
+        const { error } = await _supabase
+            .from('garden_library')
+            .insert([{
+                name: name,
+                emoji: document.getElementById('newEmoji').value || '🌱',
+                days_to_mature: parseInt(days),
+                date_planted: new Date().toISOString().split('T')[0] 
+            }]);
+
+        if (error) {
+            alert("Error saving: " + error.message);
+        } else {
+            toggleAddForm();
+            await checkRoute(); // Refresh everything
+        }
+
+        btn.innerText = "SAVE TO CLOUD LIBRARY";
+        btn.disabled = false;
         
         // Clear inputs
         document.querySelectorAll('#addForm input').forEach(input => input.value = '');
     }
 
-    function removePlant(index) {
-        if(confirm(`Remove ${myPlants[index].name}?`)) {
-            myPlants.splice(index, 1);
-            localStorage.setItem('myGardenLibrary', JSON.stringify(myPlants));
-            renderLibrary();
+    // 8. REMOVE FROM SUPABASE
+    async function removePlant(id, name) {
+        if(confirm(`Remove ${name} from your cloud library?`)) {
+            const { error } = await _supabase
+                .from('garden_library')
+                .delete()
+                .eq('id', id);
+            
+            if (error) alert(error.message);
+            else await checkRoute();
         }
     }
 
