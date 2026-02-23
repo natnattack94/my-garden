@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Garden Clinic | GardenHub Hartford</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --pest-red: #e76f51;
@@ -13,13 +14,7 @@
             --bg: #f8fafc;
         }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 20px; 
-            color: #334155;
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #334155; }
 
         .clinic-grid {
             display: grid;
@@ -40,11 +35,9 @@
         }
 
         .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-
         .card.pest { border-top-color: var(--pest-red); }
         .card.disease { border-top-color: var(--disease-blue); }
 
-        /* Highlight for plants currently in the user's garden */
         .card.at-risk {
             outline: 3px solid var(--leaf-green);
             background: #f0fdfa;
@@ -106,12 +99,15 @@
                class="w-full p-5 pl-12 bg-white border-2 border-slate-200 rounded-3xl shadow-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all">
         <span class="absolute left-5 top-5 text-slate-400">🔍</span>
     </div>
-    <div id="active-risk-count" class="text-center mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest"></div>
+    <div id="active-risk-count" class="text-center mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Syncing with your cloud library...</div>
 </div>
 
 <div class="clinic-grid" id="clinicGrid"></div>
 
 <script>
+    // 1. SUPABASE CONNECTION
+    const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
+
     const CLINIC_DB = [
         {
             name: "Tomato Hornworm",
@@ -155,15 +151,28 @@
         }
     ];
 
-    function getMyGardenPlants() {
-        const library = JSON.parse(localStorage.getItem('myGardenLibrary')) || [];
-        // Extract just the names for easy matching
-        return library.map(p => p.name);
+    let myGardenPlants = [];
+
+    // 2. FETCH CLOUD DATA
+    async function syncAndRender() {
+        const { data, error } = await _supabase
+            .from('garden_library')
+            .select('name');
+
+        if (!error && data) {
+            myGardenPlants = data.map(p => p.name.toLowerCase());
+        }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialSearch = urlParams.get('name') || urlParams.get('search') || "";
+        
+        document.getElementById('clinicSearch').value = initialSearch;
+        displayIssues(initialSearch);
     }
 
+    // 3. LOGIC & DISPLAY
     function displayIssues(filter = "") {
         const clinicGrid = document.getElementById('clinicGrid');
-        const myPlants = getMyGardenPlants();
         let riskCount = 0;
         
         clinicGrid.innerHTML = "";
@@ -175,7 +184,8 @@
         );
 
         filteredData.forEach(issue => {
-            const isAtRisk = issue.target.some(t => myPlants.includes(t));
+            // Check if any of the pest targets are currently in the user's cloud library
+            const isAtRisk = issue.target.some(t => myGardenPlants.includes(t.toLowerCase()));
             if (isAtRisk) riskCount++;
 
             const card = document.createElement('div');
@@ -210,23 +220,14 @@
         });
 
         document.getElementById('active-risk-count').innerText = 
-            myPlants.length ? `${riskCount} active threats to your current crops` : "Add plants to your library to see active threats";
+            myGardenPlants.length ? `${riskCount} active threats to your current crops` : "Add plants to your library to see active threats";
     }
 
     // Search input listener
     document.getElementById('clinicSearch').addEventListener('input', (e) => displayIssues(e.target.value));
 
-    window.onload = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const initialSearch = urlParams.get('name') || urlParams.get('search');
-        
-        if (initialSearch) {
-            document.getElementById('clinicSearch').value = initialSearch;
-            displayIssues(initialSearch);
-        } else {
-            displayIssues();
-        }
-    };
+    // Initialize on load
+    window.onload = syncAndRender;
 </script>
 </body>
 </html>
