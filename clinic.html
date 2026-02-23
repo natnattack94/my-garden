@@ -84,7 +84,7 @@
 
         /* Library Row Styles */
         #library-vault {
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
             padding-right: 8px;
         }
@@ -134,8 +134,10 @@
 </section>
 
 <script>
+    // 1. SUPABASE CONNECTION
     const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
 
+    // 2. EXPANDED CLINIC DATABASE
     const CLINIC_DB = [
         {
             name: "Tomato Hornworm",
@@ -146,9 +148,25 @@
             peak: "July - August"
         },
         {
+            name: "Blossom End Rot",
+            type: "disease",
+            target: ["Tomato", "Pepper", "Zucchini"],
+            symptoms: "Leathery black/brown sunken spot on the bottom of the fruit.",
+            fix: "Maintain consistent soil moisture and ensure adequate calcium. Avoid high-nitrogen fertilizer.",
+            peak: "June - July (Dry spells)"
+        },
+        {
+            name: "Squash Vine Borer",
+            type: "pest",
+            target: ["Zucchini", "Squash", "Pumpkin"],
+            symptoms: "Sudden wilting of the whole plant. Yellow sawdust-like 'frass' at the base of the stem.",
+            fix: "Check stem bases for holes. Slit stem and remove larvae, then bury the stem in soil to encourage re-rooting.",
+            peak: "June - July"
+        },
+        {
             name: "Aphids",
             type: "pest",
-            target: ["Lettuce", "Broccoli", "Kale"],
+            target: ["Lettuce", "Broccoli", "Kale", "Peas"],
             symptoms: "Tiny green/black bugs on undersides of leaves, sticky residue, curling growth.",
             fix: "Blast plants with a strong stream of water or use insecticidal soap/Neem oil.",
             peak: "May - June & September"
@@ -162,25 +180,34 @@
             peak: "July (After heavy rain)"
         },
         {
+            name: "Cucumber Beetle",
+            type: "pest",
+            target: ["Cucumber", "Melon", "Squash"],
+            symptoms: "Yellow/black striped or spotted beetles eating leaves and flowers.",
+            fix: "Use yellow sticky traps. Cover young plants with row covers until they flower.",
+            peak: "June - August"
+        },
+        {
             name: "Powdery Mildew",
             type: "disease",
-            target: ["Zucchini", "Squash", "Broccoli"],
+            target: ["Zucchini", "Squash", "Broccoli", "Cucumber"],
             symptoms: "White, flour-like dust covering leaves. Stunted growth.",
-            fix: "Mix 1 part milk with 9 parts water; spray on leaves in direct sunlight. Improve airflow.",
+            fix: "Mix 1 part milk with 9 parts water; spray on leaves in direct sunlight.",
             peak: "August - September"
         },
         {
-            name: "Septoria Leaf Spot",
-            type: "disease",
-            target: ["Tomato"],
-            symptoms: "Numerous small circular spots with dark borders and grey centers.",
-            fix: "Avoid overhead watering. Remove infected bottom leaves immediately.",
-            peak: "June - August"
+            name: "Slugs & Snails",
+            type: "pest",
+            target: ["Lettuce", "Basil", "Strawberries"],
+            symptoms: "Irregular holes with smooth edges. Shimmering slime trails.",
+            fix: "Set out beer traps or use iron phosphate pellets (Sluggo).",
+            peak: "April - June"
         }
     ];
 
     let myFullLibrary = [];
 
+    // 3. CLOUD SYNC
     async function syncAndRender() {
         const { data, error } = await _supabase
             .from('garden_library')
@@ -202,6 +229,7 @@
         renderDiagnosticGrid(filter);
     }
 
+    // 4. RENDER LIBRARY LIST
     function renderLibraryVault(filter = "") {
         const vault = document.getElementById('library-vault');
         const searchTerm = filter.toLowerCase();
@@ -210,8 +238,11 @@
             p.name.toLowerCase().includes(searchTerm)
         );
 
-        if (filteredPlants.length === 0) {
+        if (filteredPlants.length === 0 && myFullLibrary.length > 0) {
             vault.innerHTML = `<p class="text-center py-8 text-slate-400 text-xs font-bold uppercase">No matching plants in vault</p>`;
+            return;
+        } else if (myFullLibrary.length === 0) {
+            vault.innerHTML = `<p class="text-center py-8 text-slate-400 text-xs font-bold uppercase">Vault Empty - Add plants in Library</p>`;
             return;
         }
 
@@ -221,7 +252,7 @@
                     <span class="text-2xl">${plant.emoji || '🌱'}</span>
                     <div>
                         <h4 class="font-black text-slate-800 text-sm uppercase">${plant.name}</h4>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase">Hartford Sector 6B</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Sector 6B • Active Crop</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -232,6 +263,7 @@
         `).join('');
     }
 
+    // 5. RENDER DIAGNOSTIC CARDS
     function renderDiagnosticGrid(filter = "") {
         const clinicGrid = document.getElementById('clinicGrid');
         const myGardenNames = myFullLibrary.map(p => p.name.toLowerCase());
@@ -256,17 +288,24 @@
                 ${isAtRisk ? '<div class="risk-badge">Active Garden Threat</div>' : ''}
                 <div class="type-badge">${issue.type}</div>
                 <h3 class="text-xl font-black text-slate-800 mb-4 mt-4">${issue.name}</h3>
+                
                 <div class="mb-4 text-sm">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Targets</span>
                     <div class="font-bold text-slate-600">${issue.target.join(', ')}</div>
                 </div>
+
                 <div class="mb-4 text-sm">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Symptoms</span>
                     <div class="text-slate-500 italic">"${issue.symptoms}"</div>
                 </div>
+
                 <div class="fix-box">
                     <span class="block text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Solution</span>
                     <div class="font-medium text-slate-700 text-xs">${issue.fix}</div>
+                </div>
+
+                <div class="mt-4 text-[9px] font-bold text-slate-400 uppercase">
+                    📅 Peak: <span class="text-slate-600">${issue.peak}</span>
                 </div>
             `;
             clinicGrid.appendChild(card);
