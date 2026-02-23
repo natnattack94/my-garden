@@ -122,14 +122,25 @@
             </table>
         </section>
 
+        <section style="background:#f0f7ee; padding:20px; border-radius:15px; border: 1px solid var(--leaf); margin-bottom:20px;">
+            <h3 style="margin-top:0; color:var(--dark);">➕ Add Custom Seed</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="text" id="manName" placeholder="Plant Name (e.g. Grandma's Heirloom)">
+                <input type="text" id="manImg" placeholder="Image URL (optional)">
+                <input type="text" id="manSun" placeholder="Sun (e.g. Full Sun)">
+                <input type="text" id="manWater" placeholder="Water (e.g. Moderate)">
+            </div>
+            <button class="btn-action" style="width:100%; margin-top:10px; background:var(--leaf);" onclick="addManualSeed()">Add to Collection</button>
+        </section>
+
         <section style="background:white; padding:20px; border-radius:15px; border: 1px solid #eee;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0">🌱 My Saved Seeds</h3>
+                <h3 style="margin:0">🌱 My Seed Collection</h3>
                 <button onclick="renderSavedSeeds()" class="btn-action" style="padding: 5px 15px; font-size: 0.8rem;">🔄 Refresh List</button>
             </div>
             <table>
                 <thead>
-                    <tr><th>Plant Name</th><th>Date Saved</th><th>Action</th></tr>
+                    <tr><th>Plant Name</th><th>Source</th><th>Date Saved</th><th>Action</th></tr>
                 </thead>
                 <tbody id="savedSeedsBody"></tbody>
             </table>
@@ -161,8 +172,7 @@
 <div id="plantModal" class="modal">
     <div class="modal-content">
         <button class="close-modal" onclick="closeModal()">&times;</button>
-        <div id="modalContent">
-            </div>
+        <div id="modalContent"></div>
     </div>
 </div>
 
@@ -179,19 +189,46 @@
         if(tabName === 'planner') renderSavedSeeds();
     }
 
+    // MANUAL ENTRY LOGIC
+    function addManualSeed() {
+        const name = document.getElementById('manName').value;
+        const img = document.getElementById('manImg').value || 'https://img.icons8.com/color/96/leaf.png';
+        const sun = document.getElementById('manSun').value || 'Unknown';
+        const water = document.getElementById('manWater').value || 'Unknown';
+
+        if (!name) return alert("Please enter at least a plant name.");
+
+        let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        seeds.push({
+            name: name,
+            id: 'man-' + Date.now(),
+            img: img,
+            sun: sun,
+            water: water,
+            source: 'Manual',
+            dateAdded: new Date().toLocaleDateString()
+        });
+        localStorage.setItem('mySeeds', JSON.stringify(seeds));
+        
+        // Clear fields
+        ['manName', 'manImg', 'manSun', 'manWater'].forEach(id => document.getElementById(id).value = '');
+        renderSavedSeeds();
+    }
+
     // SAVED SEEDS LOGIC + MODAL
     function renderSavedSeeds() {
         const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
         const container = document.getElementById('savedSeedsBody');
         
         if (seeds.length === 0) {
-            container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No seeds saved yet. Visit the Encyclopedia to add some!</td></tr>';
+            container.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">No seeds saved yet.</td></tr>';
             return;
         }
 
         container.innerHTML = seeds.map(s => `
             <tr>
-                <td><button onclick="showPlantDetails('${s.id}')" style="background:none; border:none; color:var(--leaf); font-weight:bold; cursor:pointer; text-decoration:underline;">${s.name}</button></td>
+                <td><button onclick="showPlantDetails('${s.id}')" style="background:none; border:none; color:var(--leaf); font-weight:bold; cursor:pointer; text-decoration:underline; text-align:left;">${s.name}</button></td>
+                <td style="font-size:0.75rem; color:#888;">${s.source || 'Library'}</td>
                 <td>${s.dateAdded}</td>
                 <td><button onclick="removeSeed('${s.id}')" style="color:var(--harvest); background:none; border:none; cursor:pointer; font-weight:bold;">✕ Remove</button></td>
             </tr>
@@ -211,22 +248,14 @@
             <h2 style="color:var(--dark); margin-top:0;">${plant.name}</h2>
             <div class="modal-detail">💧 <strong>Water:</strong> ${plant.water || 'Varies'}</div>
             <div class="modal-detail">☀️ <strong>Sun:</strong> ${plant.sun || 'Varies'}</div>
-            <div class="modal-detail" style="font-size:0.8rem; color:#999; margin-top:15px;">Saved on: ${plant.dateAdded}</div>
+            <div class="modal-detail" style="font-size:0.8rem; color:#999; margin-top:15px;">Source: ${plant.source || 'Library'}</div>
             <button class="btn-action" style="width:100%; margin-top:20px;" onclick="closeModal()">Close Guide</button>
         `;
-        
         modal.style.display = "block";
     }
 
-    function closeModal() {
-        document.getElementById('plantModal').style.display = "none";
-    }
-
-    // Close modal if user clicks outside of it
-    window.onclick = function(event) {
-        const modal = document.getElementById('plantModal');
-        if (event.target == modal) closeModal();
-    }
+    function closeModal() { document.getElementById('plantModal').style.display = "none"; }
+    window.onclick = function(e) { if (e.target == document.getElementById('plantModal')) closeModal(); }
 
     function removeSeed(id) {
         let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
@@ -330,15 +359,10 @@
     window.onload = () => {
         document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
         document.getElementById('frostDate').value = localStorage.getItem('frostDate') || "";
-        renderTasks();
-        renderHarvests();
-        runCalculator();
-        syncStats();
-        renderSavedSeeds();
+        renderTasks(); renderHarvests(); runCalculator(); syncStats(); renderSavedSeeds();
     };
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
-
 </body>
 </html>
