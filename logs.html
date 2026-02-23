@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Garden Logs | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
         .log-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; transition: all 0.2s; }
@@ -48,7 +49,7 @@
             <textarea id="logText" placeholder="What happened in the garden today?" 
                       class="w-full p-4 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 min-h-[100px]"></textarea>
             
-            <button onclick="saveLog()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-black transition">Add to Timeline</button>
+            <button onclick="saveLog()" id="addLogBtn" class="w-full bg-slate-800 text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-black transition">Add to Timeline</button>
         </div>
     </div>
 
@@ -60,22 +61,34 @@
 </div>
 
 <script>
-    // Pull existing logs or start with a default
-    let gardenLogs = JSON.parse(localStorage.getItem('gardenLogs')) || [
-        { title: "System Initialized", text: "Welcome to your Hartford Garden OS. Start logging your planting progress here!", category: "General", date: new Date().toLocaleDateString() }
-    ];
+    // 1. SUPABASE INITIALIZATION
+    const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
 
-    function renderLogs() {
+    // 2. FETCH LOGS FROM CLOUD
+    async function fetchLogs() {
+        const { data, error } = await _supabase
+            .from('garden_logs')
+            .select('*')
+            .order('logged_at', { ascending: false });
+
+        if (error) {
+            console.error("Fetch Error:", error);
+            return;
+        }
+        renderLogs(data);
+    }
+
+    // 3. RENDER TIMELINE
+    function renderLogs(logs) {
         const container = document.getElementById('logContainer');
         
-        // Sorting by Date/ID descending to keep most recent on top
-        const sortedLogs = [...gardenLogs].sort((a, b) => (b.id || 0) - (a.id || 0));
+        if (!logs || logs.length === 0) {
+            container.innerHTML = `<div class="p-6 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">No entries in your timeline yet.</div>`;
+            return;
+        }
 
-        container.innerHTML = sortedLogs.map((log, index) => {
-            // Support for both user-created logs and auto-generated system logs
-            const displayTitle = log.title || "System Update";
-            const displayText = log.text || log.message || "";
-            const displayDate = log.date || log.timestamp || "Recent";
+        container.innerHTML = logs.map((log) => {
+            const dateDisplay = new Date(log.logged_at).toLocaleDateString();
             const catClass = `border-${log.category || 'General'}`;
 
             return `
@@ -84,56 +97,64 @@
                     <div class="log-card p-6 shadow-sm ${catClass}">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-[10px] font-black text-green-600 uppercase tracking-widest">
-                                ${log.category || 'General'} • ${displayDate}
+                                ${log.category || 'General'} • ${dateDisplay}
                             </span>
-                            <button onclick="deleteLog(${log.id || index})" class="text-slate-300 hover:text-red-500 transition">✕</button>
+                            <button onclick="deleteLog(${log.id})" class="text-slate-300 hover:text-red-500 transition">✕</button>
                         </div>
-                        <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter mb-2">${displayTitle}</h3>
-                        <p class="text-slate-600 leading-relaxed text-sm">${displayText}</p>
+                        <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter mb-2">${log.title}</h3>
+                        <p class="text-slate-600 leading-relaxed text-sm">${log.content}</p>
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    function saveLog() {
+    // 4. SAVE NEW LOG
+    async function saveLog() {
+        const btn = document.getElementById('addLogBtn');
         const title = document.getElementById('logTitle').value;
-        const text = document.getElementById('logText').value;
+        const content = document.getElementById('logText').value;
         const category = document.getElementById('logCategory').value;
         
-        if (!title || !text) return alert("Please fill out both the title and the note!");
+        if (!title || !content) return alert("Please fill out both the title and the note!");
 
-        const newLog = { 
-            id: Date.now(), // Unique ID for easier deletion
-            title, 
-            text, 
-            category, 
-            date: new Date().toLocaleDateString() 
-        };
+        btn.innerText = "SYNCING...";
+        btn.disabled = true;
 
-        gardenLogs.unshift(newLog); // Add to front of array
-        localStorage.setItem('gardenLogs', JSON.stringify(gardenLogs));
+        const { error } = await _supabase
+            .from('garden_logs')
+            .insert([{ 
+                title: title, 
+                content: content, 
+                category: category 
+            }]);
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            document.getElementById('logTitle').value = '';
+            document.getElementById('logText').value = '';
+            await fetchLogs(); // Refresh list
+        }
         
-        document.getElementById('logTitle').value = '';
-        document.getElementById('logText').value = '';
-        renderLogs();
+        btn.innerText = "ADD TO TIMELINE";
+        btn.disabled = false;
     }
 
-    function deleteLog(idOrIndex) {
+    // 5. DELETE LOG
+    async function deleteLog(id) {
         if (confirm("Delete this log entry permanently?")) {
-            // Check if we're deleting by ID (preferred) or array index
-            if (typeof idOrIndex === 'number' && idOrIndex > 1000) {
-                gardenLogs = gardenLogs.filter(log => log.id !== idOrIndex);
-            } else {
-                gardenLogs.splice(idOrIndex, 1);
-            }
+            const { error } = await _supabase
+                .from('garden_logs')
+                .delete()
+                .eq('id', id);
             
-            localStorage.setItem('gardenLogs', JSON.stringify(gardenLogs));
-            renderLogs();
+            if (error) alert(error.message);
+            else await fetchLogs();
         }
     }
 
-    window.onload = renderLogs;
+    window.onload = fetchLogs;
 </script>
 </body>
 </html>
