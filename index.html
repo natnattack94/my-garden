@@ -6,36 +6,43 @@
     <title>GardenHub OS | Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
-        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        
-        /* The Garden Grid */
-        .garden-cell { 
-            aspect-ratio: 1/1; 
-            border: 1px solid #f1f5f9; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-            transition: all 0.2s;
-            background: #ffffff;
+        :root { 
+            --leaf: #4f772d; --dark: #1a1a1a; --card-bg: #242424;
+            --harvest: #e76f51; --sky: #00b4d8; --warning: #ffbe0b;
         }
-        .garden-cell:hover { background: #f0fdf4; border-color: #bbf7d0; transform: scale(1.05); z-index: 10; border-radius: 8px; }
         
-        .palette-btn { 
-            width: 45px; height: 45px; 
-            display: flex; align-items: center; justify-content: center; 
-            border-radius: 12px; border: 2px solid transparent; 
-            transition: all 0.2s; cursor: pointer; background: #f1f5f9;
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Inter', sans-serif; }
+        
+        /* Vital Sign Animations */
+        @keyframes pulse-health {
+            0% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 119, 45, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0); }
         }
-        .palette-btn.active { border-color: #22c55e; background: #f0fdf4; transform: translateY(-2px); }
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(231, 111, 81, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
 
-        /* Sun Map Mini */
-        .sun-cell { height: 12px; border-radius: 2px; }
-        .sun-full { background: #fef3c7; }
-        .sun-partial { background: #ede9fe; }
-        .sun-shade { background: #f1f5f9; }
+        .seed-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 1px solid #333; }
+        .seed-card.companion-friend { border-color: #4f772d; background: #1b2e1b; transform: scale(1.05); z-index: 10; }
+        .seed-card.companion-foe { opacity: 0.3; filter: grayscale(1); animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .seed-card.dimmed { opacity: 0.2; transform: scale(0.95); }
+        
+        .health-ring { border-radius: 50%; width: 12px; height: 12px; display: inline-block; }
+        .health-good { background: #4f772d; animation: pulse-health 2s infinite; }
+        .health-danger { background: #e76f51; animation: pulse-danger 1s infinite; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -43,109 +50,140 @@
 <div class="max-w-6xl mx-auto">
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-            <h1 class="text-4xl font-black text-slate-800 tracking-tighter">GardenHub <span class="text-green-600">OS</span></h1>
-            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 italic">Hartford, CT</p>
+            <h1 class="text-4xl font-black text-white tracking-tighter">GardenHub <span class="text-green-500">OS</span></h1>
+            <p id="live-date" class="text-gray-500 font-mono text-sm uppercase mt-1">Hartford, CT | Loading...</p>
         </div>
         <nav class="flex gap-2">
-            <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
-            <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 ROI Logs</a>
-            <button onclick="clearGarden()" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition text-slate-500 border border-slate-200">🗑️ Reset Grid</button>
+            <a href="calendar.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">📅 Timeline</a>
+            <a href="logs.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">📈 ROI Logs</a>
+            <button onclick="resetMatchmaker()" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">🔄 Reset</button>
         </nav>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
-        
-        <div class="lg:col-span-1 glass-panel p-4 flex lg:flex-col gap-3 justify-center items-center">
-            <p class="text-[8px] font-black text-slate-400 uppercase lg:rotate-180 lg:writing-mode-vertical mb-2">Palette</p>
-            <button onclick="setBrush('🌸')" class="palette-btn" id="btn-🌸">🌸</button>
-            <button onclick="setBrush('🌻')" class="palette-btn" id="btn-🌻">🌻</button>
-            <button onclick="setBrush('🌷')" class="palette-btn" id="btn-🌷">🌷</button>
-            <button onclick="setBrush('🍅')" class="palette-btn" id="btn-🍅">🍅</button>
-            <button onclick="setBrush('🌿')" class="palette-btn" id="btn-🌿">🌿</button>
-            <button onclick="setBrush('')" class="palette-btn text-xs font-bold text-slate-400">X</button>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active Crops</p>
+            <h3 id="stat-planted" class="text-3xl font-black text-white">0</h3>
         </div>
-
-        <div class="lg:col-span-7 glass-panel p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400">Garden Layout Designer</h2>
-                <div id="sun-map-mini" class="flex gap-1">
-                    </div>
-            </div>
-            <div id="garden-grid" class="grid grid-cols-8 gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-                </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pending Tasks</p>
+            <h3 id="stat-tasks" class="text-3xl font-black text-orange-500">0</h3>
         </div>
-
-        <div class="lg:col-span-4 space-y-4">
-            <div class="glass-panel p-5 grid grid-cols-2 gap-4">
-                <div>
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p>
-                    <h3 class="text-2xl font-black text-blue-500">42°F</h3>
-                </div>
-                <div>
-                    <p class="text-[9px] font-bold text-slate-400 uppercase">ROI</p>
-                    <h3 id="stat-roi" class="text-2xl font-black text-green-600">$0</h3>
-                </div>
-            </div>
-            <div class="glass-panel p-6">
-                <h2 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Urgent Actions</h2>
-                <div id="taskList" class="space-y-2 mb-4"></div>
-                <div class="flex gap-2">
-                    <input type="text" id="taskDesc" placeholder="New chore..." class="bg-slate-50 border-none text-xs p-3 rounded-xl flex-1">
-                    <button onclick="addTask()" class="bg-slate-800 text-white px-4 rounded-xl text-[10px] font-bold uppercase">Add</button>
-                </div>
-            </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ground Temp</p>
+            <h3 id="stat-temp" class="text-3xl font-black text-sky-400">42°F</h3>
+            <div id="frost-alert-ui" class="hidden absolute top-0 right-0 bg-red-600 text-[8px] px-2 py-1 font-bold">FROST RISK</div>
+        </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Season Value</p>
+            <h3 id="stat-harvest-val" class="text-3xl font-black text-green-500">$0.00</h3>
         </div>
     </div>
 
-    <div class="mb-10">
-        <h2 class="text-xl font-bold text-slate-800 mb-6">Crop Health & Companions</h2>
-        <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Crop Command</h2>
+                <span class="text-[10px] text-gray-500 italic">Tap card for companion matchmaking</span>
+            </div>
+            <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-500"></span> Live Vitals
+                </h2>
+                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#1a1a1a" data-accent="rgba(255, 255, 255, 0)">WEATHER</a>
+            </div>
+
+            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+                <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
+                <div id="taskList" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2"></div>
+                <div class="mt-4 flex gap-2">
+                    <input type="text" id="taskDesc" placeholder="Add chore..." class="bg-zinc-800 border-none text-sm p-2 rounded-lg flex-1">
+                    <button onclick="addTask()" class="bg-green-600 p-2 rounded-lg font-bold text-xs uppercase">Add</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    let selectedBrush = '🌸';
-    let gardenData = JSON.parse(localStorage.getItem('gardenLayout')) || Array(40).fill('');
+    const plantLogic = {
+        "Tomatoes": { emoji: "🍅", sensitivity: 45, friends: ["Basil", "Carrots"], foes: ["Broccoli", "Kale"] },
+        "Peppers": { emoji: "🫑", sensitivity: 50, friends: ["Basil", "Bok Choy"], foes: ["Kale"] },
+        "Carrots": { emoji: "🥕", sensitivity: 28, friends: ["Tomatoes", "Lettuce"], foes: ["None"] },
+        "Lettuce": { emoji: "🥬", sensitivity: 32, friends: ["Carrots", "Bok Choy"], foes: ["Broccoli"] },
+        "Kale": { emoji: "🌿", sensitivity: 20, friends: ["Lettuce"], foes: ["Tomatoes", "Peppers"] },
+        "Basil": { emoji: "🌱", sensitivity: 55, friends: ["Tomatoes", "Peppers"], foes: ["None"] },
+        "Bok Choy": { emoji: "🥬", sensitivity: 32, friends: ["Lettuce", "Peppers"], foes: ["None"] },
+        "Broccoli": { emoji: "🥦", sensitivity: 25, friends: ["None"], foes: ["Tomatoes", "Lettuce"] }
+    };
 
-    function setBrush(emoji) {
-        selectedBrush = emoji;
-        document.querySelectorAll('.palette-btn').forEach(btn => btn.classList.remove('active'));
-        if(emoji) document.getElementById(`btn-${emoji}`).classList.add('active');
+    let currentTemp = 42; 
+
+    function renderSeedGrid() {
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [
+            {name: "Tomatoes", id: 1}, {name: "Basil", id: 2}, {name: "Broccoli", id: 3}, {name: "Peppers", id: 4}
+        ];
+        const grid = document.getElementById('seed-grid');
+        
+        grid.innerHTML = seeds.map(seed => {
+            const info = plantLogic[seed.name] || { emoji: "🌱", sensitivity: 32, friends: [], foes: [] };
+            const isAtRisk = currentTemp <= info.sensitivity;
+            
+            return `
+                <div id="card-${seed.name}" 
+                     onclick="handleMatchmaker('${seed.name}')"
+                     class="seed-card bg-zinc-900 p-5 rounded-2xl relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-4xl transition-transform group-hover:scale-110">${info.emoji}</span>
+                        <div class="health-ring ${isAtRisk ? 'health-danger' : 'health-good'}"></div>
+                    </div>
+                    <h4 class="text-white font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
+                    <div class="flex gap-2 mt-2">
+                        <span class="text-[9px] bg-zinc-800 px-2 py-1 rounded text-gray-400 font-bold uppercase">${isAtRisk ? 'Risk: Frost' : 'Status: Optimal'}</span>
+                    </div>
+                    ${isAtRisk ? `<div class="absolute bottom-0 left-0 right-0 bg-red-600 text-[8px] text-center font-black py-0.5 animate-pulse">PROTECT CROP</div>` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('stat-planted').innerText = seeds.length;
+        updateGlobalStats();
     }
 
-    function initGarden() {
-        const grid = document.getElementById('garden-grid');
-        grid.innerHTML = '';
-        gardenData.forEach((emoji, i) => {
-            const cell = document.createElement('div');
-            cell.className = 'garden-cell rounded-lg shadow-sm';
-            cell.innerText = emoji;
-            cell.onclick = () => {
-                gardenData[i] = selectedBrush;
-                localStorage.setItem('gardenLayout', JSON.stringify(gardenData));
-                initGarden();
-            };
-            grid.appendChild(cell);
+    function updateGlobalStats() {
+        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        const totalVal = logs.reduce((acc, log) => acc + log.value, 0);
+        document.getElementById('stat-harvest-val').innerText = `$${totalVal.toFixed(2)}`;
+    }
+
+    function handleMatchmaker(activeName) {
+        const info = plantLogic[activeName];
+        if (!info) return;
+
+        document.querySelectorAll('.seed-card').forEach(card => {
+            const cardName = card.id.replace('card-', '');
+            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
+
+            if (cardName === activeName) {
+                // Focus active
+            } else if (info.friends.includes(cardName)) {
+                card.classList.add('companion-friend');
+            } else if (info.foes.includes(cardName)) {
+                card.classList.add('companion-foe');
+            } else {
+                card.classList.add('dimmed');
+            }
         });
     }
 
-    function clearGarden() {
-        if(confirm("Clear your garden layout?")) {
-            gardenData = Array(40).fill('');
-            localStorage.setItem('gardenLayout', JSON.stringify(gardenData));
-            initGarden();
-        }
-    }
-
-    // Standard Tasks/Seeds logic from previous versions
-    function renderTasks() {
-        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        document.getElementById('taskList').innerHTML = tasks.slice(0, 3).map(t => `
-            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded-full text-green-600">
-                <span class="text-[11px] font-semibold text-slate-500 truncate">${t.desc}</span>
-            </div>
-        `).join('');
+    function resetMatchmaker() {
+        document.querySelectorAll('.seed-card').forEach(card => {
+            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
+        });
     }
 
     function addTask() {
@@ -158,22 +196,28 @@
         renderTasks();
     }
 
+    function renderTasks() {
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        document.getElementById('taskList').innerHTML = tasks.map(t => `
+            <div class="flex items-center gap-3 bg-zinc-800/30 p-3 rounded-xl border border-zinc-800 group">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-green-600 focus:ring-green-500">
+                <span class="text-xs font-medium text-gray-400 flex-1">${t.desc}</span>
+            </div>
+        `).reverse().join('');
+        document.getElementById('stat-tasks').innerText = tasks.length;
+    }
+
     function removeTask(id) {
         let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
         tasks = tasks.filter(t => t.id !== id);
         localStorage.setItem('gardenTasks', JSON.stringify(tasks));
-        renderTasks();
+        setTimeout(renderTasks, 300);
     }
 
     window.onload = () => {
         document.getElementById('live-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-        initGarden();
+        renderSeedGrid();
         renderTasks();
-        setBrush('🌸');
-        
-        // Dynamic ROI
-        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-        document.getElementById('stat-roi').innerText = `$${Math.round(logs.reduce((a,b) => a + b.value, 0))}`;
     };
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
