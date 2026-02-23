@@ -32,11 +32,12 @@
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-4xl font-black text-slate-800 tracking-tighter">GardenHub <span class="text-green-600">OS</span></h1>
-            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1">Hartford, CT</p>
+            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest italic">Hartford, CT</p>
         </div>
-        <nav class="flex gap-2">
-            <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm">📅 Timeline & Map</a>
-            <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm">📈 ROI Logs</a>
+        <nav class="flex flex-wrap gap-2">
+            <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
+            <a href="map.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">🗺️ Garden Map</a>
+            <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 ROI Logs</a>
             <button onclick="resetMatchmaker()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition text-white shadow-lg">🔄 Reset View</button>
         </nav>
     </header>
@@ -89,8 +90,8 @@
                 <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
                 <div id="taskList" class="space-y-3 mb-4"></div>
                 <div class="flex gap-2">
-                    <input type="text" id="taskDesc" placeholder="Quick task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1">
-                    <button onclick="addTask()" class="bg-green-600 text-white px-4 rounded-xl font-bold text-xs uppercase">Add</button>
+                    <input type="text" id="taskDesc" placeholder="Quick task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500 transition-all">
+                    <button onclick="addTask()" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded-xl font-bold text-xs uppercase transition-colors">Add</button>
                 </div>
             </div>
         </div>
@@ -114,6 +115,7 @@
 
     function initSunMap() {
         const map = document.getElementById('sun-map');
+        if (!map) return;
         map.innerHTML = '';
         sunData.forEach((state, i) => {
             const cell = document.createElement('div');
@@ -132,6 +134,8 @@
     function renderSeedGrid() {
         const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [{name: "Tomatoes"}, {name: "Basil"}, {name: "Peppers"}];
         const grid = document.getElementById('seed-grid');
+        if (!grid) return;
+        
         grid.innerHTML = seeds.map(seed => {
             const info = plantLogic[seed.name] || { emoji: "🌱", sensitivity: 32, friends: [], foes: [] };
             const isAtRisk = 42 <= info.sensitivity;
@@ -184,9 +188,12 @@
 
     function renderTasks() {
         const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        document.getElementById('taskList').innerHTML = tasks.map(t => `
+        const taskList = document.getElementById('taskList');
+        if (!taskList) return;
+
+        taskList.innerHTML = tasks.map(t => `
             <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded-full border-slate-300 text-green-600">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded-full border-slate-300 text-green-600 focus:ring-green-500">
                 <span class="text-xs font-semibold text-slate-600 flex-1">${t.desc}</span>
             </div>
         `).reverse().join('');
@@ -201,6 +208,7 @@
     }
 
     window.onload = () => {
+        document.getElementById('live-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         initSunMap();
         renderSeedGrid();
         renderTasks();
