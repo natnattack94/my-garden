@@ -11,6 +11,7 @@
         .color-start { background-color: #ff2d55; } /* Pink */
         .color-transplant { background-color: #ff9500; } /* Orange */
         .color-sow { background-color: #af52de; } /* Purple */
+        .color-frost { background-color: rgba(59, 130, 246, 0.15); } /* Frost Blue Tint */
         
         .month-grid {
             display: grid;
@@ -19,6 +20,7 @@
             position: absolute;
             width: 100%;
             pointer-events: none;
+            z-index: 1;
         }
         .grid-line { border-right: 1px solid #333; }
     </style>
@@ -31,10 +33,11 @@
             <a href="index.html" class="text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition border border-gray-700 text-gray-300">← Back to Dashboard</a>
         </div>
 
-        <div class="flex gap-6 mb-8 text-xs font-semibold bg-black/30 p-4 rounded-xl border border-gray-800">
-            <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-start"></span> Start Inside</div>
-            <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-transplant"></span> Transplant</div>
-            <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-sow"></span> Sow Outside</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-[10px] font-semibold bg-black/30 p-4 rounded-xl border border-gray-800">
+            <div class="flex items-center gap-2"><span class="w-6 h-2 rounded-full color-start"></span> Start Inside</div>
+            <div class="flex items-center gap-2"><span class="w-6 h-2 rounded-full color-transplant"></span> Transplant</div>
+            <div class="flex items-center gap-2"><span class="w-6 h-2 rounded-full color-sow"></span> Sow Outside</div>
+            <div class="flex items-center gap-2"><span class="w-6 h-4 border border-blue-500/30 color-frost"></span> Frost Risk</div>
         </div>
 
         <div id="timeline-container" class="space-y-4">
@@ -47,16 +50,16 @@
     </div>
 
     <script>
-        // 1. Data Logic (Matching your Index logic)
+        // 1. Data Logic with Succession Intervals (in weeks)
         const plantLogic = {
-            "Tomatoes": { sow: -6, plant: 2, maturity: 80, emoji: "🍅" },
-            "Peppers": { sow: -8, plant: 3, maturity: 90, emoji: "🫑" },
-            "Carrots": { sow: 0, plant: 0, maturity: 75, emoji: "🥕" },
-            "Lettuce": { sow: -3, plant: -1, maturity: 45, emoji: "🥬" },
-            "Kale": { sow: -4, plant: -2, maturity: 55, emoji: "🥬" },
-            "Basil": { sow: -6, plant: 2, maturity: 60, emoji: "🌿" },
-            "Bok Choy": { sow: -4, plant: 0, maturity: 45, emoji: "🥬" },
-            "Broccoli": { sow: -7, plant: -2, maturity: 70, emoji: "🥦" }
+            "Tomatoes": { sow: -6, plant: 2, maturity: 80, emoji: "🍅", succession: 0 },
+            "Peppers": { sow: -8, plant: 3, maturity: 90, emoji: "🫑", succession: 0 },
+            "Carrots": { sow: 0, plant: 0, maturity: 75, emoji: "🥕", succession: 3 },
+            "Lettuce": { sow: -3, plant: -1, maturity: 45, emoji: "🥬", succession: 2 },
+            "Kale": { sow: -4, plant: -2, maturity: 55, emoji: "🥬", succession: 4 },
+            "Basil": { sow: -6, plant: 2, maturity: 60, emoji: "🌿", succession: 4 },
+            "Bok Choy": { sow: -4, plant: 0, maturity: 45, emoji: "🥬", succession: 2 },
+            "Broccoli": { sow: -7, plant: -2, maturity: 70, emoji: "🥦", succession: 0 }
         };
 
         function renderTimeline() {
@@ -69,36 +72,52 @@
                 return;
             }
 
-            if (!frostDateStr) {
-                container.innerHTML = `<div class="bg-orange-900/20 border border-orange-500 text-orange-200 p-4 rounded-xl">Please set a Last Frost Date in the Seed Planning tab first!</div>`;
-                return;
-            }
-
-            const lastFrost = new Date(frostDateStr);
+            // Defaulting to May 15 if no frost date is set (typical for Hartford)
+            const lastFrost = new Date(frostDateStr || '2026-05-15');
             const currentYear = lastFrost.getFullYear();
 
+            // Calculate Frost Danger Zone (Roughly Nov to April)
+            // Position for May 15 and Oct 15
+            const springFrostEnd = (new Date(currentYear, 4, 15) - new Date(currentYear, 0, 1)) / (1000 * 60 * 60 * 24 * 365) * 100;
+            const fallFrostStart = (new Date(currentYear, 9, 15) - new Date(currentYear, 0, 1)) / (1000 * 60 * 60 * 24 * 365) * 100;
+
             container.innerHTML = seeds.map(seed => {
-                const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, emoji: "🌱" };
+                const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, emoji: "🌱", succession: 0 };
                 
-                // Calculate Dates
-                let sowDate = new Date(lastFrost); sowDate.setDate(lastFrost.getDate() + (info.sow * 7));
-                let plantDate = new Date(lastFrost); plantDate.setDate(lastFrost.getDate() + (info.plant * 7));
-                
-                // Helper to get % position of year
                 const getPos = (date) => {
                     const startOfYear = new Date(currentYear, 0, 1);
                     const diff = date - startOfYear;
                     return Math.max(0, Math.min(100, (diff / (1000 * 60 * 60 * 24 * 365)) * 100));
                 };
 
-                const sowPos = getPos(sowDate);
-                const plantPos = getPos(plantDate);
+                // Generate Succession Batches
+                const batches = info.succession > 0 ? 3 : 1;
+                let barsHtml = '';
+
+                for (let i = 0; i < batches; i++) {
+                    let offsetDays = i * (info.succession * 7);
+                    let sowDate = new Date(lastFrost); 
+                    sowDate.setDate(lastFrost.getDate() + (info.sow * 7) + offsetDays);
+                    let plantDate = new Date(lastFrost); 
+                    plantDate.setDate(lastFrost.getDate() + (info.plant * 7) + offsetDays);
+                    
+                    let sowPos = getPos(sowDate);
+                    let plantPos = getPos(plantDate);
+                    let opacity = 1 - (i * 0.3); // Fade later batches
+
+                    barsHtml += `
+                        ${info.sow !== 0 ? `<div class="absolute h-2 rounded-full color-start" style="top: 15%; left: ${sowPos}%; width: 3%; opacity: ${opacity}; z-index: 5;"></div>` : ''}
+                        <div class="absolute h-2 rounded-full color-transplant" style="top: 45%; left: ${plantPos}%; width: 4%; opacity: ${opacity}; z-index: 5;"></div>
+                        <div class="absolute h-2 rounded-full color-sow" style="top: 75%; left: ${plantPos + 5}%; width: 8%; opacity: ${opacity}; z-index: 5;"></div>
+                    `;
+                }
 
                 return `
                 <div class="bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800 hover:border-gray-600 transition">
                     <div class="w-20 flex flex-col items-center shrink-0">
                         <span class="text-3xl">${info.emoji}</span>
                         <span class="text-[10px] mt-1 font-bold uppercase tracking-wider text-gray-400">${seed.name}</span>
+                        ${info.succession > 0 ? `<span class="text-[8px] text-blue-400 font-bold mt-1">BATCHED</span>` : ''}
                     </div>
                     
                     <div class="flex-1 relative">
@@ -108,17 +127,16 @@
                         </div>
                         
                         <div class="h-16 relative bg-[#181818] rounded-lg overflow-hidden border border-gray-800/50">
+                            <div class="absolute top-0 bottom-0 color-frost left-0" style="width: ${springFrostEnd}%;"></div>
+                            <div class="absolute top-0 bottom-0 color-frost" style="left: ${fallFrostStart}%; right: 0;"></div>
+
                             <div class="month-grid">
                                 ${Array(12).fill('<div class="grid-line"></div>').join('')}
                             </div>
 
-                            <div class="today-marker absolute top-0 bottom-0 w-[2px] bg-white z-10 shadow-[0_0_8px_white]"></div>
+                            <div class="today-marker absolute top-0 bottom-0 w-[2px] bg-white z-20 shadow-[0_0_8px_white]"></div>
 
-                            ${info.sow !== 0 ? `<div class="absolute top-2 h-3 rounded-full color-start" style="left: ${sowPos}%; width: 4%;"></div>` : ''}
-                            
-                            <div class="absolute top-7 h-3 rounded-full color-transplant" style="left: ${plantPos}%; width: 5%;"></div>
-                            
-                            <div class="absolute top-12 h-3 rounded-full color-sow" style="left: ${plantPos + 5}%; width: 10%;"></div>
+                            ${barsHtml}
                         </div>
                     </div>
                 </div>`;
@@ -138,7 +156,6 @@
             });
         }
 
-        // Initialize
         renderTimeline();
     </script>
 </body>
