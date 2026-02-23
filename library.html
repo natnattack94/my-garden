@@ -86,30 +86,35 @@
         const grid = document.getElementById('libGrid');
         grid.innerHTML = plants.map(p => {
             const imgUrl = p.default_image ? p.default_image.thumbnail : 'https://img.icons8.com/color/96/leaf.png';
-            // Clean up the name for the JavaScript function call
             const safeName = (p.common_name || 'Unknown').replace(/'/g, "\\'");
+            
+            // Collect extra details for the dashboard popup
+            const sun = p.sunlight ? p.sunlight[0] : 'Varies';
+            const water = p.watering || 'Varies';
 
             return `
                 <div class="card">
                     <img src="${imgUrl}" onerror="this.src='https://img.icons8.com/color/96/leaf.png'">
                     <h3>${p.common_name || 'Unknown'}</h3>
-                    <p class="info-text"><strong>Water:</strong> ${p.watering || 'Varies'}</p>
-                    <p class="info-text"><strong>Sun:</strong> ${p.sunlight ? p.sunlight[0] : 'Varies'}</p>
-                    <button class="btn-save" onclick="saveToMyGarden('${safeName}', '${p.id}')">❤️ Save to My Seeds</button>
+                    <p class="info-text"><strong>Water:</strong> ${water}</p>
+                    <p class="info-text"><strong>Sun:</strong> ${sun}</p>
+                    <button class="btn-save" onclick="saveToMyGarden('${safeName}', '${p.id}', '${imgUrl}', '${sun}', '${water}')">❤️ Save to My Seeds</button>
                 </div>
             `;
         }).join('');
     }
 
-    function saveToMyGarden(name, id) {
-        // Pull current list from local storage
+    function saveToMyGarden(name, id, img, sun, water) {
         let myGarden = JSON.parse(localStorage.getItem('mySeeds')) || [];
         
-        // Check for duplicates
         if (!myGarden.find(p => p.id === id)) {
+            // We are now saving the Image, Sun, and Water info too!
             myGarden.push({ 
                 name: name, 
                 id: id, 
+                img: img,
+                sun: sun,
+                water: water,
                 dateAdded: new Date().toLocaleDateString() 
             });
             localStorage.setItem('mySeeds', JSON.stringify(myGarden));
@@ -119,11 +124,9 @@
         }
     }
 
-    // Allow "Enter" key to trigger search
     document.getElementById('libIn').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') searchLib();
     });
 </script>
-
 </body>
 </html>
