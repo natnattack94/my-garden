@@ -16,6 +16,7 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: #334155; }
 
+        /* Clinic Diagnostic Cards */
         .clinic-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -80,6 +81,23 @@
             margin-top: 15px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
+
+        /* Library Row Styles */
+        #library-vault {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .plant-row {
+            background: white;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .plant-row:hover {
+            border-color: var(--leaf-green);
+            background: #f0fdfa;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -99,13 +117,23 @@
                class="w-full p-5 pl-12 bg-white border-2 border-slate-200 rounded-3xl shadow-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all">
         <span class="absolute left-5 top-5 text-slate-400">🔍</span>
     </div>
-    <div id="active-risk-count" class="text-center mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Syncing with your cloud library...</div>
 </div>
 
-<div class="clinic-grid" id="clinicGrid"></div>
+<section class="max-w-4xl mx-auto mb-16">
+    <div class="flex justify-between items-end mb-6 px-2">
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Your Cloud Library Vault</h2>
+        <p id="active-risk-count" class="text-[10px] font-bold text-green-600 uppercase italic">Syncing...</p>
+    </div>
+    <div id="library-vault" class="space-y-2">
+        </div>
+</section>
+
+<section class="max-w-6xl mx-auto">
+    <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 px-2 text-center">Diagnostic Database</h2>
+    <div class="clinic-grid" id="clinicGrid"></div>
+</section>
 
 <script>
-    // 1. SUPABASE CONNECTION
     const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
 
     const CLINIC_DB = [
@@ -151,82 +179,104 @@
         }
     ];
 
-    let myGardenPlants = [];
+    let myFullLibrary = [];
 
-    // 2. FETCH CLOUD DATA
     async function syncAndRender() {
         const { data, error } = await _supabase
             .from('garden_library')
-            .select('name');
+            .select('*');
 
         if (!error && data) {
-            myGardenPlants = data.map(p => p.name.toLowerCase());
+            myFullLibrary = data;
         }
         
         const urlParams = new URLSearchParams(window.location.search);
         const initialSearch = urlParams.get('name') || urlParams.get('search') || "";
-        
         document.getElementById('clinicSearch').value = initialSearch;
-        displayIssues(initialSearch);
+        
+        refreshUI(initialSearch);
     }
 
-    // 3. LOGIC & DISPLAY
-    function displayIssues(filter = "") {
+    function refreshUI(filter = "") {
+        renderLibraryVault(filter);
+        renderDiagnosticGrid(filter);
+    }
+
+    function renderLibraryVault(filter = "") {
+        const vault = document.getElementById('library-vault');
+        const searchTerm = filter.toLowerCase();
+        
+        const filteredPlants = myFullLibrary.filter(p => 
+            p.name.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredPlants.length === 0) {
+            vault.innerHTML = `<p class="text-center py-8 text-slate-400 text-xs font-bold uppercase">No matching plants in vault</p>`;
+            return;
+        }
+
+        vault.innerHTML = filteredPlants.map(plant => `
+            <div class="plant-row p-4 rounded-2xl flex items-center justify-between" onclick="document.getElementById('clinicSearch').value='${plant.name}'; refreshUI('${plant.name}')">
+                <div class="flex items-center gap-4">
+                    <span class="text-2xl">${plant.emoji || '🌱'}</span>
+                    <div>
+                        <h4 class="font-black text-slate-800 text-sm uppercase">${plant.name}</h4>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase">Hartford Sector 6B</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-md uppercase">Vitals Clear</span>
+                    <span class="text-slate-300">→</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderDiagnosticGrid(filter = "") {
         const clinicGrid = document.getElementById('clinicGrid');
+        const myGardenNames = myFullLibrary.map(p => p.name.toLowerCase());
         let riskCount = 0;
         
         clinicGrid.innerHTML = "";
         
-        const filteredData = CLINIC_DB.filter(item => 
+        const filteredIssues = CLINIC_DB.filter(item => 
             item.name.toLowerCase().includes(filter.toLowerCase()) ||
             item.target.some(t => t.toLowerCase().includes(filter.toLowerCase())) ||
             item.symptoms.toLowerCase().includes(filter.toLowerCase())
         );
 
-        filteredData.forEach(issue => {
-            // Check if any of the pest targets are currently in the user's cloud library
-            const isAtRisk = issue.target.some(t => myGardenPlants.includes(t.toLowerCase()));
+        filteredIssues.forEach(issue => {
+            const isAtRisk = issue.target.some(t => myGardenNames.includes(t.toLowerCase()));
             if (isAtRisk) riskCount++;
 
             const card = document.createElement('div');
             card.className = `card ${issue.type} ${isAtRisk ? 'at-risk' : ''}`;
             
             card.innerHTML = `
-                ${isAtRisk ? '<div class="risk-badge">My Garden at Risk</div>' : ''}
+                ${isAtRisk ? '<div class="risk-badge">Active Garden Threat</div>' : ''}
                 <div class="type-badge">${issue.type}</div>
                 <h3 class="text-xl font-black text-slate-800 mb-4 mt-4">${issue.name}</h3>
-                
                 <div class="mb-4 text-sm">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Common Targets</span>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Targets</span>
                     <div class="font-bold text-slate-600">${issue.target.join(', ')}</div>
                 </div>
-
                 <div class="mb-4 text-sm">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Symptoms</span>
                     <div class="text-slate-500 italic">"${issue.symptoms}"</div>
                 </div>
-
                 <div class="fix-box">
-                    <span class="block text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Organic Solution</span>
-                    <div class="font-medium text-slate-700">${issue.fix}</div>
-                </div>
-
-                <div class="mt-6 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
-                    <span>📅 Peak Season:</span>
-                    <span class="text-slate-600">${issue.peak}</span>
+                    <span class="block text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Solution</span>
+                    <div class="font-medium text-slate-700 text-xs">${issue.fix}</div>
                 </div>
             `;
             clinicGrid.appendChild(card);
         });
 
         document.getElementById('active-risk-count').innerText = 
-            myGardenPlants.length ? `${riskCount} active threats to your current crops` : "Add plants to your library to see active threats";
+            myFullLibrary.length ? `${riskCount} detected threats for your garden` : "Add plants to your library to track threats";
     }
 
-    // Search input listener
-    document.getElementById('clinicSearch').addEventListener('input', (e) => displayIssues(e.target.value));
-
-    // Initialize on load
+    document.getElementById('clinicSearch').addEventListener('input', (e) => refreshUI(e.target.value));
     window.onload = syncAndRender;
 </script>
 </body>
