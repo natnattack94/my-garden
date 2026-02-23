@@ -8,7 +8,6 @@
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        /* Sidebar Styling: High-Contrast Seed Card Look */
         .seed-card-sidebar { 
             background: white; 
             border: 1px solid #e2e8f0; 
@@ -23,7 +22,6 @@
         }
         .seed-card-sidebar:active { cursor: grabbing; scale: 0.95; }
 
-        /* Grid Aesthetics */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(9, 64px); 
@@ -34,6 +32,7 @@
             border-radius: 32px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
             border: 1px solid #e2e8f0;
+            position: relative;
         }
 
         .grid-spot {
@@ -46,7 +45,6 @@
 
         .grid-spot.occupied { background: #f0fdf4; border: 1px solid #bbf7d0; }
 
-        /* Interactive Info Icon */
         .info-btn {
             position: absolute; bottom: 4px; right: 4px;
             background: white; border-radius: 50%;
@@ -59,7 +57,6 @@
             border: 1px solid #e2e8f0;
         }
         .grid-spot.occupied:hover .info-btn { opacity: 1; }
-        .info-btn:hover { background: #f0fdf4; scale: 1.1; }
 
         /* Delete Overlay */
         .grid-spot.occupied:hover::after {
@@ -70,11 +67,16 @@
             border-radius: 12px; font-weight: bold; cursor: pointer;
             z-index: 30; opacity: 0; transition: opacity 0.2s;
         }
-        /* Reveal delete if hovering but not on the info button */
         .grid-spot.occupied:hover:not(:has(.info-btn:hover))::after { opacity: 1; }
 
         .ghost-friend { background-color: #dcfce7 !important; outline: 3px solid #4ade80; outline-offset: -3px; }
         .ghost-foe { background-color: #fee2e2 !important; outline: 3px solid #f87171; outline-offset: -3px; }
+
+        /* Empty State Tooltip */
+        #empty-hint {
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
     </style>
 </head>
 <body class="flex h-screen">
@@ -85,8 +87,7 @@
             <p class="text-sm font-bold text-slate-800">Drag to your 9x9 Grid</p>
         </div>
         
-        <div id="library-drag-container" class="space-y-3 overflow-y-auto pr-2 flex-grow">
-            </div>
+        <div id="library-drag-container" class="space-y-3 overflow-y-auto pr-2 flex-grow"></div>
 
         <div class="pt-6 border-t border-slate-100 space-y-3">
             <button onclick="clearFullGrid()" class="w-full py-3 rounded-xl bg-slate-50 text-slate-400 text-xs font-bold uppercase hover:bg-red-50 hover:text-red-500 transition">Reset Map</button>
@@ -101,7 +102,13 @@
         </div>
 
         <div id="gardenGrid" class="grid-container">
+            <div id="empty-hint" class="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-[32px] opacity-0">
+                <div class="bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
+                    <span class="text-2xl">🌱</span>
+                    <p class="font-bold text-xs uppercase tracking-widest">Drag a variety to plant</p>
+                </div>
             </div>
+        </div>
     </main>
 
 <script>
@@ -109,7 +116,6 @@
     const COLS = 9;
     const gridContainer = document.getElementById('gardenGrid');
 
-    // Companion Planting Logic
     const plantLogic = {
         "Tomato": { friends: ["Basil", "Carrot", "Lettuce"], foes: ["Broccoli"] },
         "Basil": { friends: ["Tomato"], foes: [] },
@@ -120,19 +126,18 @@
     };
 
     function loadLibrarySidebar() {
-        // Pulls from the same database used in plants.html
-        const library = JSON.parse(localStorage.getItem('myGardenLibrary')) || [
-            { name: "Cosmos", emoji: "🌸", type: "Flower" },
-            { name: "Tomato", emoji: "🍅", type: "Vegetable" }
-        ];
-        
+        const library = JSON.parse(localStorage.getItem('myGardenLibrary')) || [];
         const container = document.getElementById('library-drag-container');
+        
+        if (library.length === 0) {
+            container.innerHTML = `<p class="text-[10px] font-bold text-slate-400 uppercase text-center mt-10">Vault Empty.<br>Add plants in Library first.</p>`;
+            return;
+        }
+
         container.innerHTML = library.map(p => `
             <div class="seed-card-sidebar p-4 flex items-center justify-between" 
                  draggable="true" 
-                 ondragstart="drag(event)" 
-                 data-emoji="${p.emoji}" 
-                 data-name="${p.name}">
+                 ondragstart="drag(event, ${JSON.stringify(p).replace(/"/g, '&quot;')})">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">${p.emoji}</span>
                     <span class="font-bold text-slate-700 text-sm">${p.name}</span>
@@ -144,8 +149,15 @@
 
     function initGrid() {
         const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        gridContainer.innerHTML = ""; 
+        const hint = document.getElementById('empty-hint');
         
+        // Tooltip logic: Show if no keys exist in the layout object
+        hint.style.opacity = Object.keys(savedLayout).length === 0 ? "1" : "0";
+
+        // Re-render grid spots
+        const spots = gridContainer.querySelectorAll('.grid-spot');
+        spots.forEach(s => s.remove());
+
         for (let i = 0; i < GRID_SIZE; i++) {
             const spot = document.createElement('div');
             spot.className = 'grid-spot';
@@ -171,23 +183,19 @@
         }
     }
 
-    let draggedPlantData = null;
+    let draggedPlantObject = null;
 
-    function drag(ev) {
-        draggedPlantData = {
-            name: ev.target.getAttribute('data-name'),
-            emoji: ev.target.getAttribute('data-emoji')
-        };
-        ev.dataTransfer.setData("name", draggedPlantData.name);
+    function drag(ev, plantObj) {
+        draggedPlantObject = plantObj;
     }
 
     function handleDragOver(ev, index) {
         ev.preventDefault();
         const spot = ev.currentTarget;
-        if (spot.classList.contains('occupied')) return;
+        if (spot.classList.contains('occupied') || !draggedPlantObject) return;
         
         spot.classList.add('dragging-over');
-        const status = checkCompanions(index, draggedPlantData.name);
+        const status = checkCompanions(index, draggedPlantObject.name);
         
         if (status === 'friend') spot.classList.add('ghost-friend');
         else if (status === 'foe') spot.classList.add('ghost-foe');
@@ -197,7 +205,7 @@
         element.classList.remove('ghost-friend', 'ghost-foe', 'dragging-over');
     }
 
-    function checkCompanions(index, newPlant) {
+    function checkCompanions(index, newPlantName) {
         const row = Math.floor(index / COLS);
         const col = index % COLS;
         const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
@@ -209,9 +217,9 @@
                 const nRow = row + i, nCol = col + j;
                 if (nRow >= 0 && nRow < COLS && nCol >= 0 && nCol < COLS) {
                     const neighbor = savedLayout[nRow * COLS + nCol];
-                    if (neighbor && plantLogic[newPlant]) {
-                        if (plantLogic[newPlant].foes.includes(neighbor.name)) return 'foe';
-                        if (plantLogic[newPlant].friends.includes(neighbor.name)) status = 'friend';
+                    if (neighbor && plantLogic[newPlantName]) {
+                        if (plantLogic[newPlantName].foes.includes(neighbor.name)) return 'foe';
+                        if (plantLogic[newPlantName].friends.includes(neighbor.name)) status = 'friend';
                     }
                 }
             }
@@ -221,12 +229,28 @@
 
     function handleDrop(ev, index) {
         ev.preventDefault();
-        if(!draggedPlantData) return;
+        if(!draggedPlantObject) return;
         
         let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        savedLayout[index] = draggedPlantData;
+        
+        // UPDATE: Timestamping the plant for the Dashboard Math
+        savedLayout[index] = {
+            ...draggedPlantObject,
+            datePlanted: new Date().toISOString()
+        };
+
         localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
         
+        // Auto-log planting
+        let logs = JSON.parse(localStorage.getItem('gardenLogs')) || [];
+        logs.unshift({
+            id: Date.now(),
+            category: 'General',
+            message: `Planted ${draggedPlantObject.name} via Spatial Map.`,
+            timestamp: new Date().toLocaleString()
+        });
+        localStorage.setItem('gardenLogs', JSON.stringify(logs));
+
         clearGlow(ev.currentTarget);
         initGrid(); 
     }
