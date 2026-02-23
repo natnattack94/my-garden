@@ -15,17 +15,17 @@
         .sun-shade { background: #f1f5f9; border-color: #e2e8f0; }
 
         .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; height: 140px; cursor: pointer; position: relative; overflow: hidden; }
-        .seed-card:hover { border-color: #22c55e; transform: translateY(-2px); shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .seed-card:hover { border-color: #22c55e; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .health-ring { border-radius: 50%; width: 10px; height: 10px; display: inline-block; background: #22c55e; }
 
         /* Progress Bars */
         .progress-bg { background: #f1f5f9; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
         
-        /* Harvest Color Coding */
-        .status-soon { background: #ef4444; } /* Red: Almost ready */
-        .status-mid { background: #f59e0b; }  /* Orange: Growing */
-        .status-long { background: #22c55e; } /* Green: Just started */
+        /* Status Colors */
+        .status-soon { background: #ef4444; } 
+        .status-mid { background: #f59e0b; }  
+        .status-long { background: #22c55e; } 
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -47,8 +47,8 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div class="lg:col-span-1 grid grid-cols-2 gap-4">
-            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p><h3 class="text-2xl font-black text-slate-800">3</h3></div>
-            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Tasks</p><h3 class="text-2xl font-black text-orange-500">2</h3></div>
+            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p><h3 id="crop-count" class="text-2xl font-black text-slate-800">0</h3></div>
+            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Tasks</p><h3 id="task-count" class="text-2xl font-black text-orange-500">0</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p><h3 class="text-2xl font-black text-blue-500">42°F</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Yield</p><h3 class="text-2xl font-black text-green-600">$0</h3></div>
         </div>
@@ -63,7 +63,7 @@
         <div class="lg:col-span-2 space-y-8">
             <div class="flex justify-between items-end">
                 <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Active Growth</h2>
-                <p class="text-xs text-slate-400 font-bold">Click card for plant specs</p>
+                <p class="text-xs text-slate-400 font-bold">From your Saved Library</p>
             </div>
             <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             
@@ -101,17 +101,27 @@
 </div>
 
 <script>
-    // --- DATA ---
-    const plants = [
+    // --- DYNAMIC DATA SYNC ---
+    // This pulls from the library you created in plants.html
+    const defaultPlants = [
         { name: "Cosmos", emoji: "🌸", days: 60, progress: 85 },
         { name: "Coneflower", emoji: "🌻", days: 90, progress: 40 },
         { name: "Shasta Daisy", emoji: "🌼", days: 85, progress: 15 }
     ];
 
+    function getLibraryData() {
+        return JSON.parse(localStorage.getItem('myGardenLibrary')) || defaultPlants;
+    }
+
     // --- CORE RENDER ---
     function renderDashboard() {
-        // Updated Seed Cards to link to plants.html with a query param
-        document.getElementById('seed-grid').innerHTML = plants.map(p => `
+        const currentPlants = getLibraryData();
+        
+        // Update Stats
+        document.getElementById('crop-count').innerText = currentPlants.length;
+
+        // Render Growth Cards
+        document.getElementById('seed-grid').innerHTML = currentPlants.map(p => `
             <div class="seed-card p-6 rounded-3xl flex flex-col justify-between" onclick="window.location.href='plants.html?name=${p.name}'">
                 <div class="flex justify-between items-center">
                     <span class="text-4xl">${p.emoji}</span>
@@ -120,22 +130,25 @@
                 <div class="flex justify-between items-end">
                     <div>
                         <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">View Details →</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">View Specs →</p>
                     </div>
                 </div>
             </div>
         `).join('');
 
-        // Forecast
-        document.getElementById('harvest-forecast').innerHTML = plants.map(p => {
-            let colorClass = p.progress > 80 ? 'status-soon' : (p.progress > 30 ? 'status-mid' : 'status-long');
-            let daysLeft = Math.round(p.days * (1 - p.progress/100));
+        // Render Forecast (Defaults to 50% progress if new plant)
+        document.getElementById('harvest-forecast').innerHTML = currentPlants.map(p => {
+            let progress = p.progress || 50; 
+            let daysTotal = p.days || 60;
+            let colorClass = progress > 80 ? 'status-soon' : (progress > 30 ? 'status-mid' : 'status-long');
+            let daysLeft = Math.round(daysTotal * (1 - progress/100));
+            
             return `
                 <div>
                     <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2">
                         <span>${p.name}</span><span>${daysLeft} Days Left</span>
                     </div>
-                    <div class="progress-bg"><div class="progress-fill ${colorClass}" style="width: ${p.progress}%"></div></div>
+                    <div class="progress-bg"><div class="progress-fill ${colorClass}" style="width: ${progress}%"></div></div>
                 </div>
             `;
         }).join('');
@@ -156,6 +169,7 @@
 
     function renderTasks() {
         const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [{id: 1, desc: "Weed flower bed"}];
+        document.getElementById('task-count').innerText = tasks.length;
         document.getElementById('taskList').innerHTML = tasks.map(t => `
             <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4">
