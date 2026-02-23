@@ -6,43 +6,39 @@
     <title>GardenHub OS | Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { 
-            --leaf: #4f772d; --dark: #1a1a1a; --card-bg: #242424;
-            --harvest: #e76f51; --sky: #00b4d8; --warning: #ffbe0b;
-        }
+        body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
         
-        body { background-color: #121212; color: #e0e0e0; font-family: 'Inter', sans-serif; }
-        
-        /* Vital Sign Animations */
+        /* Vital Sign Animations - Adjusted for Light Mode */
         @keyframes pulse-health {
-            0% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0.4); }
+            0% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0.2); }
             70% { box-shadow: 0 0 0 10px rgba(79, 119, 45, 0); }
             100% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0); }
         }
         @keyframes pulse-danger {
-            0% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(231, 111, 81, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0); }
-        }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
-        .seed-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 1px solid #333; }
-        .seed-card.companion-friend { border-color: #4f772d; background: #1b2e1b; transform: scale(1.05); z-index: 10; }
-        .seed-card.companion-foe { opacity: 0.3; filter: grayscale(1); animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        .seed-card.dimmed { opacity: 0.2; transform: scale(0.95); }
+        .seed-card { 
+            background: white;
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .seed-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* Companion Matchmaking Visuals */
+        .seed-card.companion-friend { border: 2px solid #4f772d; background: #f0fdf4; }
+        .seed-card.companion-foe { opacity: 0.2; filter: grayscale(1); transform: scale(0.95); }
+        .seed-card.dimmed { opacity: 0.4; }
         
         .health-ring { border-radius: 50%; width: 12px; height: 12px; display: inline-block; }
-        .health-good { background: #4f772d; animation: pulse-health 2s infinite; }
-        .health-danger { background: #e76f51; animation: pulse-danger 1s infinite; }
+        .health-good { background: #22c55e; animation: pulse-health 2s infinite; }
+        .health-danger { background: #ef4444; animation: pulse-danger 1.5s infinite; }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -50,59 +46,59 @@
 <div class="max-w-6xl mx-auto">
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-            <h1 class="text-4xl font-black text-white tracking-tighter">GardenHub <span class="text-green-500">OS</span></h1>
-            <p id="live-date" class="text-gray-500 font-mono text-sm uppercase mt-1">Hartford, CT | Loading...</p>
+            <h1 class="text-4xl font-black text-slate-800 tracking-tighter">GardenHub <span class="text-green-600">OS</span></h1>
+            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 italic">Hartford, CT | Loading...</p>
         </div>
         <nav class="flex gap-2">
-            <a href="calendar.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">📅 Timeline</a>
-            <a href="logs.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">📈 ROI Logs</a>
-            <button onclick="resetMatchmaker()" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">🔄 Reset</button>
+            <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
+            <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 ROI Logs</a>
+            <button onclick="resetMatchmaker()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition text-white shadow-lg">🔄 Reset</button>
         </nav>
     </header>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active Crops</p>
-            <h3 id="stat-planted" class="text-3xl font-black text-white">0</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div class="glass-panel p-5">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Crops</p>
+            <h3 id="stat-planted" class="text-3xl font-black text-slate-800">0</h3>
         </div>
-        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pending Tasks</p>
+        <div class="glass-panel p-5">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Tasks</p>
             <h3 id="stat-tasks" class="text-3xl font-black text-orange-500">0</h3>
         </div>
-        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ground Temp</p>
-            <h3 id="stat-temp" class="text-3xl font-black text-sky-400">42°F</h3>
-            <div id="frost-alert-ui" class="hidden absolute top-0 right-0 bg-red-600 text-[8px] px-2 py-1 font-bold">FROST RISK</div>
+        <div class="glass-panel p-5 relative overflow-hidden">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ground Temp</p>
+            <h3 id="stat-temp" class="text-3xl font-black text-blue-500">42°F</h3>
+            <div id="frost-alert-ui" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[8px] px-2 py-1 font-bold">FROST RISK</div>
         </div>
-        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Season Value</p>
-            <h3 id="stat-harvest-val" class="text-3xl font-black text-green-500">$0.00</h3>
+        <div class="glass-panel p-5">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Season Value</p>
+            <h3 id="stat-harvest-val" class="text-3xl font-black text-green-600">$0.00</h3>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Crop Command</h2>
-                <span class="text-[10px] text-gray-500 italic">Tap card for companion matchmaking</span>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Crop Command</h2>
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Tap to find companions</span>
             </div>
             <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
 
         <div class="space-y-6">
-            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-sky-500"></span> Live Vitals
+            <div class="glass-panel p-6">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> Live Vitals
                 </h2>
-                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#1a1a1a" data-accent="rgba(255, 255, 255, 0)">WEATHER</a>
+                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#ffffff" data-accent="rgba(255, 255, 255, 0)" data-textcolor="#334155">WEATHER</a>
             </div>
 
-            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-                <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
-                <div id="taskList" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2"></div>
-                <div class="mt-4 flex gap-2">
-                    <input type="text" id="taskDesc" placeholder="Add chore..." class="bg-zinc-800 border-none text-sm p-2 rounded-lg flex-1">
-                    <button onclick="addTask()" class="bg-green-600 p-2 rounded-lg font-bold text-xs uppercase">Add</button>
+            <div class="glass-panel p-6">
+                <h2 class="text-lg font-bold mb-4 text-slate-800">Urgent Actions</h2>
+                <div id="taskList" class="space-y-3 mb-4"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="taskDesc" placeholder="New task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500 transition-all">
+                    <button onclick="addTask()" class="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold text-xs uppercase transition-colors">Add</button>
                 </div>
             </div>
         </div>
@@ -110,6 +106,7 @@
 </div>
 
 <script>
+    // Logic remains consistent with previous version to ensure data persists
     const plantLogic = {
         "Tomatoes": { emoji: "🍅", sensitivity: 45, friends: ["Basil", "Carrots"], foes: ["Broccoli", "Kale"] },
         "Peppers": { emoji: "🫑", sensitivity: 50, friends: ["Basil", "Bok Choy"], foes: ["Kale"] },
@@ -136,16 +133,14 @@
             return `
                 <div id="card-${seed.name}" 
                      onclick="handleMatchmaker('${seed.name}')"
-                     class="seed-card bg-zinc-900 p-5 rounded-2xl relative overflow-hidden group">
+                     class="seed-card p-6 rounded-3xl relative overflow-hidden">
                     <div class="flex justify-between items-start mb-4">
-                        <span class="text-4xl transition-transform group-hover:scale-110">${info.emoji}</span>
+                        <span class="text-5xl">${info.emoji}</span>
                         <div class="health-ring ${isAtRisk ? 'health-danger' : 'health-good'}"></div>
                     </div>
-                    <h4 class="text-white font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
-                    <div class="flex gap-2 mt-2">
-                        <span class="text-[9px] bg-zinc-800 px-2 py-1 rounded text-gray-400 font-bold uppercase">${isAtRisk ? 'Risk: Frost' : 'Status: Optimal'}</span>
-                    </div>
-                    ${isAtRisk ? `<div class="absolute bottom-0 left-0 right-0 bg-red-600 text-[8px] text-center font-black py-0.5 animate-pulse">PROTECT CROP</div>` : ''}
+                    <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
+                    <p class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">${isAtRisk ? 'Protection Required' : 'Condition: Stable'}</p>
+                    ${isAtRisk ? `<div class="mt-3 bg-red-50 text-red-600 text-[9px] text-center font-black py-2 rounded-lg border border-red-100 uppercase">Frost Risk: Cover Now</div>` : ''}
                 </div>
             `;
         }).join('');
@@ -169,7 +164,7 @@
             card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
 
             if (cardName === activeName) {
-                // Focus active
+                // Keep active
             } else if (info.friends.includes(cardName)) {
                 card.classList.add('companion-friend');
             } else if (info.foes.includes(cardName)) {
@@ -199,9 +194,9 @@
     function renderTasks() {
         const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
         document.getElementById('taskList').innerHTML = tasks.map(t => `
-            <div class="flex items-center gap-3 bg-zinc-800/30 p-3 rounded-xl border border-zinc-800 group">
-                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-green-600 focus:ring-green-500">
-                <span class="text-xs font-medium text-gray-400 flex-1">${t.desc}</span>
+            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-sm">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-5 h-5 rounded-full border-slate-300 bg-white text-green-600 focus:ring-green-500 cursor-pointer">
+                <span class="text-sm font-semibold text-slate-600 flex-1">${t.desc}</span>
             </div>
         `).reverse().join('');
         document.getElementById('stat-tasks').innerText = tasks.length;
