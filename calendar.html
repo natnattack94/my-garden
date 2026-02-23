@@ -13,22 +13,23 @@
         .color-sow { background-color: #af52de; }
         .color-frost { background-color: rgba(59, 130, 246, 0.12); }
         
+        /* Sun Map Logic Colors */
+        .sun-full { background: #fbbf24; border-color: #f59e0b; }
+        .sun-partial { background: #a78bfa; border-color: #8b5cf6; }
+        .sun-shade { background: #4b5563; border-color: #374151; }
+
         .month-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            height: 100%;
-            position: absolute;
-            width: 100%;
-            pointer-events: none;
-            z-index: 1;
+            display: grid; grid-template-columns: repeat(12, 1fr);
+            height: 100%; position: absolute; width: 100%;
+            pointer-events: none; z-index: 1;
         }
         .grid-line { border-right: 1px solid #333; }
-
-        /* Smooth tooltip transition */
         .plant-row .details { opacity: 0; transform: translateY(5px); transition: all 0.3s ease; }
         .plant-row:hover .details { opacity: 1; transform: translateY(0); }
-        
         .growth-bar-fill { transition: width 1.5s ease-in-out; background: linear-gradient(90deg, #4f772d, #90be6d); }
+
+        .sun-cell { transition: all 0.2s ease; cursor: pointer; border: 1px solid #333; height: 35px; }
+        .sun-cell:hover { transform: scale(1.1); z-index: 10; border-color: white; }
     </style>
 </head>
 <body class="bg-app-dark text-gray-200 font-sans p-6">
@@ -36,12 +37,24 @@
     <div class="max-w-4xl mx-auto">
         <div class="flex justify-between items-end mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-green-500">Garden Timeline</h1>
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Hartford Zone 6b | Integrated Pro Suite</p>
+                <h1 class="text-3xl font-bold text-green-500">Garden Planning</h1>
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Spatial & Temporal Logic | Hartford 6b</p>
             </div>
-            <div class="flex flex-col items-end gap-2">
-                <a href="index.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition border border-gray-700 text-gray-300">← Exit to Dashboard</a>
+            <a href="index.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition border border-gray-700 text-gray-300">← Exit to Dashboard</a>
+        </div>
+
+        <div class="bg-card rounded-2xl p-5 border border-gray-800 mb-8 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400">Physical Garden Sun Map (4x8 Grid)</h2>
+                <div class="flex gap-3 text-[9px] font-bold uppercase">
+                    <span class="flex items-center gap-1"><div class="w-2 h-2 sun-full rounded-sm"></div> Full</span>
+                    <span class="flex items-center gap-1"><div class="w-2 h-2 sun-partial rounded-sm"></div> Partial</span>
+                    <span class="flex items-center gap-1"><div class="w-2 h-2 sun-shade rounded-sm"></div> Shade</span>
+                </div>
             </div>
+            <div id="sun-map" class="grid grid-cols-8 gap-1">
+                </div>
+            <p id="sun-suggestion" class="text-[10px] mt-4 text-blue-400 italic text-center opacity-80"></p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-[10px] font-semibold bg-black/30 p-4 rounded-xl border border-gray-800">
@@ -60,18 +73,45 @@
     </div>
 
     <script>
-        // Data expanded with Spacing (#5) and Succession (#1)
+        // Updated logic with Sun Mapping Requirements
         const plantLogic = {
-            "Tomatoes": { sow: -6, plant: 2, maturity: 80, emoji: "🍅", succession: 0, spacing: "1/sqft", sun: "Full Sun" },
-            "Peppers": { sow: -8, plant: 3, maturity: 90, emoji: "🫑", succession: 0, spacing: "1/sqft", sun: "Full Sun" },
-            "Carrots": { sow: 0, plant: 0, maturity: 75, emoji: "🥕", succession: 3, spacing: "16/sqft", sun: "Partial/Full" },
-            "Lettuce": { sow: -3, plant: -1, maturity: 45, emoji: "🥬", succession: 2, spacing: "4/sqft", sun: "Partial Shade" },
-            "Kale": { sow: -4, plant: -2, maturity: 55, emoji: "🥬", succession: 4, spacing: "1/sqft", sun: "Partial Sun" },
-            "Basil": { sow: -6, plant: 2, maturity: 60, emoji: "🌿", succession: 4, spacing: "4/sqft", sun: "Full Sun" },
-            "Bok Choy": { sow: -4, plant: 0, maturity: 45, emoji: "🥬", succession: 2, spacing: "4/sqft", sun: "Partial Sun" },
-            "Broccoli": { sow: -7, plant: -2, maturity: 70, emoji: "🥦", succession: 0, spacing: "1/sqft", sun: "Full Sun" }
+            "Tomatoes": { sow: -6, plant: 2, maturity: 80, emoji: "🍅", succession: 0, spacing: "1/sqft", sun: "full" },
+            "Peppers": { sow: -8, plant: 3, maturity: 90, emoji: "🫑", succession: 0, spacing: "1/sqft", sun: "full" },
+            "Carrots": { sow: 0, plant: 0, maturity: 75, emoji: "🥕", succession: 3, spacing: "16/sqft", sun: "full" },
+            "Lettuce": { sow: -3, plant: -1, maturity: 45, emoji: "🥬", succession: 2, spacing: "4/sqft", sun: "partial" },
+            "Kale": { sow: -4, plant: -2, maturity: 55, emoji: "🥬", succession: 4, spacing: "1/sqft", sun: "partial" },
+            "Basil": { sow: -6, plant: 2, maturity: 60, emoji: "🌿", succession: 4, spacing: "4/sqft", sun: "full" },
+            "Bok Choy": { sow: -4, plant: 0, maturity: 45, emoji: "🥬", succession: 2, spacing: "4/sqft", sun: "partial" },
+            "Broccoli": { sow: -7, plant: -2, maturity: 70, emoji: "🥦", succession: 0, spacing: "1/sqft", sun: "full" }
         };
 
+        // --- SUN MAP STATE ---
+        let sunData = JSON.parse(localStorage.getItem('gardenSunMap')) || Array(32).fill('full');
+
+        function initSunMap() {
+            const map = document.getElementById('sun-map');
+            map.innerHTML = '';
+            sunData.forEach((state, i) => {
+                const cell = document.createElement('div');
+                cell.className = `sun-cell rounded sun-${state}`;
+                cell.onclick = () => {
+                    const states = ['full', 'partial', 'shade'];
+                    sunData[i] = states[(states.indexOf(sunData[i]) + 1) % 3];
+                    localStorage.setItem('gardenSunMap', JSON.stringify(sunData));
+                    initSunMap();
+                    renderTimeline();
+                };
+                map.appendChild(cell);
+            });
+            updateSunSuggestions();
+        }
+
+        function updateSunSuggestions() {
+            const counts = { full: sunData.filter(s => s==='full').length, partial: sunData.filter(s => s==='partial').length };
+            document.getElementById('sun-suggestion').innerText = `Planning Insight: You have ${counts.full} sunny slots and ${counts.partial} partial slots defined.`;
+        }
+
+        // --- TIMELINE RENDER ---
         function renderTimeline() {
             const container = document.getElementById('timeline-container');
             const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
@@ -85,33 +125,25 @@
 
             const lastFrost = new Date(frostDateStr || '2026-05-15');
             const currentYear = lastFrost.getFullYear();
-
-            // Frost Risk Zones (#4)
             const springFrostEnd = (new Date(currentYear, 4, 15) - new Date(currentYear, 0, 1)) / (1000 * 60 * 60 * 24 * 365) * 100;
             const fallFrostStart = (new Date(currentYear, 9, 15) - new Date(currentYear, 0, 1)) / (1000 * 60 * 60 * 24 * 365) * 100;
 
             container.innerHTML = seeds.map(seed => {
-                const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, emoji: "🌱", succession: 0, spacing: "N/A", sun: "Unknown" };
-                
-                const getPos = (date) => {
-                    const startOfYear = new Date(currentYear, 0, 1);
-                    return ((date - startOfYear) / (1000 * 60 * 60 * 24 * 365)) * 100;
-                };
+                const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, emoji: "🌱", succession: 0, spacing: "N/A", sun: "full" };
+                const getPos = (date) => ((date - new Date(currentYear, 0, 1)) / (1000 * 60 * 60 * 24 * 365)) * 100;
 
-                // Progression Math (#6)
-                let pDate = new Date(lastFrost); pDate.setDate(lastFrost.getDate() + (info.plant * 7));
-                let hDate = new Date(pDate); hDate.setDate(pDate.getDate() + info.maturity);
-                let progress = 0;
-                if (now > pDate) progress = Math.min(100, Math.floor(((now - pDate) / (hDate - pDate)) * 100));
+                // Map/Sun Synergy Check
+                const canFit = sunData.includes(info.sun);
+                const sunLabel = info.sun.charAt(0).toUpperCase() + info.sun.slice(1);
 
-                // Succession Bars (#1)
+                // Succession Logic
                 const batches = info.succession > 0 ? 3 : 1;
                 let barsHtml = '';
                 for (let i = 0; i < batches; i++) {
                     let off = i * (info.succession * 7);
                     let sD = new Date(lastFrost); sD.setDate(lastFrost.getDate() + (info.sow * 7) + off);
                     let pD = new Date(lastFrost); pD.setDate(lastFrost.getDate() + (info.plant * 7) + off);
-                    let opacity = 1 - (i * 0.3);
+                    let opacity = 1 - (i * 0.35);
                     barsHtml += `
                         ${info.sow !== 0 ? `<div class="absolute h-1.5 rounded-full color-start" style="top: 20%; left: ${getPos(sD)}%; width: 2%; opacity: ${opacity}; z-index: 5;"></div>` : ''}
                         <div class="absolute h-1.5 rounded-full color-transplant" style="top: 48%; left: ${getPos(pD)}%; width: 3%; opacity: ${opacity}; z-index: 5;"></div>
@@ -119,26 +151,30 @@
                     `;
                 }
 
+                // Progress Tracker Logic
+                let pDate = new Date(lastFrost); pDate.setDate(lastFrost.getDate() + (info.plant * 7));
+                let hDate = new Date(pDate); hDate.setDate(pDate.getDate() + info.maturity);
+                let progress = 0;
+                if (now > pDate) progress = Math.min(100, Math.floor(((now - pDate) / (hDate - pDate)) * 100));
+
                 return `
                 <div class="plant-row bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800 transition group">
                     <div class="w-24 flex flex-col items-center shrink-0">
                         <span class="text-4xl group-hover:scale-110 transition-transform">${info.emoji}</span>
                         <span class="text-[9px] mt-2 font-black uppercase tracking-widest text-gray-400">${seed.name}</span>
-                        <div class="details mt-1 bg-green-900/30 px-2 py-0.5 rounded text-[8px] text-green-400 font-bold">
-                            ${info.spacing} • ${info.sun}
+                        <div class="details mt-1 bg-green-900/30 px-2 py-0.5 rounded text-[8px] font-bold ${canFit ? 'text-green-400' : 'text-red-400'}">
+                            ${info.spacing} • ${canFit ? 'Map Matched' : 'Needs ' + sunLabel}
                         </div>
                     </div>
                     
                     <div class="flex-1 relative">
                         <div class="flex justify-between items-center mb-2 px-1">
-                            <div class="text-[9px] font-bold text-gray-600 uppercase tracking-tighter">Growth Cycle</div>
+                            <div class="text-[9px] font-bold text-gray-600 uppercase">Growth Cycle</div>
                             <div class="text-[9px] font-black ${progress === 100 ? 'text-green-500' : 'text-orange-500'}">${progress}%</div>
                         </div>
-                        
                         <div class="w-full bg-gray-900 h-1 mb-3 rounded-full overflow-hidden border border-gray-800">
                             <div class="growth-bar-fill h-full" style="width: ${progress}%"></div>
                         </div>
-
                         <div class="h-16 relative bg-[#141414] rounded-lg overflow-hidden border border-gray-800/50 shadow-inner">
                             <div class="absolute top-0 bottom-0 color-frost left-0" style="width: ${springFrostEnd}%;"></div>
                             <div class="absolute top-0 bottom-0 color-frost" style="left: ${fallFrostStart}%; right: 0;"></div>
@@ -149,7 +185,6 @@
                     </div>
                 </div>`;
             }).join('');
-
             updateTodayLine();
         }
 
@@ -160,6 +195,7 @@
             document.querySelectorAll('.today-marker').forEach(line => line.style.left = percentage + '%');
         }
 
+        initSunMap();
         renderTimeline();
     </script>
 </body>
