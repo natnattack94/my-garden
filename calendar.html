@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planting Calendar</title>
+    <title>Visual Planting Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom colors to match the app screenshot */
         .bg-app-dark { background-color: #121212; }
         .bg-card { background-color: #1e1e1e; }
         .color-start { background-color: #ff2d55; } /* Pink */
         .color-transplant { background-color: #ff9500; } /* Orange */
         .color-sow { background-color: #af52de; } /* Purple */
         
-        /* Thin vertical grid lines */
         .month-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
@@ -28,79 +26,120 @@
 <body class="bg-app-dark text-gray-200 font-sans p-6">
 
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold mb-8 text-green-500">Garden Calendar</h1>
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-green-500">Garden Timeline</h1>
+            <a href="index.html" class="text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition border border-gray-700 text-gray-300">← Back to Dashboard</a>
+        </div>
 
-        <div class="flex gap-4 mb-8 text-xs font-semibold">
+        <div class="flex gap-6 mb-8 text-xs font-semibold bg-black/30 p-4 rounded-xl border border-gray-800">
             <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-start"></span> Start Inside</div>
             <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-transplant"></span> Transplant</div>
             <div class="flex items-center gap-2"><span class="w-8 h-3 rounded-full color-sow"></span> Sow Outside</div>
         </div>
 
-        <div class="space-y-4">
-            
-            <div class="bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800">
-                <div class="w-20 flex flex-col items-center shrink-0">
-                    <span class="text-3xl">🥬</span>
-                    <span class="text-[10px] mt-1 font-bold uppercase tracking-wider text-gray-400">Bok Choy</span>
-                </div>
-                
-                <div class="flex-1 relative">
-                    <div class="grid grid-cols-12 text-[10px] mb-2 text-gray-500 font-medium">
-                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-                        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
-                    </div>
-                    
-                    <div class="h-16 relative bg-[#181818] rounded-lg overflow-hidden border border-gray-800/50">
-                        <div class="month-grid">
-                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
-                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
-                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
-                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
-                        </div>
-
-                        <div id="today-line" class="absolute top-0 bottom-0 w-[2px] bg-white z-10 shadow-[0_0_8px_white]"></div>
-
-                        <div class="absolute top-2 h-3 rounded-full color-start w-[8%] left-[41.6%]"></div>
-                        <div class="absolute top-7 h-3 rounded-full color-transplant w-[16%] left-[0%]"></div>
-                        <div class="absolute top-12 h-3 rounded-full color-sow w-[8%] left-[50%]"></div>
-                    </div>
-                </div>
+        <div id="timeline-container" class="space-y-4">
             </div>
 
-            <div class="bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800">
-                <div class="w-20 flex flex-col items-center shrink-0">
-                    <span class="text-3xl">🥦</span>
-                    <span class="text-[10px] mt-1 font-bold uppercase tracking-wider text-gray-400">Broccoli</span>
-                </div>
-                <div class="flex-1 relative">
-                    <div class="grid grid-cols-12 text-[10px] mb-2 text-gray-500 font-medium">
-                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-                        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
-                    </div>
-                    <div class="h-16 relative bg-[#181818] rounded-lg overflow-hidden border border-gray-800/50">
-                        <div class="month-grid">
-                            <div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div><div class="grid-line"></div>
-                        </div>
-                        <div class="absolute top-7 h-3 rounded-full color-transplant w-[8%] left-[0%]"></div>
-                        <div class="absolute top-12 h-3 rounded-full color-sow w-[16%] left-[75%]"></div>
-                    </div>
-                </div>
-            </div>
-
+        <div id="empty-state" class="hidden text-center py-20">
+            <p class="text-gray-500">No seeds found in your collection.</p>
+            <a href="index.html" class="text-green-500 underline mt-2 block">Go add some seeds!</a>
         </div>
     </div>
 
     <script>
-        // Move the white line to the current month position
-        const todayLine = document.getElementById('today-line');
-        const now = new Date();
-        const month = now.getMonth(); // 0-11
-        const day = now.getDate();
-        const daysInMonth = new Date(now.getFullYear(), month + 1, 0).getDate();
-        
-        // Calculate percentage across the year
-        const percentage = ((month + (day / daysInMonth)) / 12) * 100;
-        todayLine.style.left = percentage + '%';
+        // 1. Data Logic (Matching your Index logic)
+        const plantLogic = {
+            "Tomatoes": { sow: -6, plant: 2, maturity: 80, emoji: "🍅" },
+            "Peppers": { sow: -8, plant: 3, maturity: 90, emoji: "🫑" },
+            "Carrots": { sow: 0, plant: 0, maturity: 75, emoji: "🥕" },
+            "Lettuce": { sow: -3, plant: -1, maturity: 45, emoji: "🥬" },
+            "Kale": { sow: -4, plant: -2, maturity: 55, emoji: "🥬" },
+            "Basil": { sow: -6, plant: 2, maturity: 60, emoji: "🌿" },
+            "Bok Choy": { sow: -4, plant: 0, maturity: 45, emoji: "🥬" },
+            "Broccoli": { sow: -7, plant: -2, maturity: 70, emoji: "🥦" }
+        };
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+            const frostDateStr = localStorage.getItem('frostDate');
+            
+            if (seeds.length === 0) {
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            }
+
+            if (!frostDateStr) {
+                container.innerHTML = `<div class="bg-orange-900/20 border border-orange-500 text-orange-200 p-4 rounded-xl">Please set a Last Frost Date in the Seed Planning tab first!</div>`;
+                return;
+            }
+
+            const lastFrost = new Date(frostDateStr);
+            const currentYear = lastFrost.getFullYear();
+
+            container.innerHTML = seeds.map(seed => {
+                const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, emoji: "🌱" };
+                
+                // Calculate Dates
+                let sowDate = new Date(lastFrost); sowDate.setDate(lastFrost.getDate() + (info.sow * 7));
+                let plantDate = new Date(lastFrost); plantDate.setDate(lastFrost.getDate() + (info.plant * 7));
+                
+                // Helper to get % position of year
+                const getPos = (date) => {
+                    const startOfYear = new Date(currentYear, 0, 1);
+                    const diff = date - startOfYear;
+                    return Math.max(0, Math.min(100, (diff / (1000 * 60 * 60 * 24 * 365)) * 100));
+                };
+
+                const sowPos = getPos(sowDate);
+                const plantPos = getPos(plantDate);
+
+                return `
+                <div class="bg-card rounded-2xl p-4 flex items-center gap-6 shadow-xl border border-gray-800 hover:border-gray-600 transition">
+                    <div class="w-20 flex flex-col items-center shrink-0">
+                        <span class="text-3xl">${info.emoji}</span>
+                        <span class="text-[10px] mt-1 font-bold uppercase tracking-wider text-gray-400">${seed.name}</span>
+                    </div>
+                    
+                    <div class="flex-1 relative">
+                        <div class="grid grid-cols-12 text-[10px] mb-2 text-gray-500 font-medium">
+                            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                            <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                        </div>
+                        
+                        <div class="h-16 relative bg-[#181818] rounded-lg overflow-hidden border border-gray-800/50">
+                            <div class="month-grid">
+                                ${Array(12).fill('<div class="grid-line"></div>').join('')}
+                            </div>
+
+                            <div class="today-marker absolute top-0 bottom-0 w-[2px] bg-white z-10 shadow-[0_0_8px_white]"></div>
+
+                            ${info.sow !== 0 ? `<div class="absolute top-2 h-3 rounded-full color-start" style="left: ${sowPos}%; width: 4%;"></div>` : ''}
+                            
+                            <div class="absolute top-7 h-3 rounded-full color-transplant" style="left: ${plantPos}%; width: 5%;"></div>
+                            
+                            <div class="absolute top-12 h-3 rounded-full color-sow" style="left: ${plantPos + 5}%; width: 10%;"></div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            updateTodayLine();
+        }
+
+        function updateTodayLine() {
+            const now = new Date();
+            const startOfYear = new Date(now.getFullYear(), 0, 1);
+            const diff = now - startOfYear;
+            const percentage = (diff / (1000 * 60 * 60 * 24 * 365)) * 100;
+            
+            document.querySelectorAll('.today-marker').forEach(line => {
+                line.style.left = percentage + '%';
+            });
+        }
+
+        // Initialize
+        renderTimeline();
     </script>
 </body>
 </html>
