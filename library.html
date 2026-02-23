@@ -28,14 +28,12 @@
 
         .btn-search { background: var(--leaf); color: white; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
 
-        /* PLANT GRID */
         .plant-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 25px;
         }
 
-        /* PLANT CARD */
         .plant-card {
             background: white; border-radius: 20px; overflow: hidden;
             box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s;
@@ -93,7 +91,8 @@
 </div>
 
 <script>
-    const API_KEY = sk-7Sqq699b962b1362a14989
+    // FIXED: Added quotes around the API key string
+    const API_KEY = 'sk-7Sqq699b962b1362a14989'; 
 
     async function fetchPlants() {
         const query = document.getElementById('librarySearch').value;
@@ -103,27 +102,37 @@
         grid.innerHTML = '<div class="loader">Checking the botanical archives...</div>';
 
         try {
-            // Using the species-list endpoint with a search query
-            const response = await fetch(`https://perenual.com/api/species-list?key=${API_KEY}&q=${query}`);
+            // FIXED: Updated to the V2 API endpoint
+            const response = await fetch(`https://perenual.com/api/v2/species-list?key=${API_KEY}&q=${query}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert("API Error: " + (errorData.message || "Request failed. Check your API key."));
+                grid.innerHTML = '<div class="loader" style="color:red">Search failed. Check your API key.</div>';
+                return;
+            }
+
             const result = await response.json();
 
             if (result.data && result.data.length > 0) {
                 renderCards(result.data);
             } else {
-                grid.innerHTML = '<div class="loader">No plants found. Try a different name.</div>';
+                grid.innerHTML = '<div class="loader">No plants found for "' + query + '". Try a different name.</div>';
             }
         } catch (error) {
             console.error(error);
-            grid.innerHTML = '<div class="loader" style="color:red">API Error: Make sure your API key is correct and you are online.</div>';
+            grid.innerHTML = '<div class="loader" style="color:red">Connection Error. Are you online?</div>';
         }
     }
 
     function renderCards(plants) {
         const grid = document.getElementById('plantGrid');
         grid.innerHTML = plants.map(p => {
-            // Some plants don't have images in the free tier, we use a placeholder
             const image = p.default_image ? p.default_image.regular_url : 'https://images.unsplash.com/photo-1545239351-ef056c0b011c?auto=format&fit=crop&w=400&q=80';
             
+            // Handle plant names that might have quotes in them to prevent JS errors
+            const safeName = (p.common_name || 'Unknown').replace(/'/g, "\\'");
+
             return `
                 <div class="plant-card">
                     <img src="${image}" class="plant-img" loading="lazy">
@@ -138,7 +147,7 @@
                             <tr><td class="label">ID</td><td class="val">#${p.id}</td></tr>
                         </table>
                         
-                        <button class="btn-save" onclick="savePlant('${p.common_name}', '${p.id}')">❤️ Add to Favorites</button>
+                        <button class="btn-save" onclick="savePlant('${safeName}', '${p.id}')">❤️ Add to Favorites</button>
                     </div>
                 </div>
             `;
@@ -146,7 +155,6 @@
     }
 
     function savePlant(name, id) {
-        // Logic to save specific plants to a "My Seeds" list in localStorage
         let mySeeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
         if (!mySeeds.find(s => s.id === id)) {
             mySeeds.push({ name, id, dateAdded: new Date().toLocaleDateString() });
@@ -157,7 +165,6 @@
         }
     }
 
-    // Allow "Enter" key to trigger search
     document.getElementById('librarySearch').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') fetchPlants();
     });
