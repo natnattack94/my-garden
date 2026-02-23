@@ -34,14 +34,14 @@
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-4xl font-black text-slate-800 tracking-tighter">GardenHub <span class="text-green-600">OS</span></h1>
-            <p class="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest italic">Monday, February 23</p>
+            <p id="current-date" class="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest italic"></p>
         </div>
         <nav class="flex flex-wrap gap-2">
             <a href="map.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">🗺️ Map</a>
             <a href="plants.html" class="bg-green-50 hover:bg-green-100 px-4 py-2 rounded-xl text-xs font-bold transition border border-green-200 shadow-sm text-green-700">🌿 My Library</a>
             <a href="clinic.html" class="bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl text-xs font-bold transition border border-blue-200 shadow-sm text-blue-600">🏥 Clinic</a>
             <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 Logs</a>
-            <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition text-white shadow-lg">🔄 Reset</button>
+            <button onclick="clearEverything()" class="bg-slate-100 hover:bg-red-50 hover:text-red-500 px-4 py-2 rounded-xl text-xs font-bold transition text-slate-400">⚠️ Factory Reset</button>
         </nav>
     </header>
 
@@ -50,7 +50,7 @@
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p><h3 id="crop-count" class="text-2xl font-black text-slate-800">0</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Tasks</p><h3 id="task-count" class="text-2xl font-black text-orange-500">0</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p><h3 class="text-2xl font-black text-blue-500">42°F</h3></div>
-            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Yield</p><h3 class="text-2xl font-black text-green-600">$0</h3></div>
+            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Logs</p><h3 id="log-count" class="text-2xl font-black text-green-600">0</h3></div>
         </div>
 
         <div class="lg:col-span-3 glass-panel p-5">
@@ -63,12 +63,12 @@
         <div class="lg:col-span-2 space-y-8">
             <div class="flex justify-between items-end">
                 <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Active Growth</h2>
-                <p class="text-xs text-slate-400 font-bold">From your Saved Library</p>
+                <a href="plants.html" class="text-xs text-green-600 font-bold hover:underline">Manage Vault →</a>
             </div>
             <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             
             <div class="glass-panel p-6">
-                <h2 class="text-lg font-bold mb-6">Harvest Forecast</h2>
+                <h2 class="text-lg font-bold mb-6">Maturity Forecast</h2>
                 <div id="harvest-forecast" class="space-y-6"></div>
             </div>
         </div>
@@ -79,20 +79,13 @@
                 <div id="weather-container" style="min-height: 150px;">
                     <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="HARTFORD" data-label_2="WEATHER" data-theme="pure" data-basecolor="#ffffff" data-textcolor="#334155" data-highcolor="#ef4444" data-lowcolor="#3b82f6" >HARTFORD WEATHER</a>
                 </div>
-                <div class="mt-8 pt-4 border-t border-slate-100">
-                    <div class="flex justify-between items-center mb-2">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Soil Moisture</p>
-                        <span class="text-[10px] font-bold text-blue-500">65%</span>
-                    </div>
-                    <div class="progress-bg"><div class="progress-fill bg-blue-400" style="width: 65%;"></div></div>
-                </div>
             </div>
 
             <div class="glass-panel p-6">
                 <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
                 <div id="taskList" class="space-y-3 mb-4"></div>
                 <div class="flex gap-2">
-                    <input type="text" id="taskDesc" placeholder="Quick task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500">
+                    <input type="text" id="taskDesc" placeholder="Quick task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500 outline-none">
                     <button onclick="addTask()" class="bg-green-600 text-white px-4 rounded-xl font-bold text-xs uppercase">Add</button>
                 </div>
             </div>
@@ -101,52 +94,45 @@
 </div>
 
 <script>
-    // --- DYNAMIC DATA SYNC ---
-    // This pulls from the library you created in plants.html
-    const defaultPlants = [
-        { name: "Cosmos", emoji: "🌸", days: 60, progress: 85 },
-        { name: "Coneflower", emoji: "🌻", days: 90, progress: 40 },
-        { name: "Shasta Daisy", emoji: "🌼", days: 85, progress: 15 }
-    ];
-
+    // --- DATA SYNC ---
     function getLibraryData() {
-        return JSON.parse(localStorage.getItem('myGardenLibrary')) || defaultPlants;
+        return JSON.parse(localStorage.getItem('myGardenLibrary')) || [
+            { name: "Cosmos", emoji: "🌸", progress: 85, days: 60 },
+            { name: "Tomato", emoji: "🍅", progress: 30, days: 80 }
+        ];
     }
 
-    // --- CORE RENDER ---
     function renderDashboard() {
         const currentPlants = getLibraryData();
+        const currentLogs = JSON.parse(localStorage.getItem('gardenLogs')) || [];
         
-        // Update Stats
+        // Update Metrics
         document.getElementById('crop-count').innerText = currentPlants.length;
+        document.getElementById('log-count').innerText = currentLogs.length;
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Render Growth Cards
+        // Render Active Growth Cards
         document.getElementById('seed-grid').innerHTML = currentPlants.map(p => `
             <div class="seed-card p-6 rounded-3xl flex flex-col justify-between" onclick="window.location.href='plants.html?name=${p.name}'">
                 <div class="flex justify-between items-center">
                     <span class="text-4xl">${p.emoji}</span>
                     <div class="health-ring"></div>
                 </div>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">View Specs →</p>
-                    </div>
+                <div>
+                    <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Zone 6B Spec Check</p>
                 </div>
             </div>
         `).join('');
 
-        // Render Forecast (Defaults to 50% progress if new plant)
+        // Render Forecast
         document.getElementById('harvest-forecast').innerHTML = currentPlants.map(p => {
-            let progress = p.progress || 50; 
-            let daysTotal = p.days || 60;
-            let colorClass = progress > 80 ? 'status-soon' : (progress > 30 ? 'status-mid' : 'status-long');
-            let daysLeft = Math.round(daysTotal * (1 - progress/100));
-            
+            let progress = p.progress || 10; 
+            let colorClass = progress > 70 ? 'status-long' : (progress > 30 ? 'status-mid' : 'status-soon');
             return `
                 <div>
                     <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2">
-                        <span>${p.name}</span><span>${daysLeft} Days Left</span>
+                        <span>${p.name}</span><span>${progress}% Est. Maturity</span>
                     </div>
                     <div class="progress-bg"><div class="progress-fill ${colorClass}" style="width: ${progress}%"></div></div>
                 </div>
@@ -168,7 +154,7 @@
     };
 
     function renderTasks() {
-        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [{id: 1, desc: "Weed flower bed"}];
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [{id: 1, desc: "Check Hartford frost alert"}];
         document.getElementById('task-count').innerText = tasks.length;
         document.getElementById('taskList').innerHTML = tasks.map(t => `
             <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -176,13 +162,6 @@
                 <span class="text-xs font-semibold text-slate-600">${t.desc}</span>
             </div>
         `).join('');
-    }
-
-    function removeTask(id) {
-        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        tasks = tasks.filter(t => t.id !== id);
-        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
-        renderTasks();
     }
 
     function addTask() {
@@ -195,7 +174,20 @@
         renderTasks();
     }
 
-    // --- INITIALIZATION ---
+    function removeTask(id) {
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        renderTasks();
+    }
+
+    function clearEverything() {
+        if(confirm("Factory Reset? This clears all Library data, Maps, and Logs.")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
     window.onload = () => {
         renderDashboard();
         renderTasks();
