@@ -3,119 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>9x9 Precision Grid | GardenHub</title>
+    <title>9x9 Precision Grid | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { 
-            --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
-            --grass: #aacc00; --wood: #bc8a5f; --seed: #e9c46a;
-            --friend-glow: #4ade80;
-            --foe-glow: #f87171;
-        }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        /* Sidebar Styling: High-Contrast Seed Card Look */
+        .seed-card-sidebar { 
+            background: white; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 16px; 
+            transition: all 0.2s ease;
+            cursor: grab;
+        }
+        .seed-card-sidebar:hover { 
+            border-color: #22c55e; 
+            transform: translateX(4px); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
+        .seed-card-sidebar:active { cursor: grabbing; scale: 0.95; }
 
-        #sidebar {
-            width: 280px; background: white; padding: 24px;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.05); display: flex; flex-direction: column;
-            z-index: 100; border-right: 1px solid #e2e8f0;
-        }
-        
-        /* Updated Sidebar Card Style */
-        .seed-card {
-            background: white; padding: 12px; border-radius: 12px;
-            margin-bottom: 10px; cursor: grab; font-weight: bold;
-            display: flex; justify-content: space-between; align-items: center;
-            border: 1px solid #e2e8f0; transition: 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .seed-card:active { cursor: grabbing; scale: 0.95; }
-        .seed-card:hover { border-color: #22c55e; transform: translateX(5px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .qty-tag { font-size: 0.65rem; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
-
-        .main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        
-        /* Glass Style Grid Container */
+        /* Grid Aesthetics */
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(9, 60px); 
-            grid-template-rows: repeat(9, 60px);    
+            grid-template-columns: repeat(9, 64px); 
+            grid-template-rows: repeat(9, 64px);    
             gap: 4px;
-            background: #ffffff;
+            background: white;
             padding: 16px;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
             border: 1px solid #e2e8f0;
-            position: relative;
         }
 
         .grid-spot {
-            width: 60px; height: 60px;
-            background: #f8fafc;
+            width: 64px; height: 64px;
+            background: #f1f5f9;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.2s;
-            border-radius: 8px; position: relative;
-            overflow: hidden; border: 1px solid #f1f5f9;
+            border-radius: 12px; position: relative;
+            transition: all 0.2s;
         }
 
-        .grid-spot.occupied { background: #ecfdf5; border-color: #10b981; }
-        
-        .ghost-friend { background-color: #dcfce7 !important; outline: 3px solid var(--friend-glow); outline-offset: -3px; }
-        .ghost-foe { background-color: #fee2e2 !important; outline: 3px solid var(--foe-glow); outline-offset: -3px; }
+        .grid-spot.occupied { background: #f0fdf4; border: 1px solid #bbf7d0; }
 
-        .grid-spot * { pointer-events: none; }
-        .grid-spot:not(.dragging-over) .photo-upload-btn { pointer-events: auto; }
-
-        .photo-upload-btn {
-            position: absolute; top: 2px; left: 2px;
-            background: white; border-radius: 4px;
-            width: 18px; height: 18px;
+        /* Interactive Info Icon */
+        .info-btn {
+            position: absolute; bottom: 4px; right: 4px;
+            background: white; border-radius: 50%;
+            width: 20px; height: 20px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 10px; z-index: 20; opacity: 0; transition: 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            font-size: 10px; font-weight: bold; color: #10b981;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            opacity: 0; transition: opacity 0.2s;
+            z-index: 40; pointer-events: auto !important;
+            border: 1px solid #e2e8f0;
         }
-        .grid-spot.occupied:hover .photo-upload-btn { opacity: 1; }
-        
-        .growth-snapshot { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; z-index: 1; }
-        .plant-emoji { position: relative; z-index: 2; font-size: 1.8rem; }
-        .multiplier-badge { position: absolute; bottom: 2px; right: 2px; background: #10b981; color: white; font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; font-weight: bold; z-index: 3; }
+        .grid-spot.occupied:hover .info-btn { opacity: 1; }
+        .info-btn:hover { background: #f0fdf4; scale: 1.1; }
 
+        /* Delete Overlay */
         .grid-spot.occupied:hover::after {
-            content: "✕"; position: absolute; font-size: 1.2rem; color: white;
-            background: rgba(239, 68, 68, 0.8); width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center; z-index: 30;
+            content: "✕"; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(239, 68, 68, 0.7); color: white;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; font-weight: bold; cursor: pointer;
+            z-index: 30; opacity: 0; transition: opacity 0.2s;
         }
+        /* Reveal delete if hovering but not on the info button */
+        .grid-spot.occupied:hover:not(:has(.info-btn:hover))::after { opacity: 1; }
 
-        .btn-clear { background: #f8fafc; color: #ef4444; border: 1px solid #fee2e2; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; transition: 0.2s; }
-        .btn-clear:hover { background: #fee2e2; }
+        .ghost-friend { background-color: #dcfce7 !important; outline: 3px solid #4ade80; outline-offset: -3px; }
+        .ghost-foe { background-color: #fee2e2 !important; outline: 3px solid #f87171; outline-offset: -3px; }
     </style>
 </head>
-<body>
+<body class="flex h-screen">
 
-<div id="sidebar">
-    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Crop Command</h3>
-    
-    <div id="library-drag-container">
+    <aside id="sidebar" class="w-72 bg-white border-r border-slate-200 p-6 flex flex-col">
+        <div class="mb-8">
+            <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Crop Command</h2>
+            <p class="text-sm font-bold text-slate-800">Drag to your 9x9 Grid</p>
+        </div>
+        
+        <div id="library-drag-container" class="space-y-3 overflow-y-auto pr-2 flex-grow">
+            </div>
+
+        <div class="pt-6 border-t border-slate-100 space-y-3">
+            <button onclick="clearFullGrid()" class="w-full py-3 rounded-xl bg-slate-50 text-slate-400 text-xs font-bold uppercase hover:bg-red-50 hover:text-red-500 transition">Reset Map</button>
+            <a href="index.html" class="block w-full text-center py-3 text-xs font-black text-green-600 uppercase transition hover:translate-x-[-4px]">← Exit to Dashboard</a>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-8">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-black text-slate-800 tracking-tighter uppercase">Spatial <span class="text-green-600">Map</span></h1>
+            <p id="feedback-text" class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Hartford Garden • Zone 6B</p>
         </div>
 
-    <button class="btn-clear" onclick="clearFullGrid()">Reset Grid</button>
-    <a href="index.html" class="block text-center mt-4 text-xs font-bold text-slate-500 hover:text-green-600 transition">← Dashboard</a>
-</div>
-
-<div class="main-view">
-    <div class="text-center mb-6">
-        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">9x9 Precision Grid</h2>
-        <p id="feedback-text" class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Zone 6B Companion Mapping</p>
-    </div>
-    <div class="grid-container" id="gardenGrid"></div>
-</div>
+        <div id="gardenGrid" class="grid-container">
+            </div>
+    </main>
 
 <script>
     const GRID_SIZE = 81; 
     const COLS = 9;
     const gridContainer = document.getElementById('gardenGrid');
 
-    // Default logic for companion planting
+    // Companion Planting Logic
     const plantLogic = {
         "Tomato": { friends: ["Basil", "Carrot", "Lettuce"], foes: ["Broccoli"] },
         "Basil": { friends: ["Tomato"], foes: [] },
@@ -126,6 +120,7 @@
     };
 
     function loadLibrarySidebar() {
+        // Pulls from the same database used in plants.html
         const library = JSON.parse(localStorage.getItem('myGardenLibrary')) || [
             { name: "Cosmos", emoji: "🌸", type: "Flower" },
             { name: "Tomato", emoji: "🍅", type: "Vegetable" }
@@ -133,10 +128,16 @@
         
         const container = document.getElementById('library-drag-container');
         container.innerHTML = library.map(p => `
-            <div class="seed-card" draggable="true" ondragstart="drag(event)" 
-                 data-emoji="${p.emoji}" data-name="${p.name}" data-qty="1">
-                <span>${p.emoji} ${p.name}</span> 
-                <span class="qty-tag">${p.type}</span>
+            <div class="seed-card-sidebar p-4 flex items-center justify-between" 
+                 draggable="true" 
+                 ondragstart="drag(event)" 
+                 data-emoji="${p.emoji}" 
+                 data-name="${p.name}">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">${p.emoji}</span>
+                    <span class="font-bold text-slate-700 text-sm">${p.name}</span>
+                </div>
+                <span class="text-[9px] font-black text-slate-300 uppercase">Drag</span>
             </div>
         `).join('');
     }
@@ -147,44 +148,37 @@
         
         for (let i = 0; i < GRID_SIZE; i++) {
             const spot = document.createElement('div');
-            spot.classList.add('grid-spot');
+            spot.className = 'grid-spot';
             spot.id = `spot-${i}`;
             
             spot.addEventListener('dragover', (e) => handleDragOver(e, i));
             spot.addEventListener('dragleave', (e) => clearGlow(e.currentTarget));
             spot.addEventListener('drop', (e) => handleDrop(e, i));
-            spot.onclick = () => removePlant(i);
+            
+            spot.onclick = () => {
+                if(savedLayout[i]) removePlant(i);
+            };
             
             if (savedLayout[i]) {
                 const data = savedLayout[i];
-                if (data.photo) {
-                    const img = document.createElement('img');
-                    img.src = data.photo;
-                    img.className = 'growth-snapshot';
-                    spot.appendChild(img);
-                }
-                const emojiSpan = document.createElement('span');
-                emojiSpan.className = 'plant-emoji';
-                emojiSpan.innerText = data.emoji;
-                spot.appendChild(emojiSpan);
-
-                const upBtn = document.createElement('div');
-                upBtn.className = 'photo-upload-btn';
-                upBtn.innerHTML = '📷';
-                upBtn.onclick = (e) => { e.stopPropagation(); triggerUpload(i); };
-                spot.appendChild(upBtn);
-
                 spot.classList.add('occupied');
+                spot.innerHTML = `
+                    <span class="text-3xl relative z-10">${data.emoji}</span>
+                    <div class="info-btn" onclick="event.stopPropagation(); window.location.href='plants.html?name=${data.name}'">ℹ️</div>
+                `;
             }
             gridContainer.appendChild(spot);
         }
     }
 
-    let draggedPlantName = "";
+    let draggedPlantData = null;
+
     function drag(ev) {
-        draggedPlantName = ev.target.getAttribute('data-name');
-        ev.dataTransfer.setData("emoji", ev.target.getAttribute('data-emoji'));
-        ev.dataTransfer.setData("name", draggedPlantName);
+        draggedPlantData = {
+            name: ev.target.getAttribute('data-name'),
+            emoji: ev.target.getAttribute('data-emoji')
+        };
+        ev.dataTransfer.setData("name", draggedPlantData.name);
     }
 
     function handleDragOver(ev, index) {
@@ -193,7 +187,7 @@
         if (spot.classList.contains('occupied')) return;
         
         spot.classList.add('dragging-over');
-        const status = checkCompanions(index, draggedPlantName);
+        const status = checkCompanions(index, draggedPlantData.name);
         
         if (status === 'friend') spot.classList.add('ghost-friend');
         else if (status === 'foe') spot.classList.add('ghost-foe');
@@ -227,24 +221,21 @@
 
     function handleDrop(ev, index) {
         ev.preventDefault();
-        const emoji = ev.dataTransfer.getData("emoji");
-        const name = ev.dataTransfer.getData("name");
-        if(!emoji) return;
+        if(!draggedPlantData) return;
         
         let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        savedLayout[index] = { emoji, name };
+        savedLayout[index] = draggedPlantData;
         localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
+        
         clearGlow(ev.currentTarget);
         initGrid(); 
     }
 
     function removePlant(index) {
         let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        if (savedLayout[index]) {
-            delete savedLayout[index];
-            localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
-            initGrid(); 
-        }
+        delete savedLayout[index];
+        localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
+        initGrid(); 
     }
 
     function clearFullGrid() {
