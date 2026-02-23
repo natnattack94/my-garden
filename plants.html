@@ -3,40 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant Library | GardenHub</title>
+    <title>Plant Library | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
         .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; }
         .detail-header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
 <div class="max-w-5xl mx-auto">
     <div class="flex justify-between items-center mb-8">
-        <a href="index.html" class="text-slate-500 font-bold hover:text-green-600 transition">← Dashboard</a>
+        <a href="index.html" class="text-slate-500 font-bold hover:text-green-600 transition uppercase text-xs tracking-widest">← Dashboard</a>
         <button onclick="toggleAddForm()" id="addBtn" class="bg-green-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-green-700 transition">+ Add New Variety</button>
     </div>
 
     <div id="addForm" class="hidden glass-panel p-6 mb-10 border-2 border-green-100">
         <h2 class="text-xl font-black text-slate-800 mb-4 uppercase tracking-tight">Register New Plant</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input type="text" id="newName" placeholder="Plant Name (e.g. Zucchini)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200">
-            <input type="text" id="newEmoji" placeholder="Emoji (e.g. 🥒)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200">
-            <select id="newType" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200">
+            <input type="text" id="newName" placeholder="Plant Name (e.g. Zucchini)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
+            <input type="text" id="newEmoji" placeholder="Emoji (e.g. 🥒)" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
+            <select id="newType" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
                 <option value="Vegetable">Vegetable</option>
                 <option value="Flower">Flower</option>
                 <option value="Herb">Herb</option>
             </select>
-            <input type="text" id="newDepth" placeholder="Planting Depth" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200">
-            <input type="text" id="newSun" placeholder="Sun Needs" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200">
-            <button onclick="saveNewPlant()" class="bg-slate-800 text-white rounded-xl font-bold uppercase text-sm">Save to Library</button>
+            <input type="text" id="newDepth" placeholder="Planting Depth" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
+            <input type="text" id="newSun" placeholder="Sun Needs" class="p-3 bg-slate-50 rounded-xl border-none ring-1 ring-slate-200 focus:ring-green-500 outline-none">
+            <button onclick="saveNewPlant()" class="bg-slate-800 text-white rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-black transition">Save to Library</button>
         </div>
     </div>
 
     <div id="library-view">
-        <h1 class="text-3xl font-black text-slate-800 mb-6">My Saved <span class="text-green-600">Library</span></h1>
+        <h1 class="text-4xl font-black text-slate-800 mb-2 tracking-tighter">SEED <span class="text-green-600">VAULT</span></h1>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-8">Hartford Garden Archive</p>
         <div id="plant-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             </div>
     </div>
@@ -46,102 +48,150 @@
 </div>
 
 <script>
-    // Initial Database (Ideally, you'd move this to LocalStorage later)
+    // 1. DATABASE LOGIC
     let myPlants = JSON.parse(localStorage.getItem('myGardenLibrary')) || [
         { name: "Cosmos", emoji: "🌸", type: "Flower", depth: "1/4\"", sun: "Full Sun", spacing: "12\"", notes: "Great for Hartford pollinators." },
         { name: "Coneflower", emoji: "🌻", type: "Flower", depth: "1/8\"", sun: "Full Sun", spacing: "18\"", notes: "Native perennial, very hardy." },
         { name: "Shasta Daisy", emoji: "🌼", type: "Flower", depth: "Surface", sun: "Partial Sun", spacing: "15\"", notes: "Clean white blooms all summer." }
     ];
 
-    function renderLibrary() {
-        const grid = document.getElementById('plant-grid');
-        grid.innerHTML = myPlants.map(p => `
-            <div class="glass-panel p-6 cursor-pointer hover:shadow-xl transition-all border-b-4 border-green-500" onclick="showDetail('${p.name}')">
-                <span class="text-4xl">${p.emoji}</span>
-                <h3 class="text-xl font-black text-slate-800 mt-2">${p.name}</h3>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">${p.type}</p>
-            </div>
-        `).join('');
-    }
-
-    function showDetail(name) {
-        const plant = myPlants.find(p => p.name === name);
-        const libraryView = document.getElementById('library-view');
-        const detailView = document.getElementById('detail-view');
-
-        libraryView.classList.add('hidden');
-        detailView.classList.remove('hidden');
-
-        detailView.innerHTML = `
-            <button onclick="closeDetail()" class="mb-6 text-sm font-bold text-green-600 uppercase tracking-widest">← Back to Gallery</button>
-            <div class="glass-panel overflow-hidden">
-                <div class="detail-header p-10 text-white">
-                    <span class="text-7xl">${plant.emoji}</span>
-                    <h1 class="text-5xl font-black mt-4 uppercase tracking-tighter">${plant.name}</h1>
-                </div>
-                <div class="p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div class="p-4 bg-slate-50 rounded-2xl text-center">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Depth</p>
-                        <p class="font-bold text-slate-800">${plant.depth}</p>
-                    </div>
-                    <div class="p-4 bg-slate-50 rounded-2xl text-center">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Sun</p>
-                        <p class="font-bold text-slate-800">${plant.sun}</p>
-                    </div>
-                    <div class="p-4 bg-slate-50 rounded-2xl text-center">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Spacing</p>
-                        <p class="font-bold text-slate-800">${plant.spacing || 'N/A'}</p>
-                    </div>
-                    <div class="p-4 bg-blue-50 rounded-2xl text-center cursor-pointer" onclick="window.location.href='clinic.html?search=${plant.name}'">
-                        <p class="text-[10px] font-bold text-blue-400 uppercase">Health</p>
-                        <p class="font-bold text-blue-600">Diagnose ⚕️</p>
-                    </div>
-                </div>
-                <div class="p-8 border-t border-slate-100">
-                    <h4 class="font-black text-slate-800 uppercase text-sm mb-2">Grower's Notes</h4>
-                    <p class="text-slate-600 leading-relaxed">${plant.notes || 'No notes added yet.'}</p>
-                </div>
-            </div>
-        `;
-    }
-
-    function closeDetail() {
-        document.getElementById('library-view').classList.remove('hidden');
-        document.getElementById('detail-view').classList.add('hidden');
-    }
-
-    function toggleAddForm() {
-        const form = document.getElementById('addForm');
-        form.classList.toggle('hidden');
-    }
-
-    function saveNewPlant() {
-        const newPlant = {
-            name: document.getElementById('newName').value,
-            emoji: document.getElementById('newEmoji').value,
-            type: document.getElementById('newType').value,
-            depth: document.getElementById('newDepth').value,
-            sun: document.getElementById('newSun').value,
-            notes: "Added from Library Form."
-        };
-
-        if(!newPlant.name) return alert("Please add a name!");
-        
-        myPlants.push(newPlant);
-        localStorage.setItem('myGardenLibrary', JSON.stringify(myPlants));
-        renderLibrary();
-        toggleAddForm();
-    }
-
-    window.onload = () => {
+    // 2. ROUTING & ENTRY
+    function checkRoute() {
         const params = new URLSearchParams(window.location.search);
         const nameParam = params.get('name');
+        
         if (nameParam) {
             showDetail(nameParam);
         } else {
             renderLibrary();
         }
-    };
+    }
+
+    // 3. GALLERY RENDERER
+    function renderLibrary() {
+        document.getElementById('library-view').classList.remove('hidden');
+        document.getElementById('detail-view').classList.add('hidden');
+        document.getElementById('addBtn').classList.remove('hidden');
+
+        const grid = document.getElementById('plant-grid');
+        grid.innerHTML = myPlants.map((p, index) => `
+            <div class="glass-panel p-6 cursor-pointer card-hover transition-all border-b-4 border-green-500 group relative" onclick="window.location.href='plants.html?name=${p.name}'">
+                <button onclick="event.stopPropagation(); removePlant(${index})" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 bg-red-50 text-red-500 w-8 h-8 rounded-full text-xs hover:bg-red-500 hover:text-white transition">✕</button>
+                <span class="text-5xl">${p.emoji}</span>
+                <h3 class="text-xl font-black text-slate-800 mt-4 uppercase tracking-tighter">${p.name}</h3>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${p.type}</p>
+            </div>
+        `).join('');
+    }
+
+    // 4. DETAIL RENDERER
+    function showDetail(name) {
+        const plant = myPlants.find(p => p.name.toLowerCase() === name.toLowerCase());
+        const libraryView = document.getElementById('library-view');
+        const detailView = document.getElementById('detail-view');
+        const addBtn = document.getElementById('addBtn');
+
+        if (!plant) {
+            window.location.href = 'plants.html'; // Fallback if name is invalid
+            return;
+        }
+
+        libraryView.classList.add('hidden');
+        addBtn.classList.add('hidden');
+        detailView.classList.remove('hidden');
+
+        detailView.innerHTML = `
+            <button onclick="window.location.href='plants.html'" class="mb-6 text-[10px] font-black text-green-600 uppercase tracking-widest flex items-center gap-2">
+                <span>←</span> Back to Vault
+            </button>
+            <div class="glass-panel overflow-hidden shadow-2xl">
+                <div class="detail-header p-10 text-white flex justify-between items-end">
+                    <div>
+                        <span class="text-8xl drop-shadow-lg">${plant.emoji}</span>
+                        <h1 class="text-6xl font-black mt-4 uppercase tracking-tighter">${plant.name}</h1>
+                    </div>
+                    <p class="font-black opacity-50 uppercase tracking-widest text-sm mb-2">${plant.type}</p>
+                </div>
+                
+                <div class="p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Depth</p>
+                        <p class="font-bold text-slate-800 text-lg">${plant.depth}</p>
+                    </div>
+                    <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sun</p>
+                        <p class="font-bold text-slate-800 text-lg">${plant.sun}</p>
+                    </div>
+                    <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Spacing</p>
+                        <p class="font-bold text-slate-800 text-lg">${plant.spacing || '12"'}</p>
+                    </div>
+                    
+                    <div class="p-5 bg-blue-50 rounded-2xl border border-blue-100 text-center cursor-pointer hover:bg-blue-100 transition" 
+                         onclick="window.location.href='clinic.html?name=${plant.name}'">
+                        <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Support</p>
+                        <p class="font-black text-blue-600 text-lg">DIAGNOSE ⚕️</p>
+                    </div>
+                </div>
+
+                <div class="p-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start gap-8">
+                    <div class="flex-grow">
+                        <h4 class="font-black text-slate-400 uppercase text-[10px] tracking-widest mb-3">Grower's Archive</h4>
+                        <p class="text-slate-600 leading-relaxed font-medium">${plant.notes || 'No specific notes recorded for this variety yet.'}</p>
+                    </div>
+                    <button onclick="removePlantByName('${plant.name}')" class="text-[10px] font-black text-red-300 uppercase tracking-widest hover:text-red-600 transition self-end">
+                        Delete Variety
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // 5. FUNCTIONALITY: ADD / DELETE
+    function toggleAddForm() {
+        document.getElementById('addForm').classList.toggle('hidden');
+    }
+
+    function saveNewPlant() {
+        const name = document.getElementById('newName').value;
+        const emoji = document.getElementById('newEmoji').value || '🌱';
+        if(!name) return alert("Plant name is required!");
+
+        const newPlant = {
+            name: name,
+            emoji: emoji,
+            type: document.getElementById('newType').value,
+            depth: document.getElementById('newDepth').value || '1/2"',
+            sun: document.getElementById('newSun').value || 'Full Sun',
+            notes: "Manually registered variety."
+        };
+
+        myPlants.push(newPlant);
+        localStorage.setItem('myGardenLibrary', JSON.stringify(myPlants));
+        renderLibrary();
+        toggleAddForm();
+        // Clear inputs
+        document.getElementById('newName').value = '';
+        document.getElementById('newEmoji').value = '';
+    }
+
+    function removePlant(index) {
+        if(confirm(`Remove ${myPlants[index].name} from your vault?`)) {
+            myPlants.splice(index, 1);
+            localStorage.setItem('myGardenLibrary', JSON.stringify(myPlants));
+            renderLibrary();
+        }
+    }
+
+    function removePlantByName(name) {
+        const index = myPlants.findIndex(p => p.name === name);
+        if(index !== -1) {
+            removePlant(index);
+            window.location.href = 'plants.html';
+        }
+    }
+
+    window.onload = checkRoute;
 </script>
 
 </body>
