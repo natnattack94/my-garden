@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
-        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); min-height: 100px; }
         
         /* Original Grid & Sun Map Styles */
         .sun-cell { transition: all 0.2s ease; cursor: pointer; border: 1px solid #f1f5f9; height: 30px; border-radius: 6px; }
@@ -26,6 +26,13 @@
         .status-sprout { background: #99f6e4; }
         .status-grow { background: #22c55e; }
         .status-harvest { background: #f59e0b; animation: pulse 2s infinite; }
+
+        /* Fix for Empty Layouts */
+        #seed-grid:empty, #harvest-forecast:empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     </style>
@@ -71,7 +78,7 @@
             
             <div class="glass-panel p-6">
                 <h2 class="text-lg font-bold mb-6">Maturity Forecast</h2>
-                <div id="harvest-forecast" class="space-y-6"></div>
+                <div id="harvest-forecast" class="space-y-6 min-h-[100px]"></div>
             </div>
         </div>
 
@@ -106,17 +113,14 @@
 </div>
 
 <script>
-    // FILL IN YOUR SUPABASE KEYS HERE
     const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
 
-    // UTILITIES
     function calculateMaturity(datePlanted, daysToMature) {
         if (!datePlanted || !daysToMature) return 0;
         const diffInDays = (new Date() - new Date(datePlanted)) / (1000 * 60 * 60 * 24);
         return Math.min(100, Math.max(0, Math.floor((diffInDays / daysToMature) * 100)));
     }
 
-    // AUTH STATE
     _supabase.auth.onAuthStateChange((event, session) => {
         const overlay = document.getElementById('auth-overlay');
         if (session) {
@@ -148,7 +152,6 @@
         location.reload();
     }
 
-    // MAIN RENDER
     async function renderDashboard() {
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -170,7 +173,7 @@
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cloud Synced Crop</p>
                 </div>
             </div>
-        `).join('') : '<p class="text-slate-400 italic text-sm">No plants in your cloud library.</p>';
+        `).join('') : '<div class="col-span-full py-10 text-center border-2 border-dashed border-slate-100 rounded-3xl"><p class="text-slate-400 text-xs font-bold uppercase tracking-widest">No active growth found</p></div>';
 
         // 2. Forecast Bars
         document.getElementById('harvest-forecast').innerHTML = plants?.length ? plants.map(p => {
@@ -183,7 +186,7 @@
                     </div>
                     <div class="progress-bg"><div class="progress-fill ${colorClass}" style="width: ${progress}%"></div></div>
                 </div>`;
-        }).join('') : '<p class="text-slate-400 italic text-sm">Add seeds to see timelines.</p>';
+        }).join('') : '<div class="py-10 text-center"><p class="text-slate-400 text-xs font-bold uppercase tracking-widest">No timelines available</p></div>';
 
         // 3. Sun Map
         let sunData = JSON.parse(localStorage.getItem('gardenSunMap')) || Array(32).fill('full');
