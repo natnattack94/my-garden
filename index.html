@@ -61,6 +61,13 @@
 
         /* LIBRARY IFRAME */
         .library-frame { width: 100%; height: 70vh; border: none; border-radius: 15px; background: white; }
+
+        /* POPUP MODAL STYLES */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 10% auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 20px; text-align: center; position: relative; animation: fadeIn 0.3s ease; }
+        .close-modal { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #aaa; border: none; background: none; }
+        .modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px; }
+        .modal-detail { margin: 10px 0; font-size: 1rem; color: #444; }
     </style>
 </head>
 <body>
@@ -124,8 +131,7 @@
                 <thead>
                     <tr><th>Plant Name</th><th>Date Saved</th><th>Action</th></tr>
                 </thead>
-                <tbody id="savedSeedsBody">
-                    </tbody>
+                <tbody id="savedSeedsBody"></tbody>
             </table>
         </section>
     </div>
@@ -150,7 +156,14 @@
         <textarea id="gardenNotes" rows="12" style="width:100%; border-radius:15px;" placeholder="Record soil conditions, pest observations, etc..."></textarea>
         <button class="btn-action" style="width:100%; margin-top:10px;" onclick="saveNotes()">Save Journal Entry</button>
     </div>
+</div>
 
+<div id="plantModal" class="modal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeModal()">&times;</button>
+        <div id="modalContent">
+            </div>
+    </div>
 </div>
 
 <script>
@@ -163,11 +176,10 @@
         document.getElementById(tabName).classList.add("active");
         evt.currentTarget.classList.add("active");
 
-        // Refresh seeds table if planner tab is opened
         if(tabName === 'planner') renderSavedSeeds();
     }
 
-    // SAVED SEEDS LOGIC
+    // SAVED SEEDS LOGIC + MODAL
     function renderSavedSeeds() {
         const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
         const container = document.getElementById('savedSeedsBody');
@@ -179,11 +191,41 @@
 
         container.innerHTML = seeds.map(s => `
             <tr>
-                <td><strong>${s.name}</strong></td>
+                <td><button onclick="showPlantDetails('${s.id}')" style="background:none; border:none; color:var(--leaf); font-weight:bold; cursor:pointer; text-decoration:underline;">${s.name}</button></td>
                 <td>${s.dateAdded}</td>
                 <td><button onclick="removeSeed('${s.id}')" style="color:var(--harvest); background:none; border:none; cursor:pointer; font-weight:bold;">✕ Remove</button></td>
             </tr>
         `).join('');
+    }
+
+    function showPlantDetails(id) {
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        const plant = seeds.find(s => s.id === id);
+        if(!plant) return;
+
+        const modal = document.getElementById('plantModal');
+        const content = document.getElementById('modalContent');
+
+        content.innerHTML = `
+            <img src="${plant.img}" class="modal-img" onerror="this.src='https://img.icons8.com/color/96/leaf.png'">
+            <h2 style="color:var(--dark); margin-top:0;">${plant.name}</h2>
+            <div class="modal-detail">💧 <strong>Water:</strong> ${plant.water || 'Varies'}</div>
+            <div class="modal-detail">☀️ <strong>Sun:</strong> ${plant.sun || 'Varies'}</div>
+            <div class="modal-detail" style="font-size:0.8rem; color:#999; margin-top:15px;">Saved on: ${plant.dateAdded}</div>
+            <button class="btn-action" style="width:100%; margin-top:20px;" onclick="closeModal()">Close Guide</button>
+        `;
+        
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById('plantModal').style.display = "none";
+    }
+
+    // Close modal if user clicks outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('plantModal');
+        if (event.target == modal) closeModal();
     }
 
     function removeSeed(id) {
@@ -297,9 +339,6 @@
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
