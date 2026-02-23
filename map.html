@@ -12,29 +12,27 @@
         
         body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* SEED BIN */
         #sidebar {
-            width: 220px; background: white; padding: 20px;
+            width: 240px; background: white; padding: 20px;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;
             z-index: 10;
         }
         .seed-card {
-            background: var(--seed); padding: 12px; border-radius: 8px;
-            margin-bottom: 10px; cursor: grab; font-weight: bold;
-            text-align: center; border: 2px solid transparent; transition: 0.2s;
-            user-select: none;
+            background: var(--seed); padding: 10px; border-radius: 8px;
+            margin-bottom: 8px; cursor: grab; font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 2px solid transparent; transition: 0.2s;
         }
-        .seed-card:hover { border-color: var(--leaf); transform: translateY(-2px); }
-        .seed-card:active { cursor: grabbing; }
+        .seed-card:hover { border-color: var(--leaf); transform: translateX(5px); }
+        .qty-tag { font-size: 0.7rem; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; }
 
-        /* GRID CANVAS */
         .main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(9, 55px); 
-            grid-template-rows: repeat(9, 55px);    
-            gap: 3px;
+            grid-template-columns: repeat(9, 60px); 
+            grid-template-rows: repeat(9, 60px);    
+            gap: 4px;
             background: var(--wood);
             padding: 12px;
             border-radius: 10px;
@@ -42,59 +40,65 @@
         }
 
         .grid-spot {
-            width: 55px; height: 55px;
+            width: 60px; height: 60px;
             background: var(--dirt);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; cursor: pointer; transition: 0.2s;
+            cursor: pointer; transition: 0.2s;
             border-radius: 4px; position: relative;
         }
 
-        /* Hover & Interaction States */
-        .grid-spot:hover { filter: brightness(1.2); transform: scale(1.02); z-index: 2; }
-        
         .grid-spot.occupied { background: #556b2f; }
         
-        .grid-spot.occupied:hover::after {
-            content: "✕";
-            position: absolute;
-            font-size: 1rem;
-            color: white;
-            background: rgba(211, 47, 47, 0.8);
-            width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 4px;
+        /* The Spacing Multiplier Badge */
+        .multiplier-badge {
+            position: absolute; bottom: 2px; right: 2px;
+            background: var(--leaf); color: white;
+            font-size: 0.6rem; padding: 1px 4px; border-radius: 3px;
+            font-weight: bold;
         }
 
-        .instructions { margin-bottom: 20px; text-align: center; color: var(--dark); }
-        .btn-clear { background: #e76f51; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; transition: 0.3s; }
-        .btn-clear:hover { background: #d65d41; }
+        .grid-spot.occupied:hover::after {
+            content: "✕"; position: absolute; font-size: 1.2rem; color: white;
+            background: rgba(211, 47, 47, 0.8); width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center; border-radius: 4px;
+        }
+
+        .btn-clear { background: #e76f51; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h3 style="color:var(--dark); margin-top:0;">🧺 Seed Bin</h3>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍅" data-name="Tomato">🍅 Tomato</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥬" data-name="Kale">🥬 Kale</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot">🥕 Carrot</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌶️" data-name="Pepper">🌶️ Pepper</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍓" data-name="Berry">🍓 Berry</div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌿" data-name="Herb">🌿 Herb</div>
+    <h3 style="color:var(--dark); margin-top:0;">🧺 Square Foot Library</h3>
     
-    <p style="font-size: 0.75rem; color: #777; margin-top: 20px;">
-        💡 <strong>Tip:</strong> Drag seeds to the dirt. Click an occupied square to remove.
-    </p>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍅" data-name="Tomato" data-qty="1">
+        <span>🍅 Tomato</span> <span class="qty-tag">1/sq</span>
+    </div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥬" data-name="Lettuce" data-qty="4">
+        <span>🥬 Lettuce</span> <span class="qty-tag">4/sq</span>
+    </div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot" data-qty="16">
+        <span>🥕 Carrot</span> <span class="qty-tag">16/sq</span>
+    </div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🧅" data-name="Onion" data-qty="9">
+        <span>🧅 Onion</span> <span class="qty-tag">9/sq</span>
+    </div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌶️" data-name="Pepper" data-qty="1">
+        <span>🌶️ Pepper</span> <span class="qty-tag">1/sq</span>
+    </div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌿" data-name="Basil" data-qty="4">
+        <span>🌿 Basil</span> <span class="qty-tag">4/sq</span>
+    </div>
 
     <button class="btn-clear" onclick="clearFullGrid()">Reset All</button>
     <a href="index.html" style="display:block; text-align:center; margin-top:15px; color:var(--leaf); text-decoration:none; font-weight:bold;">← Dashboard</a>
 </div>
 
 <div class="main-view">
-    <div class="instructions">
-        <h2 style="margin:0;">9x9 Planting Grid</h2>
-        <p style="margin:5px 0 0;">Draft your layout for the 2026 season</p>
+    <div style="text-align:center; margin-bottom: 15px;">
+        <h2 style="margin:0;">9x9 SFG Planner</h2>
+        <p style="margin:0; font-size:0.9rem;">Hover over a square to see the plant count</p>
     </div>
-
     <div class="grid-container" id="gardenGrid"></div>
 </div>
 
@@ -110,17 +114,23 @@
             const spot = document.createElement('div');
             spot.classList.add('grid-spot');
             spot.id = `spot-${i}`;
-            
             spot.ondragover = (e) => e.preventDefault();
             spot.ondrop = (e) => handleDrop(e, i);
             spot.onclick = () => removePlant(i);
             
             if (savedLayout[i]) {
-                spot.innerText = savedLayout[i].emoji;
+                const data = savedLayout[i];
+                spot.innerHTML = `<span style="font-size:1.8rem;">${data.emoji}</span>`;
                 spot.classList.add('occupied');
-                spot.title = savedLayout[i].name;
+                
+                // Add the multiplier badge if more than 1
+                if(data.qty > 1) {
+                    const badge = document.createElement('div');
+                    badge.className = 'multiplier-badge';
+                    badge.innerText = `x${data.qty}`;
+                    spot.appendChild(badge);
+                }
             }
-            
             gridContainer.appendChild(spot);
         }
     }
@@ -128,19 +138,20 @@
     function drag(ev) {
         ev.dataTransfer.setData("emoji", ev.target.getAttribute('data-emoji'));
         ev.dataTransfer.setData("name", ev.target.getAttribute('data-name'));
+        ev.dataTransfer.setData("qty", ev.target.getAttribute('data-qty'));
     }
 
     function handleDrop(ev, index) {
         ev.preventDefault();
         const emoji = ev.dataTransfer.getData("emoji");
         const name = ev.dataTransfer.getData("name");
+        const qty = ev.dataTransfer.getData("qty");
         
-        if(!emoji) return; // Prevent empty drops
+        if(!emoji) return;
 
         let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        savedLayout[index] = { emoji, name };
+        savedLayout[index] = { emoji, name, qty };
         localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
-        
         initGrid(); 
     }
 
@@ -154,7 +165,7 @@
     }
 
     function clearFullGrid() {
-        if (confirm("This will clear your entire 9x9 design. Continue?")) {
+        if (confirm("Reset the garden?")) {
             localStorage.removeItem('gardenGridLayout');
             initGrid();
         }
