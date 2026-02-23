@@ -15,7 +15,7 @@
         .sun-partial { background: #ede9fe; border-color: #ddd6fe; }
         .sun-shade { background: #f1f5f9; border-color: #e2e8f0; }
 
-        .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; cursor: pointer; }
+        .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; cursor: pointer; height: 140px; }
         .seed-card.companion-friend { border: 2px solid #22c55e; background: #f0fdf4; }
         .seed-card.companion-foe { opacity: 0.2; filter: grayscale(1); }
         .seed-card.dimmed { opacity: 0.4; }
@@ -25,8 +25,8 @@
         .health-danger { background: #ef4444; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        /* Forecast Progress Bar */
-        .progress-bg { background: #f1f5f9; border-radius: 10px; height: 6px; width: 100%; overflow: hidden; }
+        /* Progress Bars */
+        .progress-bg { background: #f1f5f9; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; }
         .progress-fill { background: #3b82f6; height: 100%; transition: width 0.5s ease; }
         .harvest-fill { background: #22c55e; }
     </style>
@@ -37,7 +37,7 @@
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-4xl font-black text-slate-800 tracking-tighter">GardenHub <span class="text-green-600">OS</span></h1>
-            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest italic">Hartford, CT</p>
+            <p id="live-date" class="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest italic">Monday, February 23</p>
         </div>
         <nav class="flex flex-wrap gap-2">
             <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
@@ -49,19 +49,19 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div class="lg:col-span-1 grid grid-cols-2 gap-4">
-            <div class="glass-panel p-4 text-center">
+            <div class="glass-panel p-4 text-center flex flex-col justify-center">
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p>
-                <h3 id="stat-planted" class="text-2xl font-black text-slate-800">0</h3>
+                <h3 id="stat-planted" class="text-2xl font-black text-slate-800">3</h3>
             </div>
-            <div class="glass-panel p-4 text-center">
+            <div class="glass-panel p-4 text-center flex flex-col justify-center">
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Tasks</p>
-                <h3 id="stat-tasks" class="text-2xl font-black text-orange-500">0</h3>
+                <h3 id="stat-tasks" class="text-2xl font-black text-orange-500">2</h3>
             </div>
-            <div class="glass-panel p-4 text-center">
+            <div class="glass-panel p-4 text-center flex flex-col justify-center">
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p>
                 <h3 class="text-2xl font-black text-blue-500">42°F</h3>
             </div>
-            <div class="glass-panel p-4 text-center">
+            <div class="glass-panel p-4 text-center flex flex-col justify-center">
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Yield</p>
                 <h3 id="stat-harvest-val" class="text-2xl font-black text-green-600">$0</h3>
             </div>
@@ -69,7 +69,7 @@
 
         <div class="lg:col-span-3 glass-panel p-5">
             <div class="flex justify-between items-center mb-3">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">Spatial Sun Map</h3>
+                <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Spatial Sun Map</h3>
                 <div class="flex gap-3 text-[8px] font-bold uppercase">
                     <span class="flex items-center gap-1"><div class="w-2 h-2 sun-full rounded-sm"></div> Full</span>
                     <span class="flex items-center gap-1"><div class="w-2 h-2 sun-partial rounded-sm"></div> Partial</span>
@@ -88,21 +88,19 @@
             </div>
             
             <div class="glass-panel p-6">
-                <h2 class="text-lg font-bold mb-4">Harvest Forecast</h2>
-                <div id="harvest-forecast" class="space-y-4">
+                <h2 class="text-lg font-bold mb-6">Harvest Forecast</h2>
+                <div id="harvest-forecast" class="space-y-6">
                     </div>
             </div>
         </div>
 
         <div class="space-y-6">
-            <div class="glass-panel p-6">
-                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <span class="text-blue-500">🌡️</span> Vitals & Outlook
-                </h2>
-                <div class="min-h-[150px]">
-                    <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#ffffff" data-textcolor="#334155" data-highcolor="#ef4444" data-lowcolor="#3b82f6" data-days="7">WEATHER</a>
+            <div class="glass-panel p-6 overflow-hidden">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🌡️ Vitals & Outlook</h2>
+                <div class="min-h-[150px] w-full">
+                    <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#ffffff" data-textcolor="#334155" data-highcolor="#ef4444" data-lowcolor="#3b82f6" data-days="7">HARTFORD WEATHER</a>
                 </div>
-                <div class="mt-6 pt-4 border-t border-slate-100">
+                <div class="mt-8 pt-4 border-t border-slate-100">
                     <div class="flex justify-between items-center mb-2">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Soil Moisture</p>
                         <span class="text-[10px] font-bold text-blue-500">65%</span>
@@ -115,8 +113,8 @@
                 <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
                 <div id="taskList" class="space-y-3 mb-4"></div>
                 <div class="flex gap-2">
-                    <input type="text" id="taskDesc" placeholder="Quick task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500 transition-all">
-                    <button onclick="addTask()" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded-xl font-bold text-xs uppercase transition-colors">Add</button>
+                    <input type="text" id="taskDesc" placeholder="New chore..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500 transition-all">
+                    <button onclick="addTask()" class="bg-green-600 hover:bg-green-700 text-white px-4 rounded-xl font-bold text-xs">Add</button>
                 </div>
             </div>
         </div>
@@ -125,103 +123,61 @@
 
 <script>
     const plantLogic = {
-        "Tomatoes": { emoji: "🍅", sensitivity: 45, daysToHarvest: 80, friends: ["Basil", "Carrots"], foes: ["Broccoli", "Kale"] },
-        "Peppers": { emoji: "🫑", sensitivity: 50, daysToHarvest: 75, friends: ["Basil", "Bok Choy"], foes: ["Kale"] },
-        "Carrots": { emoji: "🥕", sensitivity: 28, daysToHarvest: 70, friends: ["Tomatoes", "Lettuce"], foes: ["None"] },
-        "Lettuce": { emoji: "🥬", sensitivity: 32, daysToHarvest: 45, friends: ["Carrots", "Bok Choy"], foes: ["Broccoli"] },
-        "Kale": { emoji: "🌿", sensitivity: 20, daysToHarvest: 60, friends: ["Lettuce"], foes: ["Tomatoes", "Peppers"] },
-        "Basil": { emoji: "🌱", sensitivity: 55, daysToHarvest: 30, friends: ["Tomatoes", "Peppers"], foes: ["None"] },
-        "Cosmos": { emoji: "🌸", sensitivity: 35, daysToHarvest: 60, friends: ["Coneflower"], foes: ["None"] },
-        "Coneflower": { emoji: "🌻", sensitivity: 30, daysToHarvest: 90, friends: ["Cosmos"], foes: ["None"] },
-        "Shasta Daisy": { emoji: "🌼", sensitivity: 30, daysToHarvest: 85, friends: ["None"], foes: ["None"] }
+        "Cosmos": { emoji: "🌸", daysToHarvest: 60 },
+        "Coneflower": { emoji: "🌻", daysToHarvest: 90 },
+        "Shasta Daisy": { emoji: "🌼", daysToHarvest: 85 }
     };
 
+    // --- SUN MAP ---
     let sunData = JSON.parse(localStorage.getItem('gardenSunMap')) || Array(32).fill('full');
-
     function initSunMap() {
         const map = document.getElementById('sun-map');
-        if (!map) return;
-        map.innerHTML = '';
-        sunData.forEach((state, i) => {
-            const cell = document.createElement('div');
-            cell.className = `sun-cell sun-${state}`;
-            cell.onclick = () => {
-                const states = ['full', 'partial', 'shade'];
-                sunData[i] = states[(states.indexOf(sunData[i]) + 1) % 3];
-                localStorage.setItem('gardenSunMap', JSON.stringify(sunData));
-                initSunMap();
-            };
-            map.appendChild(cell);
-        });
+        map.innerHTML = sunData.map((state, i) => `<div class="sun-cell sun-${state}" onclick="toggleSun(${i})"></div>`).join('');
     }
+    window.toggleSun = (i) => {
+        const states = ['full', 'partial', 'shade'];
+        sunData[i] = states[(states.indexOf(sunData[i]) + 1) % 3];
+        localStorage.setItem('gardenSunMap', JSON.stringify(sunData));
+        initSunMap();
+    };
 
-    function renderSeedGrid() {
-        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [{name: "Cosmos"}, {name: "Coneflower"}, {name: "Shasta Daisy"}];
-        const grid = document.getElementById('seed-grid');
-        if (!grid) return;
-        
-        grid.innerHTML = seeds.map(seed => {
-            const info = plantLogic[seed.name] || { emoji: "🌱", sensitivity: 32, friends: [], foes: [] };
-            const isAtRisk = 42 <= info.sensitivity;
-            return `
-                <div id="card-${seed.name}" onclick="handleMatchmaker('${seed.name}')" class="seed-card p-6 rounded-3xl relative">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-4xl">${info.emoji}</span>
-                        <div class="health-ring ${isAtRisk ? 'health-danger' : 'health-good'}"></div>
-                    </div>
-                    <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
-                    ${isAtRisk ? `<p class="text-[9px] text-red-500 font-bold mt-2 uppercase tracking-widest">⚠️ Protect Crop</p>` : ''}
+    // --- SEEDS & FORECAST ---
+    function renderSeeds() {
+        const seeds = [{name: "Cosmos"}, {name: "Coneflower"}, {name: "Shasta Daisy"}];
+        document.getElementById('seed-grid').innerHTML = seeds.map(seed => `
+            <div class="seed-card p-6 rounded-3xl flex flex-col justify-between">
+                <div class="flex justify-between items-center">
+                    <span class="text-4xl">${plantLogic[seed.name]?.emoji || "🌱"}</span>
+                    <div class="health-ring health-good"></div>
                 </div>
-            `;
-        }).join('');
-        document.getElementById('stat-planted').innerText = seeds.length;
-        updateGlobalStats();
-        renderForecast(seeds);
-    }
+                <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
+            </div>
+        `).join('');
 
-    function renderForecast(seeds) {
-        const forecastEl = document.getElementById('harvest-forecast');
-        if (!forecastEl) return;
-        
-        forecastEl.innerHTML = seeds.map(seed => {
-            const info = plantLogic[seed.name] || { emoji: "🌱", daysToHarvest: 50 };
-            const progress = Math.floor(Math.random() * 60) + 20; // Simulated progress
+        document.getElementById('harvest-forecast').innerHTML = seeds.map(seed => {
+            const progress = Math.floor(Math.random() * 50) + 10;
             return `
-                <div class="flex items-center gap-4">
-                    <span class="text-2xl">${info.emoji}</span>
-                    <div class="flex-1">
-                        <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-1">
-                            <span>${seed.name}</span>
-                            <span>${Math.round(info.daysToHarvest * (1 - progress/100))} Days to Maturity</span>
-                        </div>
-                        <div class="progress-bg"><div class="progress-fill harvest-fill" style="width: ${progress}%"></div></div>
+                <div>
+                    <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2">
+                        <span>${seed.name}</span>
+                        <span>${Math.round(plantLogic[seed.name].daysToHarvest * (1 - progress/100))} Days to Maturity</span>
                     </div>
+                    <div class="progress-bg"><div class="progress-fill harvest-fill" style="width: ${progress}%"></div></div>
                 </div>
             `;
         }).join('');
     }
 
-    function updateGlobalStats() {
-        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-        const total = logs.reduce((acc, log) => acc + log.value, 0);
-        document.getElementById('stat-harvest-val').innerText = `$${Math.round(total)}`;
-    }
-
-    function handleMatchmaker(activeName) {
-        const info = plantLogic[activeName];
-        if (!info) return;
-        document.querySelectorAll('.seed-card').forEach(card => {
-            const cardName = card.id.replace('card-', '');
-            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
-            if (cardName === activeName) return;
-            if (info.friends?.includes(cardName)) card.classList.add('companion-friend');
-            else if (info.foes?.includes(cardName)) card.classList.add('companion-foe');
-            else card.classList.add('dimmed');
-        });
-    }
-
-    function resetMatchmaker() {
-        document.querySelectorAll('.seed-card').forEach(c => c.classList.remove('companion-friend', 'companion-foe', 'dimmed'));
+    // --- TASKS ---
+    function renderTasks() {
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [{id: 1, desc: "Test"}, {id: 2, desc: "Weed"}];
+        document.getElementById('taskList').innerHTML = tasks.map(t => `
+            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded-full border-slate-300">
+                <span class="text-xs font-semibold text-slate-600">${t.desc}</span>
+            </div>
+        `).reverse().join('');
+        document.getElementById('stat-tasks').innerText = tasks.length;
     }
 
     function addTask() {
@@ -234,19 +190,6 @@
         renderTasks();
     }
 
-    function renderTasks() {
-        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        const taskList = document.getElementById('taskList');
-        if (!taskList) return;
-        taskList.innerHTML = tasks.map(t => `
-            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded-full border-slate-300 text-green-600 focus:ring-green-500">
-                <span class="text-xs font-semibold text-slate-600 flex-1">${t.desc}</span>
-            </div>
-        `).reverse().join('');
-        document.getElementById('stat-tasks').innerText = tasks.length;
-    }
-
     function removeTask(id) {
         let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
         tasks = tasks.filter(t => t.id !== id);
@@ -255,17 +198,14 @@
     }
 
     window.onload = () => {
-        document.getElementById('live-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         initSunMap();
-        renderSeedGrid();
+        renderSeeds();
         renderTasks();
-        
-        // Force Weather Widget Re-init
-        if (typeof __weatherwidget_init === 'function') {
-            __weatherwidget_init();
-        }
+        // Re-init weather widget
+        if (typeof __weatherwidget_init === 'function') __weatherwidget_init();
     };
 
+    // Weather Widget Script
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
 </body>
