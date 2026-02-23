@@ -14,7 +14,7 @@
         .sun-partial { background: #ede9fe; border-color: #ddd6fe; }
         .sun-shade { background: #f1f5f9; border-color: #e2e8f0; }
 
-        .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; height: 140px; }
+        .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; height: 140px; cursor: pointer; }
         .health-ring { border-radius: 50%; width: 10px; height: 10px; display: inline-block; background: #22c55e; }
 
         /* Progress Bars */
@@ -36,15 +36,16 @@
             <p class="text-slate-500 font-medium text-sm mt-1 uppercase tracking-widest italic">Monday, February 23</p>
         </div>
         <nav class="flex flex-wrap gap-2">
-            <a href="#" class="bg-white px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600">📅 Timeline</a>
-            <a href="#" class="bg-white px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600">🗺️ Map</a>
-            <button onclick="location.reload()" class="bg-slate-800 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg">🔄 Reset View</button>
+            <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
+            <a href="map.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">🗺️ Garden Map</a>
+            <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 ROI Logs</a>
+            <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition text-white shadow-lg">🔄 Reset View</button>
         </nav>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div class="lg:col-span-1 grid grid-cols-2 gap-4">
-            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p><h3 class="text-2xl font-black">3</h3></div>
+            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p><h3 class="text-2xl font-black text-slate-800">3</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Tasks</p><h3 class="text-2xl font-black text-orange-500">2</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p><h3 class="text-2xl font-black text-blue-500">42°F</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Yield</p><h3 class="text-2xl font-black text-green-600">$0</h3></div>
@@ -67,7 +68,7 @@
         </div>
 
         <div class="space-y-6">
-            <div class="glass-panel p-6 min-h-[300px]">
+            <div class="glass-panel p-6">
                 <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🌡️ Vitals & Outlook</h2>
                 <div id="weather-container" style="min-height: 150px;">
                     <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="HARTFORD" data-label_2="WEATHER" data-theme="pure" data-basecolor="#ffffff" data-textcolor="#334155" data-highcolor="#ef4444" data-lowcolor="#3b82f6" >HARTFORD WEATHER</a>
@@ -84,20 +85,26 @@
             <div class="glass-panel p-6">
                 <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
                 <div id="taskList" class="space-y-3 mb-4"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="taskDesc" placeholder="Quick task..." class="bg-slate-100 border-none text-sm p-3 rounded-xl flex-1 focus:ring-2 focus:ring-green-500">
+                    <button onclick="addTask()" class="bg-green-600 text-white px-4 rounded-xl font-bold text-xs uppercase">Add</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // --- DATA ---
     const plants = [
         { name: "Cosmos", emoji: "🌸", days: 60, progress: 85 },
         { name: "Coneflower", emoji: "🌻", days: 90, progress: 40 },
         { name: "Shasta Daisy", emoji: "🌼", days: 85, progress: 15 }
     ];
 
-    function renderAll() {
-        // Render Seed Cards
+    // --- CORE RENDER ---
+    function renderDashboard() {
+        // Seeds
         document.getElementById('seed-grid').innerHTML = plants.map(p => `
             <div class="seed-card p-6 rounded-3xl flex flex-col justify-between">
                 <div class="flex justify-between items-center"><span class="text-4xl">${p.emoji}</span><div class="health-ring"></div></div>
@@ -105,14 +112,14 @@
             </div>
         `).join('');
 
-        // Render Color-Coded Forecast
+        // Forecast
         document.getElementById('harvest-forecast').innerHTML = plants.map(p => {
             let colorClass = p.progress > 80 ? 'status-soon' : (p.progress > 30 ? 'status-mid' : 'status-long');
             let daysLeft = Math.round(p.days * (1 - p.progress/100));
             return `
                 <div>
                     <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2">
-                        <span>${p.name}</span><span>${daysLeft} Days to Maturity</span>
+                        <span>${p.name}</span><span>${daysLeft} Days Left</span>
                     </div>
                     <div class="progress-bg"><div class="progress-fill ${colorClass}" style="width: ${p.progress}%"></div></div>
                 </div>
@@ -120,35 +127,55 @@
         }).join('');
 
         // Sun Map
-        const sunMap = document.getElementById('sun-map');
-        sunMap.innerHTML = Array(32).fill(0).map(() => `<div class="sun-cell sun-full"></div>`).join('');
-
-        // Tasks
-        document.getElementById('taskList').innerHTML = `
-            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <input type="checkbox" class="w-4 h-4 rounded-full"><span class="text-xs font-semibold text-slate-600">Weed the flower bed</span>
-            </div>
-        `;
+        let sunData = JSON.parse(localStorage.getItem('gardenSunMap')) || Array(32).fill('full');
+        document.getElementById('sun-map').innerHTML = sunData.map((state, i) => `<div class="sun-cell sun-${state}" onclick="toggleSun(${i})"></div>`).join('');
     }
 
-    // Weather Widget Initialization Fix
-    function initWeather() {
-        var d = document, s = 'script', id = 'weatherwidget-io-js';
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) {
-            // If script exists but widget is empty, re-run initialization
-            if (window.__weatherwidget_init) window.__weatherwidget_init();
-            return;
-        }
-        js = d.createElement(s); js.id = id;
-        js.src = "https://weatherwidget.io/js/widget.min.js";
-        fjs.parentNode.insertBefore(js, fjs);
-    }
-
-    window.onload = () => {
-        renderAll();
-        initWeather();
+    // --- UTILITIES ---
+    window.toggleSun = (i) => {
+        let sunData = JSON.parse(localStorage.getItem('gardenSunMap')) || Array(32).fill('full');
+        const states = ['full', 'partial', 'shade'];
+        sunData[i] = states[(states.indexOf(sunData[i]) + 1) % 3];
+        localStorage.setItem('gardenSunMap', JSON.stringify(sunData));
+        renderDashboard();
     };
+
+    function renderTasks() {
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [{id: 1, desc: "Weed flower bed"}];
+        document.getElementById('taskList').innerHTML = tasks.map(t => `
+            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4">
+                <span class="text-xs font-semibold text-slate-600">${t.desc}</span>
+            </div>
+        `).join('');
+    }
+
+    function removeTask(id) {
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        renderTasks();
+    }
+
+    function addTask() {
+        const desc = document.getElementById('taskDesc').value;
+        if (!desc) return;
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks.push({ id: Date.now(), desc });
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        document.getElementById('taskDesc').value = "";
+        renderTasks();
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        renderDashboard();
+        renderTasks();
+        // Force Weather
+        if (typeof __weatherwidget_init === 'function') __weatherwidget_init();
+    };
+
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
 </body>
 </html>
