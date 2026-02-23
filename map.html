@@ -8,6 +8,8 @@
         :root { 
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
             --grass: #aacc00; --wood: #bc8a5f; --seed: #e9c46a;
+            --friend-glow: rgba(74, 222, 128, 0.7);
+            --foe-glow: rgba(239, 68, 68, 0.7);
         }
         
         body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -23,6 +25,7 @@
             display: flex; justify-content: space-between; align-items: center;
             border: 2px solid transparent; transition: 0.2s;
         }
+        .seed-card:active { cursor: grabbing; scale: 0.95; }
         .seed-card:hover { border-color: var(--leaf); transform: translateX(5px); }
         .qty-tag { font-size: 0.7rem; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; }
 
@@ -43,13 +46,26 @@
             width: 60px; height: 60px;
             background: var(--dirt);
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.2s;
+            cursor: pointer; transition: 0.3s;
             border-radius: 4px; position: relative;
         }
 
         .grid-spot.occupied { background: #556b2f; }
         
-        /* The Spacing Multiplier Badge */
+        /* GHOST MODE STYLES */
+        .ghost-friend { 
+            background: #dcfce7 !important; 
+            box-shadow: 0 0 15px var(--friend-glow);
+            transform: scale(1.05);
+            z-index: 5;
+        }
+        .ghost-foe { 
+            background: #fee2e2 !important; 
+            box-shadow: 0 0 15px var(--foe-glow);
+            transform: scale(0.95);
+            z-index: 5;
+        }
+
         .multiplier-badge {
             position: absolute; bottom: 2px; right: 2px;
             background: var(--leaf); color: white;
@@ -69,10 +85,13 @@
 <body>
 
 <div id="sidebar">
-    <h3 style="color:var(--dark); margin-top:0;">🧺 Square Foot Library</h3>
+    <h3 style="color:var(--dark); margin-top:0;">🧺 Crop Command</h3>
     
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍅" data-name="Tomato" data-qty="1">
         <span>🍅 Tomato</span> <span class="qty-tag">1/sq</span>
+    </div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌿" data-name="Basil" data-qty="4">
+        <span>🌿 Basil</span> <span class="qty-tag">4/sq</span>
     </div>
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥬" data-name="Lettuce" data-qty="4">
         <span>🥬 Lettuce</span> <span class="qty-tag">4/sq</span>
@@ -80,14 +99,11 @@
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot" data-qty="16">
         <span>🥕 Carrot</span> <span class="qty-tag">16/sq</span>
     </div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🧅" data-name="Onion" data-qty="9">
-        <span>🧅 Onion</span> <span class="qty-tag">9/sq</span>
-    </div>
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌶️" data-name="Pepper" data-qty="1">
         <span>🌶️ Pepper</span> <span class="qty-tag">1/sq</span>
     </div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌿" data-name="Basil" data-qty="4">
-        <span>🌿 Basil</span> <span class="qty-tag">4/sq</span>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥦" data-name="Broccoli" data-qty="1">
+        <span>🥦 Broccoli</span> <span class="qty-tag">1/sq</span>
     </div>
 
     <button class="btn-clear" onclick="clearFullGrid()">Reset All</button>
@@ -96,15 +112,26 @@
 
 <div class="main-view">
     <div style="text-align:center; margin-bottom: 15px;">
-        <h2 style="margin:0;">9x9 SFG Planner</h2>
-        <p style="margin:0; font-size:0.9rem;">Hover over a square to see the plant count</p>
+        <h2 style="margin:0;">9x9 Ghost Mapper</h2>
+        <p id="feedback-text" style="margin:0; font-size:0.9rem; color: var(--dark);">Drag a seed over the grid to see companion compatibility</p>
     </div>
     <div class="grid-container" id="gardenGrid"></div>
 </div>
 
 <script>
     const GRID_SIZE = 81; 
+    const COLS = 9;
     const gridContainer = document.getElementById('gardenGrid');
+
+    // COMPANION LOGIC DATABASE
+    const plantLogic = {
+        "Tomato": { friends: ["Basil", "Carrot", "Lettuce", "Pepper"], foes: ["Broccoli"] },
+        "Basil": { friends: ["Tomato", "Pepper"], foes: [] },
+        "Lettuce": { friends: ["Carrot", "Tomato", "Broccoli"], foes: [] },
+        "Carrot": { friends: ["Tomato", "Lettuce"], foes: [] },
+        "Pepper": { friends: ["Tomato", "Basil"], foes: [] },
+        "Broccoli": { friends: ["Lettuce"], foes: ["Tomato", "Pepper"] }
+    };
 
     function initGrid() {
         const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
@@ -114,16 +141,20 @@
             const spot = document.createElement('div');
             spot.classList.add('grid-spot');
             spot.id = `spot-${i}`;
-            spot.ondragover = (e) => e.preventDefault();
+            
+            // Drag Events
+            spot.ondragover = (e) => handleDragOver(e, i);
+            spot.ondragleave = (e) => clearGlow(e.target);
             spot.ondrop = (e) => handleDrop(e, i);
+            
             spot.onclick = () => removePlant(i);
             
             if (savedLayout[i]) {
                 const data = savedLayout[i];
                 spot.innerHTML = `<span style="font-size:1.8rem;">${data.emoji}</span>`;
                 spot.classList.add('occupied');
+                spot.setAttribute('data-plant-name', data.name);
                 
-                // Add the multiplier badge if more than 1
                 if(data.qty > 1) {
                     const badge = document.createElement('div');
                     badge.className = 'multiplier-badge';
@@ -135,10 +166,62 @@
         }
     }
 
+    let draggedPlantName = "";
+
     function drag(ev) {
+        draggedPlantName = ev.target.getAttribute('data-name');
         ev.dataTransfer.setData("emoji", ev.target.getAttribute('data-emoji'));
-        ev.dataTransfer.setData("name", ev.target.getAttribute('data-name'));
+        ev.dataTransfer.setData("name", draggedPlantName);
         ev.dataTransfer.setData("qty", ev.target.getAttribute('data-qty'));
+    }
+
+    function handleDragOver(ev, index) {
+        ev.preventDefault();
+        const spot = ev.target.closest('.grid-spot');
+        if (!spot || spot.classList.contains('occupied')) return;
+
+        // Run Ghost Mode Logic
+        const status = checkCompanions(index, draggedPlantName);
+        
+        clearGlow(spot); // Refresh
+        if (status === 'friend') spot.classList.add('ghost-friend');
+        if (status === 'foe') spot.classList.add('ghost-foe');
+    }
+
+    function clearGlow(element) {
+        element.classList.remove('ghost-friend', 'ghost-foe');
+    }
+
+    function checkCompanions(index, newPlant) {
+        if (!plantLogic[newPlant]) return 'neutral';
+
+        const row = Math.floor(index / COLS);
+        const col = index % COLS;
+        const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
+        let status = 'neutral';
+
+        // Scan 8 neighbors (Moore Neighborhood)
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (i === 0 && j === 0) continue;
+
+                const nRow = row + i;
+                const nCol = col + j;
+
+                if (nRow >= 0 && nRow < COLS && nCol >= 0 && nCol < COLS) {
+                    const nIndex = nRow * COLS + nCol;
+                    const neighbor = savedLayout[nIndex];
+
+                    if (neighbor) {
+                        const neighborName = neighbor.name;
+                        // Foes take precedence
+                        if (plantLogic[newPlant].foes.includes(neighborName)) return 'foe';
+                        if (plantLogic[newPlant].friends.includes(neighborName)) status = 'friend';
+                    }
+                }
+            }
+        }
+        return status;
     }
 
     function handleDrop(ev, index) {
