@@ -9,49 +9,26 @@
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
             --cream: #f8f9fa; --accent: #e9c46a; --harvest: #e76f51;
         }
-        
         body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1200px; margin: auto; }
-
         header { 
             display: flex; justify-content: space-between; align-items: center; 
             background: white; padding: 20px 30px; border-radius: 20px; margin-bottom: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
         .search-container { display: flex; gap: 10px; width: 100%; max-width: 500px; }
-        input { flex-grow: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--leaf); }
+        input { flex-grow: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; outline: none; }
         .btn-search { background: var(--leaf); color: white; border: none; padding: 0 25px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-
         .plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
-        
-        .plant-card {
-            background: white; border-radius: 20px; overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s;
-            display: flex; flex-direction: column; animation: fadeIn 0.5s ease;
-        }
-        .plant-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
+        .plant-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         .plant-img { width: 100%; height: 220px; object-fit: cover; border-bottom: 4px solid var(--leaf); background: #eee; }
-
         .plant-info { padding: 20px; flex-grow: 1; }
-        .tag { display: inline-block; padding: 4px 10px; border-radius: 5px; background: #eef2e6; color: var(--leaf); font-weight: bold; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 10px; }
-        h3 { margin: 0; color: var(--dark); font-size: 1.4rem; text-transform: capitalize; }
-        .scientific { color: #888; font-style: italic; font-size: 0.9rem; margin-bottom: 15px; display: block; }
-
+        h3 { margin: 0; color: var(--dark); text-transform: capitalize; }
         .stats-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 10px; }
         .stats-table td { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-        .label { font-weight: bold; color: var(--dirt); }
         .val { text-align: right; color: #555; text-transform: capitalize; }
-
-        .btn-save {
-            margin-top: 20px; width: 100%; padding: 12px; border-radius: 10px;
-            border: 2px solid var(--leaf); background: transparent; color: var(--leaf);
-            font-weight: bold; cursor: pointer; transition: 0.3s;
-        }
+        .btn-save { margin-top: 20px; width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--leaf); background: transparent; color: var(--leaf); font-weight: bold; cursor: pointer; }
         .btn-save:hover { background: var(--leaf); color: white; }
-
         .status-msg { text-align: center; padding: 50px; grid-column: 1 / -1; font-weight: bold; color: var(--dark); }
     </style>
 </head>
@@ -64,13 +41,12 @@
             <a href="index.html" style="text-decoration:none; color:var(--leaf); font-weight:bold; font-size: 0.8rem;">← BACK TO DASHBOARD</a>
         </div>
         <div class="search-container">
-            <input type="text" id="librarySearch" placeholder="Search (e.g. Tomato, Oak, Basil)...">
+            <input type="text" id="librarySearch" placeholder="Search (e.g. Tomato)...">
             <button class="btn-search" onclick="fetchPlants()">Search</button>
         </div>
     </header>
-
     <div class="plant-grid" id="plantGrid">
-        <div class="status-msg">Type a plant name above to search the global database.</div>
+        <div class="status-msg">Type a name above to search.</div>
     </div>
 </div>
 
@@ -82,50 +58,52 @@
         if (!query) return;
 
         const grid = document.getElementById('plantGrid');
-        grid.innerHTML = '<div class="status-msg">🌱 Gathering botanical data...</div>';
+        grid.innerHTML = '<div class="status-msg">🌱 Searching botanical database...</div>';
 
-        try {
-            // Updated to v2 for stability
-            const response = await fetch(`https://perenual.com/api/v2/species-list?key=${API_KEY}&q=${query}`);
-            
-            if (!response.ok) throw new Error("Connection failed. Check your API key.");
+        // LIST OF URLS TO TRY (V1 vs V2 vs NO VERSION)
+        const urlOptions = [
+            `https://perenual.com/api/species-list?key=${API_KEY}&q=${query}`,
+            `https://perenual.com/api/v2/species-list?key=${API_KEY}&q=${query}`
+        ];
 
-            const result = await response.json();
+        let success = false;
 
-            if (result.data && result.data.length > 0) {
-                renderCards(result.data);
-            } else {
-                grid.innerHTML = `<div class="status-msg">No plants found for "${query}".</div>`;
+        for (let url of urlOptions) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.data) {
+                        renderCards(result.data);
+                        success = true;
+                        break; // Stop if we found one that works!
+                    }
+                }
+            } catch (err) {
+                console.error("Path failed:", url);
             }
-        } catch (error) {
-            grid.innerHTML = `<div class="status-msg" style="color:var(--harvest)">Error: ${error.message}</div>`;
+        }
+
+        if (!success) {
+            grid.innerHTML = `<div class="status-msg" style="color:red">404 Error: Could not connect to the database. <br> Please check if your API key is active on Perenual.com</div>`;
         }
     }
 
     function renderCards(plants) {
         const grid = document.getElementById('plantGrid');
         grid.innerHTML = plants.map(p => {
-            const imgUrl = p.default_image ? p.default_image.regular_url : 'https://via.placeholder.com/400x220?text=No+Image+Found';
-            const scientific = p.scientific_name ? p.scientific_name[0] : 'Unknown species';
-            
-            // FIX: Escape apostrophes so names like "Devil's Ivy" don't break the button
-            const safeName = (p.common_name || 'Common Name Unknown').replace(/'/g, "\\'");
-
+            const imgUrl = p.default_image ? p.default_image.regular_url : 'https://via.placeholder.com/400x220?text=No+Image';
+            const safeName = (p.common_name || 'Unknown').replace(/'/g, "\\'");
             return `
                 <div class="plant-card">
-                    <img src="${imgUrl}" class="plant-img" loading="lazy">
+                    <img src="${imgUrl}" class="plant-img">
                     <div class="plant-info">
-                        <span class="tag">${p.cycle || 'Perennial'}</span>
-                        <h3>${p.common_name || 'Common Name Unknown'}</h3>
-                        <span class="scientific">${scientific}</span>
-                        
+                        <h3>${p.common_name || 'Unknown'}</h3>
                         <table class="stats-table">
-                            <tr><td class="label">Watering</td><td class="val">${p.watering || 'Varies'}</td></tr>
-                            <tr><td class="label">Sunlight</td><td class="val">${p.sunlight ? p.sunlight.join(', ') : 'Varies'}</td></tr>
-                            <tr><td class="label">Database ID</td><td class="val">#${p.id}</td></tr>
+                            <tr><td>Watering</td><td class="val">${p.watering || 'N/A'}</td></tr>
+                            <tr><td>Sunlight</td><td class="val">${p.sunlight ? p.sunlight.join(', ') : 'N/A'}</td></tr>
                         </table>
-                        
-                        <button class="btn-save" onclick="savePlant('${safeName}', '${p.id}')">❤️ Save to My Seeds</button>
+                        <button class="btn-save" onclick="savePlant('${safeName}', '${p.id}')">❤️ Save</button>
                     </div>
                 </div>
             `;
@@ -137,17 +115,10 @@
         if (!favorites.find(p => p.id === id)) {
             favorites.push({ name, id, date: new Date().toLocaleDateString() });
             localStorage.setItem('mySeeds', JSON.stringify(favorites));
-            alert(`${name} added to your favorites!`);
-        } else {
-            alert("This plant is already in your favorites.");
+            alert(`${name} saved!`);
         }
     }
-
-    document.getElementById('librarySearch').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') fetchPlants();
-    });
 </script>
-
 </body>
 </html>
 
