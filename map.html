@@ -3,229 +3,313 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garden Architect | 9x9 Grid</title>
+    <title>GardenHub OS | Planter Pro Edition</title>
     <style>
         :root { 
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
-            --grass: #aacc00; --wood: #bc8a5f; --seed: #e9c46a;
-            --fruit: #e76f51; --herb: #2a9d8f;
+            --cream: #f8f9fa; --seed: #e9c46a; --harvest: #e76f51;
+            --sky: #00b4d8; --bg: #e9edc9; --warning: #fff3cd;
         }
         
-        body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); min-height: 85vh; }
 
-        /* SIDEBAR */
-        #sidebar {
-            width: 280px; background: white; padding: 20px;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-            z-index: 100;
-        }
+        /* HEADER & STATS */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+        h1 { margin: 0; color: var(--dark); font-size: 2rem; }
+        .nav-links a { text-decoration: none; color: var(--leaf); font-weight: bold; margin-left: 20px; font-size: 0.9rem; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: var(--cream); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
+        .stat-card h3 { margin: 0; font-size: 1.6rem; color: var(--dark); }
+        .stat-card p { margin: 5px 0 0; color: #888; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
 
-        .search-box { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; outline: none; transition: 0.3s; }
-        .search-box:focus { border-color: var(--leaf); }
+        /* TABS */
+        .tab-bar { display: flex; gap: 8px; background: #f0f2f0; padding: 6px; border-radius: 12px; margin-bottom: 25px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: none; cursor: pointer; font-weight: bold; color: #666; transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--dark); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
 
-        .cat-filters { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
-        .filter-btn { 
-            padding: 5px 10px; font-size: 0.7rem; border-radius: 20px; border: 1px solid #ddd; 
-            background: white; cursor: pointer; font-weight: bold; 
-        }
-        .filter-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
 
-        #libraryContainer { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+        /* PLANTER UI ELEMENTS */
+        .companion-box { background: var(--warning); border: 1px solid #ffeeba; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: none; color: #856404; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: bold; margin-top: 5px; }
+        .badge-spacing { background: var(--sky); color: white; }
+        .badge-days { background: var(--leaf); color: white; }
 
-        .seed-card {
-            background: var(--cream); border: 1px solid #eee; padding: 10px; 
-            border-radius: 8px; margin-bottom: 8px; cursor: grab; font-weight: 500;
-            transition: 0.2s; display: flex; align-items: center; gap: 10px;
-        }
-        .seed-card:hover { background: var(--seed); border-color: #d4a017; }
+        /* TASK LIST */
+        .task-list { list-style: none; padding: 0; }
+        .task-item { display: flex; align-items: center; justify-content: space-between; background: var(--cream); padding: 12px 18px; border-radius: 10px; margin-bottom: 8px; border-left: 5px solid var(--leaf); }
+        .task-item.overdue { border-left-color: var(--harvest); background: #fff5f2; }
 
-        /* GRID VIEW */
-        .main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        /* TABLE STYLING */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 0.8rem; color: #777; }
+        td { padding: 15px 12px; border-top: 1px solid #eee; font-size: 0.9rem; vertical-align: top; }
+
+        input, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
+        .btn-action { background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
         
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(9, 55px); 
-            grid-template-rows: repeat(9, 55px);    
-            gap: 3px;
-            background: var(--wood);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-        }
-
-        .grid-spot {
-            width: 55px; height: 55px;
-            background: var(--dirt);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem; cursor: pointer; transition: 0.2s;
-            border-radius: 4px; position: relative;
-        }
-
-        .grid-spot.occupied:hover::after {
-            content: "✕"; position: absolute; font-size: 1rem; color: white;
-            background: rgba(211, 47, 47, 0.8); width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center; border-radius: 4px;
-        }
-
-        .grid-spot.occupied { background: #556b2f; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); }
-
-        .btn-reset { background: #eee; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; color: #666; }
-        .btn-reset:hover { background: #ffdede; color: #d32f2f; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <h2 style="color:var(--dark); margin: 0 0 15px 0;">🌱 Library</h2>
-    
-    <input type="text" id="plantSearch" class="search-box" placeholder="Search crops..." onkeyup="filterLibrary()">
-    
-    <div class="cat-filters" id="catFilters">
-        <button class="filter-btn active" onclick="setCategory('All')">All</button>
-        <button class="filter-btn" onclick="setCategory('Veggie')">Veggies</button>
-        <button class="filter-btn" onclick="setCategory('Fruit')">Fruit</button>
-        <button class="filter-btn" onclick="setCategory('Herb')">Herbs</button>
-        <button class="filter-btn" onclick="setCategory('Flower')">Flowers</button>
+<div class="container">
+    <header>
+        <div>
+            <h1>GardenHub OS</h1>
+            <div id="live-date" style="color: var(--dirt); font-size: 0.9rem;">Sunday, February 22, 2026</div>
+        </div>
+        <nav class="nav-links">
+            <a href="map.html">🗺️ Visual Map</a>
+            <a href="library.html" target="_blank">📚 Standalone Library</a>
+        </nav>
+    </header>
+
+    <div class="stat-grid">
+        <div class="stat-card" style="border-top: 4px solid var(--leaf);"><h3 id="stat-planted">0</h3><p>Planted Squares</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--harvest);"><h3 id="stat-tasks">0</h3><p>Pending Tasks</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--sky);"><h3 id="stat-temp">42°F</h3><p>Local Temp</p></div>
+        <div class="stat-card" style="border-top: 4px solid var(--seed);"><h3 id="stat-harvests">0</h3><p>Total Yields</p></div>
     </div>
 
-    <div id="libraryContainer"></div>
-
-    <button class="btn-reset" onclick="clearFullGrid()">Reset Grid</button>
-    <a href="index.html" style="display:block; text-align:center; margin-top:15px; color:var(--leaf); text-decoration:none; font-weight:bold; font-size:0.9rem;">🏠 Dashboard</a>
-</div>
-
-<div class="main-view">
-    <div style="text-align:center; margin-bottom: 20px;">
-        <h2 style="margin:0; color:var(--dark)">9x9 Garden Plot</h2>
-        <small style="color:var(--dirt)">Drag to plant • Click square to remove</small>
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="openTab(event, 'chores')">Daily Tasks</button>
+        <button class="tab-btn" onclick="openTab(event, 'planner')">Seed Planning</button>
+        <button class="tab-btn" onclick="openTab(event, 'logs')">Harvest Logs</button>
+        <button class="tab-btn" onclick="openTab(event, 'library-tab')">Encyclopedia</button>
+        <button class="tab-btn" onclick="openTab(event, 'notes')">Journal</button>
     </div>
 
-    <div class="grid-container" id="gardenGrid"></div>
+    <div id="chores" class="tab-content active">
+        <div style="display: grid; grid-template-columns: 1fr 180px 100px; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="taskDesc" placeholder="What needs doing?">
+            <input type="date" id="taskDate">
+            <button class="btn-action" onclick="addTask()">Add Task</button>
+        </div>
+        <ul id="taskList" class="task-list"></ul>
+        <div style="margin-top:20px;">
+            <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="GARDEN" data-label_2="WEATHER" data-theme="pure">WEATHER</a>
+        </div>
+    </div>
+
+    <div id="planner" class="tab-content">
+        <section style="background:var(--dark); color:white; padding:25px; border-radius:15px; margin-bottom:20px;">
+            <h3 style="margin:0 0 10px 0;">📅 Seasonal Timeline Generator</h3>
+            <input type="date" id="frostDate" onchange="generateCalendar()" style="width:100%; max-width:300px;">
+        </section>
+
+        <div id="companionInsight" class="companion-box">
+            <h4 style="margin:0 0 5px 0;">🤝 Companion Planting Guide</h4>
+            <p id="companionText" style="font-size:0.85rem; margin:0;"></p>
+        </div>
+
+        <section style="background:white; padding:20px; border-radius:15px; border: 1px solid #eee; margin-bottom:20px;">
+            <h3 style="margin-top:0;">🌱 2026 Garden Schedule</h3>
+            <table id="calendarTable">
+                <thead>
+                    <tr style="background:var(--cream);">
+                        <th>Variety & Spacing</th>
+                        <th>🏠 Start Seeds</th>
+                        <th>🚜 Transplant</th>
+                        <th>🧺 Est. Harvest</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody">
+                    <tr><td colspan="4" style="text-align:center; padding:30px; color:#999;">Select a frost date above.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section style="background:#f0f7ee; padding:20px; border-radius:15px; border: 1px solid var(--leaf); margin-bottom:20px;">
+            <h3 style="margin-top:0; color:var(--dark);">➕ Add Custom Seed</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="text" id="manName" placeholder="Plant Name">
+                <input type="text" id="manSun" placeholder="Sun">
+            </div>
+            <button class="btn-action" style="width:100%; margin-top:10px; background:var(--leaf);" onclick="addManualSeed()">Add to Collection</button>
+        </section>
+
+        <section style="background:white; padding:20px; border-radius:15px; border: 1px solid #eee;">
+            <h3>🌱 My Seed Collection</h3>
+            <table>
+                <thead>
+                    <tr><th>Plant Name</th><th>Source</th><th>Date Saved</th><th>Action</th></tr>
+                </thead>
+                <tbody id="savedSeedsBody"></tbody>
+            </table>
+        </section>
+    </div>
+
+    <div id="logs" class="tab-content">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 100px; gap:10px; margin-bottom:20px;">
+            <input type="text" id="hCrop" placeholder="Crop Name">
+            <input type="text" id="hAmt" placeholder="Amount">
+            <button class="btn-action" style="background:var(--harvest)" onclick="addHarvest()">Log</button>
+        </div>
+        <table>
+            <thead><tr><th>Crop</th><th>Amount</th><th>Date</th></tr></thead>
+            <tbody id="hBody"></tbody>
+        </table>
+    </div>
+
+    <div id="library-tab" class="tab-content">
+        <iframe src="library.html" style="width:100%; height:70vh; border:none; border-radius:15px;"></iframe>
+    </div>
+
+    <div id="notes" class="tab-content">
+        <textarea id="gardenNotes" rows="12" style="width:100%; border-radius:15px;" placeholder="Journal entries..."></textarea>
+        <button class="btn-action" style="width:100%; margin-top:10px;" onclick="saveNotes()">Save Journal Entry</button>
+    </div>
 </div>
 
 <script>
-    // 1. DATASET
-    const plantLibrary = [
-        { name: "Tomato (Beefsteak)", emoji: "🍅", cat: "Veggie" },
-        { name: "Tomato (Cherry)", emoji: "🍒", cat: "Veggie" },
-        { name: "Carrot", emoji: "🥕", cat: "Veggie" },
-        { name: "Bell Pepper", emoji: "🫑", cat: "Veggie" },
-        { name: "Jalapeño", emoji: "🌶️", cat: "Veggie" },
-        { name: "Cucumber", emoji: "🥒", cat: "Veggie" },
-        { name: "Eggplant", emoji: "🍆", cat: "Veggie" },
-        { name: "Broccoli", emoji: "🥦", cat: "Veggie" },
-        { name: "Corn", emoji: "🌽", cat: "Veggie" },
-        { name: "Onion", emoji: "🧅", cat: "Veggie" },
-        { name: "Garlic", emoji: "🧄", cat: "Veggie" },
-        { name: "Potato", emoji: "🥔", cat: "Veggie" },
-        { name: "Kale", emoji: "🥬", cat: "Veggie" },
-        { name: "Lettuce", emoji: "🥗", cat: "Veggie" },
-        { name: "Strawberry", emoji: "🍓", cat: "Fruit" },
-        { name: "Blueberry", emoji: "🫐", cat: "Fruit" },
-        { name: "Watermelon", emoji: "🍉", cat: "Fruit" },
-        { name: "Basil", emoji: "🌿", cat: "Herb" },
-        { name: "Mint", emoji: "🍃", cat: "Herb" },
-        { name: "Rosemary", emoji: "🌲", cat: "Herb" },
-        { name: "Lavender", emoji: "🪻", cat: "Herb" },
-        { name: "Sunflower", emoji: "🌻", cat: "Flower" },
-        { name: "Marigold", emoji: "🌼", cat: "Flower" },
-        { name: "Tulip", emoji: "🌷", cat: "Flower" }
-    ];
+    // --- THE PLANTER LOGIC DATABASE ---
+    const plantLogic = {
+        "Tomatoes": { sow: -6, plant: 2, maturity: 80, spacing: 1, friends: ["Basil", "Marigolds"], foes: ["Corn", "Potatoes"] },
+        "Peppers": { sow: -8, plant: 3, maturity: 90, spacing: 1, friends: ["Onions", "Basil"], foes: ["Fennel"] },
+        "Carrots": { sow: 0, plant: 0, maturity: 75, spacing: 16, friends: ["Tomatoes", "Onions"], foes: ["Dill"] },
+        "Lettuce": { sow: -3, plant: -1, maturity: 45, spacing: 4, friends: ["Beets", "Radishes"], foes: ["None"] },
+        "Kale": { sow: -4, plant: -2, maturity: 55, spacing: 1, friends: ["Cucumbers"], foes: ["Strawberries"] },
+        "Basil": { sow: -6, plant: 2, maturity: 60, spacing: 4, friends: ["Tomatoes"], foes: ["Rue"] }
+    };
 
-    let currentCategory = "All";
+    function openTab(evt, tabName) {
+        let contents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
+        let tabs = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active");
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+        if(tabName === 'planner') { renderSavedSeeds(); generateCalendar(); }
+    }
 
-    // 2. GRID LOGIC
-    const GRID_SIZE = 81; 
-    const gridContainer = document.getElementById('gardenGrid');
+    // --- CALENDAR GENERATOR ---
+    function generateCalendar() {
+        const frostDateVal = document.getElementById('frostDate').value;
+        if (!frostDateVal) return;
+        localStorage.setItem('frostDate', frostDateVal);
 
-    function initGrid() {
-        const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        gridContainer.innerHTML = "";
-        
-        for (let i = 0; i < GRID_SIZE; i++) {
-            const spot = document.createElement('div');
-            spot.classList.add('grid-spot');
-            spot.id = `spot-${i}`;
-            spot.ondragover = (e) => e.preventDefault();
-            spot.ondrop = (e) => handleDrop(e, i);
-            spot.onclick = () => removePlant(i);
-            
-            if (savedLayout[i]) {
-                spot.innerText = savedLayout[i].emoji;
-                spot.classList.add('occupied');
-                spot.title = savedLayout[i].name;
-            }
-            gridContainer.appendChild(spot);
+        const lastFrost = new Date(frostDateVal);
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        const container = document.getElementById('calendarBody');
+
+        if (seeds.length === 0) {
+            container.innerHTML = '<tr><td colspan="4" style="text-align:center;">Add seeds to see your schedule!</td></tr>';
+            return;
         }
+
+        container.innerHTML = seeds.map(seed => {
+            const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, spacing: 1, friends: [], foes: [] };
+            let sDate = new Date(lastFrost); sDate.setDate(lastFrost.getDate() + (info.sow * 7));
+            let pDate = new Date(lastFrost); pDate.setDate(lastFrost.getDate() + (info.plant * 7));
+            let hDate = new Date(pDate); hDate.setDate(pDate.getDate() + info.maturity);
+
+            return `
+                <tr onclick="showInsight('${seed.name}')" style="cursor:pointer;">
+                    <td><strong>${seed.name}</strong><br><span class="badge badge-spacing">${info.spacing}/sq.ft</span></td>
+                    <td>${info.sow === 0 ? 'Direct Sow' : sDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</td>
+                    <td>${pDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</td>
+                    <td>
+                        <div style="color:var(--harvest); font-weight:bold;">${hDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</div>
+                        <span class="badge badge-days">${info.maturity} days</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
-    // 3. LIBRARY LOGIC
-    function renderLibrary() {
-        const query = document.getElementById('plantSearch').value.toLowerCase();
-        const container = document.getElementById('libraryContainer');
-        container.innerHTML = "";
-        
-        plantLibrary.forEach(plant => {
-            const matchesSearch = plant.name.toLowerCase().includes(query);
-            const matchesCat = currentCategory === "All" || plant.cat === currentCategory;
-
-            if (matchesSearch && matchesCat) {
-                const card = document.createElement('div');
-                card.className = 'seed-card';
-                card.draggable = true;
-                card.innerHTML = `<span>${plant.emoji}</span> ${plant.name}`;
-                card.ondragstart = (ev) => {
-                    ev.dataTransfer.setData("emoji", plant.emoji);
-                    ev.dataTransfer.setData("name", plant.name);
-                };
-                container.appendChild(card);
-            }
-        });
+    function showInsight(name) {
+        const info = plantLogic[name];
+        if (!info) return;
+        document.getElementById('companionInsight').style.display = "block";
+        document.getElementById('companionText').innerHTML = `<strong>${name}</strong> loves <b>${info.friends.join(', ')}</b>. Avoid <b>${info.foes.join(', ')}</b>.`;
     }
 
-    function setCategory(cat) {
-        currentCategory = cat;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText.includes(cat) || (cat === "All" && btn.innerText === "All"));
-        });
-        renderLibrary();
+    // --- CORE RE-USED LOGIC FROM YOUR ORIGINAL CODE ---
+    function addTask() {
+        const desc = document.getElementById('taskDesc').value;
+        const date = document.getElementById('taskDate').value;
+        if (!desc || !date) return;
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks.push({ id: Date.now(), desc, date, done: false });
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        document.getElementById('taskDesc').value = "";
+        renderTasks();
     }
 
-    function filterLibrary() { renderLibrary(); }
-
-    // 4. INTERACTION LOGIC
-    function handleDrop(ev, index) {
-        ev.preventDefault();
-        const emoji = ev.dataTransfer.getData("emoji");
-        const name = ev.dataTransfer.getData("name");
-        
-        let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        savedLayout[index] = { emoji, name };
-        localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
-        initGrid();
+    function renderTasks() {
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('taskList').innerHTML = tasks.sort((a,b) => new Date(a.date) - new Date(b.date)).map(t => `
+            <li class="task-item ${t.date < today && !t.done ? 'overdue' : ''}">
+                <div><input type="checkbox" ${t.done ? 'checked' : ''} onclick="toggleTask(${t.id})"> ${t.desc}</div>
+                <small>${t.date}</small>
+            </li>
+        `).join('');
+        document.getElementById('stat-tasks').innerText = tasks.filter(t => !t.done).length;
     }
 
-    function removePlant(index) {
-        let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        if (savedLayout[index]) {
-            delete savedLayout[index];
-            localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
-            initGrid();
-        }
+    function toggleTask(id) {
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks'));
+        tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        renderTasks();
     }
 
-    function clearFullGrid() {
-        if (confirm("Clear your entire layout?")) {
-            localStorage.removeItem('gardenGridLayout');
-            initGrid();
-        }
+    function addManualSeed() {
+        const name = document.getElementById('manName').value;
+        if (!name) return;
+        let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        seeds.push({ name, id: Date.now(), source: 'Manual', dateAdded: new Date().toLocaleDateString() });
+        localStorage.setItem('mySeeds', JSON.stringify(seeds));
+        renderSavedSeeds(); generateCalendar();
     }
+
+    function renderSavedSeeds() {
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        document.getElementById('savedSeedsBody').innerHTML = seeds.map(s => `
+            <tr>
+                <td>${s.name}</td>
+                <td>${s.source}</td>
+                <td>${s.dateAdded}</td>
+                <td><button onclick="removeSeed(${s.id})" style="color:var(--harvest); border:none; background:none; cursor:pointer;">✕</button></td>
+            </tr>`).join('');
+    }
+
+    function removeSeed(id) {
+        let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        seeds = seeds.filter(s => s.id !== id);
+        localStorage.setItem('mySeeds', JSON.stringify(seeds));
+        renderSavedSeeds(); generateCalendar();
+    }
+
+    function addHarvest() {
+        const crop = document.getElementById('hCrop').value;
+        const amt = document.getElementById('hAmt').value;
+        if(!crop || !amt) return;
+        let logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        logs.push({ crop, amt, date: new Date().toLocaleDateString() });
+        localStorage.setItem('harvestLogs', JSON.stringify(logs));
+        renderHarvests();
+    }
+
+    function renderHarvests() {
+        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        document.getElementById('hBody').innerHTML = logs.map(l => `<tr><td>${l.crop}</td><td>${l.amt}</td><td>${l.date}</td></tr>`).reverse().join('');
+        document.getElementById('stat-harvests').innerText = logs.length;
+    }
+
+    function saveNotes() { localStorage.setItem('gardenNotes', document.getElementById('gardenNotes').value); alert("Journal Saved!"); }
 
     window.onload = () => {
-        initGrid();
-        renderLibrary();
+        document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
+        document.getElementById('frostDate').value = localStorage.getItem('frostDate') || "";
+        renderTasks(); renderHarvests(); renderSavedSeeds(); generateCalendar();
     };
-</script>
 
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+</script>
 </body>
 </html>
