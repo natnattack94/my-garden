@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Garden Clinic | GardenHub Hartford</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --pest-red: #e76f51;
@@ -13,43 +14,16 @@
         }
 
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Inter', sans-serif; 
             background: var(--bg); 
             margin: 0; 
             padding: 20px; 
             color: #334155;
         }
 
-        header {
-            max-width: 1000px;
-            margin: 0 auto 30px;
-            text-align: center;
-        }
-
-        .search-container {
-            max-width: 600px;
-            margin: 0 auto 40px;
-            position: relative;
-        }
-
-        #clinicSearch {
-            width: 100%;
-            padding: 15px 20px;
-            font-size: 1.1rem;
-            border-radius: 50px;
-            border: 2px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        #clinicSearch:focus {
-            border-color: var(--leaf-green);
-        }
-
         .clinic-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 25px;
             max-width: 1200px;
             margin: 0 auto;
@@ -57,29 +31,46 @@
 
         .card {
             background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             position: relative;
-            transition: transform 0.2s;
-            border-top: 8px solid #ddd;
+            transition: all 0.3s ease;
+            border-top: 10px solid #cbd5e1;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
         .card.pest { border-top-color: var(--pest-red); }
         .card.disease { border-top-color: var(--disease-blue); }
 
+        /* Highlight for plants currently in the user's garden */
+        .card.at-risk {
+            outline: 3px solid var(--leaf-green);
+            background: #f0fdfa;
+        }
+
+        .risk-badge {
+            background: var(--leaf-green);
+            color: white;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 8px;
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            text-transform: uppercase;
+        }
+
         .type-badge {
             position: absolute;
-            top: -15px;
+            top: 15px;
             right: 20px;
             padding: 4px 12px;
             border-radius: 20px;
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: bold;
             text-transform: uppercase;
         }
@@ -87,66 +78,45 @@
         .pest .type-badge { background: var(--pest-red); }
         .disease .type-badge { background: var(--disease-blue); }
 
-        h3 { margin-top: 10px; color: #1e293b; }
-        
-        .section-label {
-            font-weight: bold;
-            font-size: 0.85rem;
-            color: #64748b;
-            margin-bottom: 4px;
-            display: block;
-            text-transform: uppercase;
-        }
-
-        .info-block { margin-bottom: 15px; }
-
         .fix-box {
-            background: #f0fdfa;
-            padding: 12px;
-            border-radius: 8px;
+            background: white;
+            padding: 15px;
+            border-radius: 16px;
             border-left: 4px solid var(--leaf-green);
-            font-size: 0.95rem;
-        }
-
-        .peak-season {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.85rem;
-            color: #94a3b8;
+            font-size: 0.9rem;
             margin-top: 15px;
-        }
-
-        .back-nav {
-            margin-bottom: 20px;
-            display: inline-block;
-            text-decoration: none;
-            color: var(--leaf-green);
-            font-weight: bold;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-<header>
-    <a href="map.html" class="back-nav">← Back to Garden Map</a>
-    <h1>🏥 Hartford Garden Clinic</h1>
-    <p>Identify, Treat, and Prevent common Zone 6B garden issues.</p>
+<header class="max-w-4xl mx-auto text-center mb-12">
+    <div class="flex justify-between items-center mb-6">
+        <a href="index.html" class="text-green-600 font-black text-xs uppercase tracking-widest hover:underline">← Dashboard</a>
+        <a href="map.html" class="text-slate-400 font-black text-xs uppercase tracking-widest hover:underline">Spatial Map →</a>
+    </div>
+    <h1 class="text-4xl font-black text-slate-800 tracking-tighter mb-2">Hartford <span class="text-green-600">Clinic</span></h1>
+    <p class="text-slate-500 font-medium">Smart diagnosis for Zone 6B gardening.</p>
 </header>
 
-<div class="search-container">
-    <input type="text" id="clinicSearch" placeholder="Search by plant (Tomato) or symptom (Yellow)...">
+<div class="max-w-xl mx-auto mb-12">
+    <div class="relative">
+        <input type="text" id="clinicSearch" placeholder="Search by plant (e.g. Tomato) or symptom..." 
+               class="w-full p-5 pl-12 bg-white border-2 border-slate-200 rounded-3xl shadow-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all">
+        <span class="absolute left-5 top-5 text-slate-400">🔍</span>
+    </div>
+    <div id="active-risk-count" class="text-center mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest"></div>
 </div>
 
-<div class="clinic-grid" id="clinicGrid">
-    </div>
+<div class="clinic-grid" id="clinicGrid"></div>
 
 <script>
     const CLINIC_DB = [
         {
             name: "Tomato Hornworm",
             type: "pest",
-            target: "Tomato, Pepper",
+            target: ["Tomato", "Pepper"],
             symptoms: "Large holes in leaves, missing stems, dark green droppings on foliage.",
             fix: "Hand-pick caterpillars (check under leaves) or use Bacillus thuringiensis (Bt) spray.",
             peak: "July - August"
@@ -154,7 +124,7 @@
         {
             name: "Aphids",
             type: "pest",
-            target: "Lettuce, Broccoli, Kale",
+            target: ["Lettuce", "Broccoli", "Kale"],
             symptoms: "Tiny green/black bugs on undersides of leaves, sticky residue, curling growth.",
             fix: "Blast plants with a strong stream of water or use insecticidal soap/Neem oil.",
             peak: "May - June & September"
@@ -162,7 +132,7 @@
         {
             name: "Early Blight",
             type: "disease",
-            target: "Tomato, Potato",
+            target: ["Tomato", "Potato"],
             symptoms: "Brown spots on older leaves with 'target' ring patterns. Yellowing halos.",
             fix: "Prune lower branches to prevent soil splash. Use copper-based fungicide if severe.",
             peak: "July (After heavy rain)"
@@ -170,91 +140,93 @@
         {
             name: "Powdery Mildew",
             type: "disease",
-            target: "Zucchini, Squash, Broccoli",
+            target: ["Zucchini", "Squash", "Broccoli"],
             symptoms: "White, flour-like dust covering leaves. Stunted growth.",
             fix: "Mix 1 part milk with 9 parts water; spray on leaves in direct sunlight. Improve airflow.",
             peak: "August - September"
         },
         {
-            name: "Cabbage Looper",
-            type: "pest",
-            target: "Broccoli, Kale, Lettuce",
-            symptoms: "Small ragged holes in leaves; light green 'inching' caterpillars.",
-            fix: "Cover crops with floating row covers or apply organic Bt spray.",
-            peak: "June - August"
-        },
-        {
             name: "Septoria Leaf Spot",
             type: "disease",
-            target: "Tomato",
+            target: ["Tomato"],
             symptoms: "Numerous small circular spots with dark borders and grey centers.",
             fix: "Avoid overhead watering. Remove infected bottom leaves immediately.",
-            peak: "June - August (High Humidity)"
+            peak: "June - August"
         }
     ];
 
-    const clinicGrid = document.getElementById('clinicGrid');
-    const searchInput = document.getElementById('clinicSearch');
+    function getMyGardenPlants() {
+        const library = JSON.parse(localStorage.getItem('myGardenLibrary')) || [];
+        // Extract just the names for easy matching
+        return library.map(p => p.name);
+    }
 
     function displayIssues(filter = "") {
+        const clinicGrid = document.getElementById('clinicGrid');
+        const myPlants = getMyGardenPlants();
+        let riskCount = 0;
+        
         clinicGrid.innerHTML = "";
         
         const filteredData = CLINIC_DB.filter(item => 
             item.name.toLowerCase().includes(filter.toLowerCase()) ||
-            item.target.toLowerCase().includes(filter.toLowerCase()) ||
+            item.target.some(t => t.toLowerCase().includes(filter.toLowerCase())) ||
             item.symptoms.toLowerCase().includes(filter.toLowerCase())
         );
 
         filteredData.forEach(issue => {
+            const isAtRisk = issue.target.some(t => myPlants.includes(t));
+            if (isAtRisk) riskCount++;
+
             const card = document.createElement('div');
-            card.className = `card ${issue.type}`;
+            card.className = `card ${issue.type} ${isAtRisk ? 'at-risk' : ''}`;
             
             card.innerHTML = `
+                ${isAtRisk ? '<div class="risk-badge">My Garden at Risk</div>' : ''}
                 <div class="type-badge">${issue.type}</div>
-                <h3>${issue.name}</h3>
+                <h3 class="text-xl font-black text-slate-800 mb-4 mt-4">${issue.name}</h3>
                 
-                <div class="info-block">
-                    <span class="section-label">Common Targets</span>
-                    <div>${issue.target}</div>
+                <div class="mb-4 text-sm">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Common Targets</span>
+                    <div class="font-bold text-slate-600">${issue.target.join(', ')}</div>
                 </div>
 
-                <div class="info-block">
-                    <span class="section-label">Symptoms</span>
-                    <div>${issue.symptoms}</div>
+                <div class="mb-4 text-sm">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Symptoms</span>
+                    <div class="text-slate-500 italic">"${issue.symptoms}"</div>
                 </div>
 
                 <div class="fix-box">
-                    <span class="section-label" style="color: var(--leaf-green)">Organic Solution</span>
-                    ${issue.fix}
+                    <span class="block text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Organic Solution</span>
+                    <div class="font-medium text-slate-700">${issue.fix}</div>
                 </div>
 
-                <div class="peak-season">
-                    📅 <strong>Peak Hartford Season:</strong> ${issue.peak}
+                <div class="mt-6 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                    <span>📅 Peak Season:</span>
+                    <span class="text-slate-600">${issue.peak}</span>
                 </div>
             `;
             clinicGrid.appendChild(card);
         });
 
-        if (filteredData.length === 0) {
-            clinicGrid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">No matches found for "${filter}". Try searching for a specific plant like 'Tomato'.</p>`;
-        }
+        document.getElementById('active-risk-count').innerText = 
+            myPlants.length ? `${riskCount} active threats to your current crops` : "Add plants to your library to see active threats";
     }
 
-    // Search Logic with URL Param support
-    searchInput.addEventListener('input', (e) => displayIssues(e.target.value));
+    // Search input listener
+    document.getElementById('clinicSearch').addEventListener('input', (e) => displayIssues(e.target.value));
 
     window.onload = () => {
-        // Check if we arrived here from the map with a search query
         const urlParams = new URLSearchParams(window.location.search);
-        const initialSearch = urlParams.get('search');
+        const initialSearch = urlParams.get('name') || urlParams.get('search');
+        
         if (initialSearch) {
-            searchInput.value = initialSearch;
+            document.getElementById('clinicSearch').value = initialSearch;
             displayIssues(initialSearch);
         } else {
             displayIssues();
         }
     };
 </script>
-
 </body>
 </html>
