@@ -3,245 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Planter Pro Edition</title>
+    <title>GardenHub OS | Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { 
-            --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
-            --cream: #f8f9fa; --seed: #e9c46a; --harvest: #e76f51;
-            --sky: #00b4d8; --bg: #e9edc9; --warning: #fff3cd;
+            --leaf: #4f772d; --dark: #1a1a1a; --card-bg: #242424;
+            --harvest: #e76f51; --sky: #00b4d8; --warning: #ffbe0b;
         }
         
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); min-height: 85vh; }
-
-        /* HEADER & STATS */
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
-        h1 { margin: 0; color: var(--dark); font-size: 2rem; }
-        .nav-links a { text-decoration: none; color: var(--leaf); font-weight: bold; margin-left: 20px; font-size: 0.9rem; }
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: var(--cream); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
-        .stat-card h3 { margin: 0; font-size: 1.6rem; color: var(--dark); }
-        .stat-card p { margin: 5px 0 0; color: #888; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
-
-        /* TABS */
-        .tab-bar { display: flex; gap: 8px; background: #f0f2f0; padding: 6px; border-radius: 12px; margin-bottom: 25px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: none; cursor: pointer; font-weight: bold; color: #666; transition: 0.3s; }
-        .tab-btn.active { background: white; color: var(--dark); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
-
-        .tab-content { display: none; animation: fadeIn 0.4s ease; }
-        .tab-content.active { display: block; }
-
-        /* PLANTER UI ELEMENTS */
-        .companion-box { background: var(--warning); border: 1px solid #ffeeba; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: none; color: #856404; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: bold; margin-top: 5px; }
-        .badge-spacing { background: var(--sky); color: white; }
-        .badge-days { background: var(--leaf); color: white; }
-
-        /* TASK LIST */
-        .task-list { list-style: none; padding: 0; }
-        .task-item { display: flex; align-items: center; justify-content: space-between; background: var(--cream); padding: 12px 18px; border-radius: 10px; margin-bottom: 8px; border-left: 5px solid var(--leaf); }
-        .task-item.overdue { border-left-color: var(--harvest); background: #fff5f2; }
-
-        /* TABLE STYLING */
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
-        th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 0.8rem; color: #777; }
-        td { padding: 15px 12px; border-top: 1px solid #eee; font-size: 0.9rem; vertical-align: top; }
-
-        input, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
-        .btn-action { background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Inter', sans-serif; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Pulse Animation for Vital Signs */
+        @keyframes pulse-health {
+            0% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 119, 45, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0); }
+        }
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(231, 111, 81, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .seed-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 1px solid #333; }
+        .seed-card.companion-friend { border-color: #4f772d; background: #1b2e1b; transform: scale(1.05); z-index: 10; }
+        .seed-card.companion-foe { opacity: 0.3; filter: grayscale(1); animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .seed-card.dimmed { opacity: 0.2; transform: scale(0.95); }
+        
+        .health-ring { border-radius: 50%; width: 12px; height: 12px; display: inline-block; }
+        .health-good { background: #4f772d; animation: pulse-health 2s infinite; }
+        .health-danger { background: #e76f51; animation: pulse-danger 1s infinite; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-<div class="container">
-    <header>
+<div class="max-w-6xl mx-auto">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-            <h1>GardenHub OS</h1>
-            <div id="live-date" style="color: var(--dirt); font-size: 0.9rem;">Monday, February 23, 2026</div>
+            <h1 class="text-4xl font-black text-white tracking-tighter">GardenHub <span class="text-green-500">OS</span></h1>
+            <p id="live-date" class="text-gray-500 font-mono text-sm uppercase mt-1">Hartford, CT | Loading...</p>
         </div>
-        <nav class="nav-links">
-            <a href="calendar.html" style="color: var(--harvest)">📅 Visual Timeline</a>
-            <a href="map.html">🗺️ Visual Map</a>
-            <a href="library.html" target="_blank">📚 Standalone Library</a>
+        <nav class="flex gap-4">
+            <a href="calendar.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-sm font-bold transition border border-zinc-700">📅 Timeline</a>
+            <button onclick="resetMatchmaker()" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-sm font-bold transition border border-zinc-700">🔄 Reset View</button>
         </nav>
     </header>
 
-    <div class="stat-grid">
-        <div class="stat-card" style="border-top: 4px solid var(--leaf);"><h3 id="stat-planted">0</h3><p>Planted Squares</p></div>
-        <div class="stat-card" style="border-top: 4px solid var(--harvest);"><h3 id="stat-tasks">0</h3><p>Pending Tasks</p></div>
-        <div class="stat-card" style="border-top: 4px solid var(--sky);"><h3 id="stat-temp">42°F</h3><p>Local Temp</p></div>
-        <div class="stat-card" style="border-top: 4px solid var(--seed);"><h3 id="stat-harvests">0</h3><p>Total Yields</p></div>
-    </div>
-
-    <div class="tab-bar">
-        <button class="tab-btn active" onclick="openTab(event, 'chores')">Daily Tasks</button>
-        <button class="tab-btn" onclick="openTab(event, 'planner')">Seed Planning</button>
-        <button class="tab-btn" onclick="openTab(event, 'logs')">Harvest Logs</button>
-        <button class="tab-btn" onclick="openTab(event, 'library-tab')">Encyclopedia</button>
-        <button class="tab-btn" onclick="openTab(event, 'notes')">Journal</button>
-    </div>
-
-    <div id="chores" class="tab-content active">
-        <div style="display: grid; grid-template-columns: 1fr 180px 100px; gap: 10px; margin-bottom: 20px;">
-            <input type="text" id="taskDesc" placeholder="What needs doing?">
-            <input type="date" id="taskDate">
-            <button class="btn-action" onclick="addTask()">Add Task</button>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active Crops</p>
+            <h3 id="stat-planted" class="text-3xl font-black text-white">0</h3>
         </div>
-        <ul id="taskList" class="task-list"></ul>
-        <div style="margin-top:20px;">
-            <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="GARDEN" data-label_2="WEATHER" data-theme="pure">WEATHER</a>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pending Tasks</p>
+            <h3 id="stat-tasks" class="text-3xl font-black text-orange-500">0</h3>
+        </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ground Temp</p>
+            <h3 id="stat-temp" class="text-3xl font-black text-sky-400">42°F</h3>
+            <div id="frost-alert-ui" class="hidden absolute top-0 right-0 bg-red-600 text-[8px] px-2 py-1 font-bold">FROST RISK</div>
+        </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Season Yield</p>
+            <h3 id="stat-harvests" class="text-3xl font-black text-green-500">0</h3>
         </div>
     </div>
 
-    <div id="planner" class="tab-content">
-        <div style="background: #fff3cd; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #ffeeba; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.85rem; color: #856404;">✨ View your planting schedule as a visual app-style timeline.</span>
-            <a href="calendar.html" class="btn-action" style="background: var(--harvest); padding: 8px 15px; text-decoration: none; font-size: 0.8rem;">Open Visual Calendar</a>
-        </div>
-
-        <section style="background:var(--dark); color:white; padding:25px; border-radius:15px; margin-bottom:20px;">
-            <h3 style="margin:0 0 10px 0;">📅 Seasonal Timeline Generator</h3>
-            <input type="date" id="frostDate" onchange="generateCalendar()" style="width:100%; max-width:300px;">
-        </section>
-
-        <div id="companionInsight" class="companion-box">
-            <h4 style="margin:0 0 5px 0;">🤝 Companion Planting Guide</h4>
-            <p id="companionText" style="font-size:0.85rem; margin:0;"></p>
-        </div>
-
-        <section style="background:white; padding:20px; border-radius:15px; border: 1px solid #eee; margin-bottom:20px;">
-            <h3 style="margin-top:0;">🌱 2026 Garden Schedule</h3>
-            <table id="calendarTable">
-                <thead>
-                    <tr style="background:var(--cream);">
-                        <th>Variety & Spacing</th>
-                        <th>🏠 Start Seeds</th>
-                        <th>🚜 Transplant</th>
-                        <th>🧺 Est. Harvest</th>
-                    </tr>
-                </thead>
-                <tbody id="calendarBody">
-                    <tr><td colspan="4" style="text-align:center; padding:30px; color:#999;">Select a frost date above.</td></tr>
-                </tbody>
-            </table>
-        </section>
-
-        <section style="background:#f0f7ee; padding:20px; border-radius:15px; border: 1px solid var(--leaf); margin-bottom:20px;">
-            <h3 style="margin-top:0; color:var(--dark);">➕ Add Custom Seed</h3>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input type="text" id="manName" placeholder="Plant Name">
-                <input type="text" id="manSun" placeholder="Sun">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Crop Command</h2>
+                <span class="text-[10px] text-gray-500 italic">Click card to see companions</span>
             </div>
-            <button class="btn-action" style="width:100%; margin-top:10px; background:var(--leaf);" onclick="addManualSeed()">Add to Collection</button>
-        </section>
-
-        <section style="background:white; padding:20px; border-radius:15px; border: 1px solid #eee;">
-            <h3>🌱 My Seed Collection</h3>
-            <table>
-                <thead>
-                    <tr><th>Plant Name</th><th>Source</th><th>Date Saved</th><th>Action</th></tr>
-                </thead>
-                <tbody id="savedSeedsBody"></tbody>
-            </table>
-        </section>
-    </div>
-
-    <div id="logs" class="tab-content">
-        <div style="display:grid; grid-template-columns: 1fr 1fr 100px; gap:10px; margin-bottom:20px;">
-            <input type="text" id="hCrop" placeholder="Crop Name">
-            <input type="text" id="hAmt" placeholder="Amount">
-            <button class="btn-action" style="background:var(--harvest)" onclick="addHarvest()">Log</button>
+            <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
         </div>
-        <table>
-            <thead><tr><th>Crop</th><th>Amount</th><th>Date</th></tr></thead>
-            <tbody id="hBody"></tbody>
-        </table>
-    </div>
 
-    <div id="library-tab" class="tab-content">
-        <iframe src="library.html" style="width:100%; height:70vh; border:none; border-radius:15px;"></iframe>
-    </div>
+        <div class="space-y-6">
+            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-500"></span> Live Vitals
+                </h2>
+                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#1a1a1a" data-accent="rgba(255, 255, 255, 0)">WEATHER</a>
+            </div>
 
-    <div id="notes" class="tab-content">
-        <textarea id="gardenNotes" rows="12" style="width:100%; border-radius:15px;" placeholder="Journal entries..."></textarea>
-        <button class="btn-action" style="width:100%; margin-top:10px;" onclick="saveNotes()">Save Journal Entry</button>
+            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+                <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
+                <div id="taskList" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                    </div>
+                <div class="mt-4 flex gap-2">
+                    <input type="text" id="taskDesc" placeholder="Quick Task..." class="bg-zinc-800 border-none text-sm p-2 rounded-lg flex-1">
+                    <button onclick="addTask()" class="bg-green-600 p-2 rounded-lg font-bold text-sm">Add</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- THE PLANTER LOGIC DATABASE ---
     const plantLogic = {
-        "Tomatoes": { sow: -6, plant: 2, maturity: 80, spacing: 1, friends: ["Basil", "Marigolds"], foes: ["Corn", "Potatoes"] },
-        "Peppers": { sow: -8, plant: 3, maturity: 90, spacing: 1, friends: ["Onions", "Basil"], foes: ["Fennel"] },
-        "Carrots": { sow: 0, plant: 0, maturity: 75, spacing: 16, friends: ["Tomatoes", "Onions"], foes: ["Dill"] },
-        "Lettuce": { sow: -3, plant: -1, maturity: 45, spacing: 4, friends: ["Beets", "Radishes"], foes: ["None"] },
-        "Kale": { sow: -4, plant: -2, maturity: 55, spacing: 1, friends: ["Cucumbers"], foes: ["Strawberries"] },
-        "Basil": { sow: -6, plant: 2, maturity: 60, spacing: 4, friends: ["Tomatoes"], foes: ["Rue"] },
-        "Bok Choy": { sow: -4, plant: 0, maturity: 45, spacing: 4, friends: ["Beets"], foes: ["None"] },
-        "Broccoli": { sow: -7, plant: -2, maturity: 70, spacing: 1, friends: ["Dill"], foes: ["Strawberries"] }
+        "Tomatoes": { emoji: "🍅", sensitivity: 45, friends: ["Basil", "Carrots"], foes: ["Broccoli", "Kale"] },
+        "Peppers": { emoji: "🫑", sensitivity: 50, friends: ["Basil", "Bok Choy"], foes: ["Kale"] },
+        "Carrots": { emoji: "🥕", sensitivity: 28, friends: ["Tomatoes", "Lettuce"], foes: ["None"] },
+        "Lettuce": { emoji: "🥬", sensitivity: 30, friends: ["Carrots", "Bok Choy"], foes: ["Broccoli"] },
+        "Kale": { emoji: "🌿", sensitivity: 20, friends: ["Lettuce"], foes: ["Tomatoes", "Peppers"] },
+        "Basil": { emoji: "🌱", sensitivity: 55, friends: ["Tomatoes", "Peppers"], foes: ["None"] },
+        "Bok Choy": { emoji: "🥬", sensitivity: 32, friends: ["Lettuce", "Peppers"], foes: ["None"] },
+        "Broccoli": { emoji: "🥦", sensitivity: 25, friends: ["None"], foes: ["Tomatoes", "Lettuce"] }
     };
 
-    function openTab(evt, tabName) {
-        let contents = document.getElementsByClassName("tab-content");
-        for (let i = 0; i < contents.length; i++) contents[i].classList.remove("active");
-        let tabs = document.getElementsByClassName("tab-btn");
-        for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active");
-        document.getElementById(tabName).classList.add("active");
-        evt.currentTarget.classList.add("active");
-        if(tabName === 'planner') { renderSavedSeeds(); generateCalendar(); }
-    }
+    let currentTemp = 42; // This would typically come from an API, hardcoded for Hartford logic
 
-    // --- CALENDAR GENERATOR ---
-    function generateCalendar() {
-        const frostDateVal = document.getElementById('frostDate').value;
-        if (!frostDateVal) return;
-        localStorage.setItem('frostDate', frostDateVal);
-
-        const lastFrost = new Date(frostDateVal);
-        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
-        const container = document.getElementById('calendarBody');
-
-        if (seeds.length === 0) {
-            container.innerHTML = '<tr><td colspan="4" style="text-align:center;">Add seeds to see your schedule!</td></tr>';
-            return;
-        }
-
-        container.innerHTML = seeds.map(seed => {
-            const info = plantLogic[seed.name] || { sow: -4, plant: 2, maturity: 65, spacing: 1, friends: [], foes: [] };
-            let sDate = new Date(lastFrost); sDate.setDate(lastFrost.getDate() + (info.sow * 7));
-            let pDate = new Date(lastFrost); pDate.setDate(lastFrost.getDate() + (info.plant * 7));
-            let hDate = new Date(pDate); hDate.setDate(pDate.getDate() + info.maturity);
-
+    function renderSeedGrid() {
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [
+            {name: "Tomatoes", id: 1}, {name: "Basil", id: 2}, {name: "Broccoli", id: 3}, {name: "Peppers", id: 4}
+        ];
+        const grid = document.getElementById('seed-grid');
+        
+        grid.innerHTML = seeds.map(seed => {
+            const info = plantLogic[seed.name] || { emoji: "🌱", sensitivity: 32, friends: [], foes: [] };
+            const isAtRisk = currentTemp <= info.sensitivity;
+            
             return `
-                <tr onclick="showInsight('${seed.name}')" style="cursor:pointer;">
-                    <td><strong>${seed.name}</strong><br><span class="badge badge-spacing">${info.spacing}/sq.ft</span></td>
-                    <td>${info.sow === 0 ? 'Direct Sow' : sDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</td>
-                    <td>${pDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</td>
-                    <td>
-                        <div style="color:var(--harvest); font-weight:bold;">${hDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</div>
-                        <span class="badge badge-days">${info.maturity} days</span>
-                    </td>
-                </tr>
+                <div id="card-${seed.name}" 
+                     onclick="handleMatchmaker('${seed.name}')"
+                     class="seed-card bg-zinc-900 p-5 rounded-2xl relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-4xl">${info.emoji}</span>
+                        <div class="health-ring ${isAtRisk ? 'health-danger' : 'health-good'}"></div>
+                    </div>
+                    <h4 class="text-white font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
+                    <div class="flex gap-2 mt-2">
+                        <span class="text-[9px] bg-zinc-800 px-2 py-1 rounded text-gray-400 font-bold uppercase">Health: ${isAtRisk ? 'Critical' : 'Stable'}</span>
+                        <span class="text-[9px] bg-zinc-800 px-2 py-1 rounded text-gray-400 font-bold uppercase">S6b</span>
+                    </div>
+                    
+                    ${isAtRisk ? `<div class="absolute bottom-0 left-0 right-0 bg-red-600 text-[9px] text-center font-black py-1">FROST ALERT: COVER NOW</div>` : ''}
+                </div>
             `;
         }).join('');
+        
+        document.getElementById('stat-planted').innerText = seeds.length;
+        if (currentTemp < 40) document.getElementById('frost-alert-ui').classList.remove('hidden');
     }
 
-    function showInsight(name) {
-        const info = plantLogic[name];
+    function handleMatchmaker(activeName) {
+        const info = plantLogic[activeName];
         if (!info) return;
-        document.getElementById('companionInsight').style.display = "block";
-        document.getElementById('companionText').innerHTML = `<strong>${name}</strong> loves <b>${info.friends.join(', ')}</b>. Avoid <b>${info.foes.join(', ')}</b>.`;
+
+        document.querySelectorAll('.seed-card').forEach(card => {
+            const cardName = card.id.replace('card-', '');
+            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
+
+            if (cardName === activeName) {
+                // Keep active card normal
+            } else if (info.friends.includes(cardName)) {
+                card.classList.add('companion-friend');
+            } else if (info.foes.includes(cardName)) {
+                card.classList.add('companion-foe');
+            } else {
+                card.classList.add('dimmed');
+            }
+        });
     }
 
-    // --- CORE RE-USED LOGIC ---
+    function resetMatchmaker() {
+        document.querySelectorAll('.seed-card').forEach(card => {
+            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
+        });
+    }
+
+    // Task Logic
     function addTask() {
         const desc = document.getElementById('taskDesc').value;
-        const date = document.getElementById('taskDate').value;
-        if (!desc || !date) return;
+        if (!desc) return;
         let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        tasks.push({ id: Date.now(), desc, date, done: false });
+        tasks.push({ id: Date.now(), desc, done: false });
         localStorage.setItem('gardenTasks', JSON.stringify(tasks));
         document.getElementById('taskDesc').value = "";
         renderTasks();
@@ -249,72 +197,27 @@
 
     function renderTasks() {
         const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('taskList').innerHTML = tasks.sort((a,b) => new Date(a.date) - new Date(b.date)).map(t => `
-            <li class="task-item ${t.date < today && !t.done ? 'overdue' : ''}">
-                <div><input type="checkbox" ${t.done ? 'checked' : ''} onclick="toggleTask(${t.id})"> ${t.desc}</div>
-                <small>${t.date}</small>
-            </li>
-        `).join('');
-        document.getElementById('stat-tasks').innerText = tasks.filter(t => !t.done).length;
+        document.getElementById('taskList').innerHTML = tasks.map(t => `
+            <div class="flex items-center gap-3 bg-zinc-800/50 p-3 rounded-xl border border-zinc-800 group">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="rounded border-zinc-700 bg-zinc-900 text-green-600 focus:ring-green-500">
+                <span class="text-sm font-medium text-gray-300 flex-1">${t.desc}</span>
+            </div>
+        `).reverse().join('');
+        document.getElementById('stat-tasks').innerText = tasks.length;
     }
 
-    function toggleTask(id) {
-        let tasks = JSON.parse(localStorage.getItem('gardenTasks'));
-        tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+    function removeTask(id) {
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks = tasks.filter(t => t.id !== id);
         localStorage.setItem('gardenTasks', JSON.stringify(tasks));
-        renderTasks();
+        setTimeout(renderTasks, 300); // Small delay for visual feedback
     }
-
-    function addManualSeed() {
-        const name = document.getElementById('manName').value;
-        if (!name) return;
-        let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
-        seeds.push({ name, id: Date.now(), source: 'Manual', dateAdded: new Date().toLocaleDateString() });
-        localStorage.setItem('mySeeds', JSON.stringify(seeds));
-        renderSavedSeeds(); generateCalendar();
-    }
-
-    function renderSavedSeeds() {
-        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
-        document.getElementById('savedSeedsBody').innerHTML = seeds.map(s => `
-            <tr>
-                <td>${s.name}</td>
-                <td>${s.source}</td>
-                <td>${s.dateAdded}</td>
-                <td><button onclick="removeSeed(${s.id})" style="color:var(--harvest); border:none; background:none; cursor:pointer;">✕</button></td>
-            </tr>`).join('');
-    }
-
-    function removeSeed(id) {
-        let seeds = JSON.parse(localStorage.getItem('mySeeds')) || [];
-        seeds = seeds.filter(s => s.id !== id);
-        localStorage.setItem('mySeeds', JSON.stringify(seeds));
-        renderSavedSeeds(); generateCalendar();
-    }
-
-    function addHarvest() {
-        const crop = document.getElementById('hCrop').value;
-        const amt = document.getElementById('hAmt').value;
-        if(!crop || !amt) return;
-        let logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-        logs.push({ crop, amt, date: new Date().toLocaleDateString() });
-        localStorage.setItem('harvestLogs', JSON.stringify(logs));
-        renderHarvests();
-    }
-
-    function renderHarvests() {
-        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-        document.getElementById('hBody').innerHTML = logs.map(l => `<tr><td>${l.crop}</td><td>${l.amt}</td><td>${l.date}</td></tr>`).reverse().join('');
-        document.getElementById('stat-harvests').innerText = logs.length;
-    }
-
-    function saveNotes() { localStorage.setItem('gardenNotes', document.getElementById('gardenNotes').value); alert("Journal Saved!"); }
 
     window.onload = () => {
-        document.getElementById('gardenNotes').value = localStorage.getItem('gardenNotes') || "";
-        document.getElementById('frostDate').value = localStorage.getItem('frostDate') || "";
-        renderTasks(); renderHarvests(); renderSavedSeeds(); generateCalendar();
+        const now = new Date();
+        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        renderSeedGrid();
+        renderTasks();
     };
 
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
