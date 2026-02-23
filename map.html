@@ -3,137 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garden Architect | Planter Edition</title>
+    <title>9x9 Precision Grid | GardenHub</title>
     <style>
         :root { 
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
             --grass: #aacc00; --wood: #bc8a5f; --seed: #e9c46a;
-            --fruit: #e76f51; --herb: #2a9d8f; --warning: #ffcc00;
-            --friend: #99ff99; --foe: #ff9999;
         }
         
         body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* SIDEBAR */
+        /* SEED BIN */
         #sidebar {
-            width: 300px; background: white; padding: 20px;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-            z-index: 100;
+            width: 220px; background: white; padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+            z-index: 10;
         }
-
-        .search-box { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; outline: none; box-sizing: border-box; }
-        
-        .cat-filters { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
-        .filter-btn { padding: 5px 10px; font-size: 0.7rem; border-radius: 20px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: bold; }
-        .filter-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
-
-        #libraryContainer { flex-grow: 1; overflow-y: auto; }
-
         .seed-card {
-            background: #fdfdfd; border: 1px solid #eee; padding: 12px; 
-            border-radius: 12px; margin-bottom: 8px; cursor: grab;
-            transition: 0.2s; display: flex; align-items: center; justify-content: space-between;
+            background: var(--seed); padding: 12px; border-radius: 8px;
+            margin-bottom: 10px; cursor: grab; font-weight: bold;
+            text-align: center; border: 2px solid transparent; transition: 0.2s;
+            user-select: none;
         }
-        .seed-card:hover { border-color: var(--leaf); background: #f0f7ee; }
-        .spacing-tag { font-size: 0.65rem; background: var(--sky); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: #e0e0e0; }
+        .seed-card:hover { border-color: var(--leaf); transform: translateY(-2px); }
+        .seed-card:active { cursor: grabbing; }
 
-        /* GRID VIEW */
-        .main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+        /* GRID CANVAS */
+        .main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         
         .grid-container {
             display: grid;
             grid-template-columns: repeat(9, 55px); 
             grid-template-rows: repeat(9, 55px);    
-            gap: 4px;
+            gap: 3px;
             background: var(--wood);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
         }
 
         .grid-spot {
             width: 55px; height: 55px;
             background: var(--dirt);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem; cursor: pointer; transition: 0.3s;
+            font-size: 1.5rem; cursor: pointer; transition: 0.2s;
             border-radius: 4px; position: relative;
         }
 
-        /* COMPANION HIGHLIGHTING */
-        .grid-spot.highlight-friend { box-shadow: inset 0 0 15px var(--friend); background: #4a5d23; }
-        .grid-spot.highlight-foe { box-shadow: inset 0 0 15px var(--foe); background: #5d2323; }
-
+        /* Hover & Interaction States */
+        .grid-spot:hover { filter: brightness(1.2); transform: scale(1.02); z-index: 2; }
+        
+        .grid-spot.occupied { background: #556b2f; }
+        
         .grid-spot.occupied:hover::after {
-            content: "✕"; position: absolute; font-size: 1rem; color: white;
-            background: rgba(211, 47, 47, 0.8); width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center; border-radius: 4px;
+            content: "✕";
+            position: absolute;
+            font-size: 1rem;
+            color: white;
+            background: rgba(211, 47, 47, 0.8);
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px;
         }
 
-        .grid-spot.occupied { background: #556b2f; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); }
-
-        .btn-reset { background: #eee; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; color: #666; }
-        .btn-reset:hover { background: #ffdede; color: #d32f2f; }
+        .instructions { margin-bottom: 20px; text-align: center; color: var(--dark); }
+        .btn-clear { background: #e76f51; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; transition: 0.3s; }
+        .btn-clear:hover { background: #d65d41; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2 style="color:var(--dark); margin: 0 0 15px 0;">🌱 Planter Library</h2>
+    <h3 style="color:var(--dark); margin-top:0;">🧺 Seed Bin</h3>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍅" data-name="Tomato">🍅 Tomato</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥬" data-name="Kale">🥬 Kale</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot">🥕 Carrot</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌶️" data-name="Pepper">🌶️ Pepper</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🍓" data-name="Berry">🍓 Berry</div>
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌿" data-name="Herb">🌿 Herb</div>
     
-    <input type="text" id="plantSearch" class="search-box" placeholder="Search crops..." onkeyup="renderLibrary()">
-    
-    <div class="cat-filters" id="catFilters">
-        <button class="filter-btn active" onclick="setCategory('All')">All</button>
-        <button class="filter-btn" onclick="setCategory('Veggie')">Veggies</button>
-        <button class="filter-btn" onclick="setCategory('Herb')">Herbs</button>
-        <button class="filter-btn" onclick="setCategory('Flower')">Flowers</button>
-    </div>
+    <p style="font-size: 0.75rem; color: #777; margin-top: 20px;">
+        💡 <strong>Tip:</strong> Drag seeds to the dirt. Click an occupied square to remove.
+    </p>
 
-    <div id="libraryContainer"></div>
-
-    <button class="btn-reset" onclick="clearFullGrid()">Reset Layout</button>
-    <a href="index.html" style="display:block; text-align:center; margin-top:15px; color:var(--leaf); text-decoration:none; font-weight:bold; font-size:0.9rem;">🏠 Back to Dashboard</a>
+    <button class="btn-clear" onclick="clearFullGrid()">Reset All</button>
+    <a href="index.html" style="display:block; text-align:center; margin-top:15px; color:var(--leaf); text-decoration:none; font-weight:bold;">← Dashboard</a>
 </div>
 
 <div class="main-view">
-    <div id="companionToast" style="position:absolute; top:20px; background:white; padding:10px 20px; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1); display:none; font-weight:bold; color:var(--dark); z-index:1000;"></div>
-
-    <div style="text-align:center; margin-bottom: 20px;">
-        <h2 style="margin:0; color:var(--dark)">My 9x9 Garden Bed</h2>
-        <small style="color:var(--dirt)">Drag a plant to see Friends (Green) and Foes (Red)</small>
+    <div class="instructions">
+        <h2 style="margin:0;">9x9 Planting Grid</h2>
+        <p style="margin:5px 0 0;">Draft your layout for the 2026 season</p>
     </div>
 
     <div class="grid-container" id="gardenGrid"></div>
 </div>
 
 <script>
-    // 1. DATASET WITH COMPANION LOGIC
-    const plantLibrary = [
-        { name: "Tomato", emoji: "🍅", cat: "Veggie", spacing: 1, friends: ["Basil", "Marigold", "Onion"], foes: ["Corn", "Potato"] },
-        { name: "Carrot", emoji: "🥕", cat: "Veggie", spacing: 16, friends: ["Tomato", "Onion"], foes: ["Dill"] },
-        { name: "Basil", emoji: "🌿", cat: "Herb", spacing: 4, friends: ["Tomato", "Pepper"], foes: ["Rue"] },
-        { name: "Marigold", emoji: "🌼", cat: "Flower", spacing: 4, friends: ["Tomato", "Eggplant", "Kale"], foes: [] },
-        { name: "Pepper", emoji: "🫑", cat: "Veggie", spacing: 1, friends: ["Basil", "Onion"], foes: ["Fennel"] },
-        { name: "Onion", emoji: "🧅", cat: "Veggie", spacing: 9, friends: ["Carrot", "Tomato", "Lettuce"], foes: ["Bean", "Pea"] },
-        { name: "Lettuce", emoji: "🥗", cat: "Veggie", spacing: 4, friends: ["Onion", "Carrot", "Radish"], foes: [] },
-        { name: "Kale", emoji: "🥬", cat: "Veggie", spacing: 1, friends: ["Marigold", "Cucumber"], foes: ["Strawberry"] },
-        { name: "Strawberry", emoji: "🍓", cat: "Fruit", spacing: 4, friends: ["Onion", "Borage"], foes: ["Kale", "Cabbage"] }
-    ];
-
-    let currentCategory = "All";
-
-    // 2. GRID LOGIC
     const GRID_SIZE = 81; 
     const gridContainer = document.getElementById('gardenGrid');
 
     function initGrid() {
         const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        gridContainer.innerHTML = "";
+        gridContainer.innerHTML = ""; 
         
         for (let i = 0; i < GRID_SIZE; i++) {
             const spot = document.createElement('div');
             spot.classList.add('grid-spot');
             spot.id = `spot-${i}`;
+            
             spot.ondragover = (e) => e.preventDefault();
             spot.ondrop = (e) => handleDrop(e, i);
             spot.onclick = () => removePlant(i);
@@ -143,85 +120,28 @@
                 spot.classList.add('occupied');
                 spot.title = savedLayout[i].name;
             }
+            
             gridContainer.appendChild(spot);
         }
     }
 
-    // 3. LIBRARY & COMPANION HIGHLIGHTING
-    function renderLibrary() {
-        const query = document.getElementById('plantSearch').value.toLowerCase();
-        const container = document.getElementById('libraryContainer');
-        container.innerHTML = "";
-        
-        plantLibrary.forEach(plant => {
-            if (currentCategory !== "All" && plant.cat !== currentCategory) return;
-            if (!plant.name.toLowerCase().includes(query)) return;
-
-            const card = document.createElement('div');
-            card.className = 'seed-card';
-            card.draggable = true;
-            card.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span>${plant.emoji}</span>
-                    <span style="font-weight:bold; font-size:0.9rem;">${plant.name}</span>
-                </div>
-                <span class="spacing-tag">${plant.spacing}/sq</span>
-            `;
-
-            card.ondragstart = (ev) => {
-                ev.dataTransfer.setData("plantName", plant.name);
-                highlightCompanions(plant.name);
-            };
-
-            card.ondragend = () => clearHighlights();
-            
-            container.appendChild(card);
-        });
+    function drag(ev) {
+        ev.dataTransfer.setData("emoji", ev.target.getAttribute('data-emoji'));
+        ev.dataTransfer.setData("name", ev.target.getAttribute('data-name'));
     }
 
-    function highlightCompanions(activePlantName) {
-        const plant = plantLibrary.find(p => p.name === activePlantName);
-        if (!plant) return;
-
-        const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-        
-        // Loop through all grid spots
-        for (let i = 0; i < GRID_SIZE; i++) {
-            const spot = document.getElementById(`spot-${i}`);
-            
-            // Check neighbors if already occupied
-            if (savedLayout[i]) {
-                const existingPlant = savedLayout[i].name;
-                if (plant.friends.includes(existingPlant)) spot.classList.add('highlight-friend');
-                if (plant.foes.includes(existingPlant)) spot.classList.add('highlight-foe');
-            }
-        }
-
-        const toast = document.getElementById('companionToast');
-        toast.style.display = "block";
-        toast.innerHTML = `Planting ${plant.emoji} ${plant.name}...`;
-    }
-
-    function clearHighlights() {
-        document.querySelectorAll('.grid-spot').forEach(s => {
-            s.classList.remove('highlight-friend', 'highlight-foe');
-        });
-        document.getElementById('companionToast').style.display = "none";
-    }
-
-    // 4. INTERACTION LOGIC
     function handleDrop(ev, index) {
         ev.preventDefault();
-        const name = ev.dataTransfer.getData("plantName");
-        const plant = plantLibrary.find(p => p.name === name);
+        const emoji = ev.dataTransfer.getData("emoji");
+        const name = ev.dataTransfer.getData("name");
         
-        if (plant) {
-            let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
-            savedLayout[index] = { emoji: plant.emoji, name: plant.name };
-            localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
-            initGrid();
-            clearHighlights();
-        }
+        if(!emoji) return; // Prevent empty drops
+
+        let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
+        savedLayout[index] = { emoji, name };
+        localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
+        
+        initGrid(); 
     }
 
     function removePlant(index) {
@@ -229,30 +149,18 @@
         if (savedLayout[index]) {
             delete savedLayout[index];
             localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
-            initGrid();
+            initGrid(); 
         }
     }
 
-    function setCategory(cat) {
-        currentCategory = cat;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText.includes(cat) || (cat === "All" && btn.innerText === "All"));
-        });
-        renderLibrary();
-    }
-
     function clearFullGrid() {
-        if (confirm("Clear your entire layout?")) {
+        if (confirm("This will clear your entire 9x9 design. Continue?")) {
             localStorage.removeItem('gardenGridLayout');
             initGrid();
         }
     }
 
-    window.onload = () => {
-        initGrid();
-        renderLibrary();
-    };
+    window.onload = initGrid;
 </script>
-
 </body>
 </html>
