@@ -3,186 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garden Ledger & Journal | GardenHub OS</title>
+    <title>GardenHub OS | Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: 'Inter', sans-serif; }
-        .bg-card { background-color: #1e1e1e; }
-        
-        /* Time-Lapse Slider Styles */
-        .comparison-container { position: relative; width: 100%; height: 250px; overflow: hidden; border-radius: 15px; }
-        .comparison-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .slider-handle { 
-            position: absolute; top: 0; bottom: 0; width: 4px; background: white; 
-            left: 50%; transform: translateX(-50%); cursor: ew-resize; z-index: 10;
+        :root { 
+            --leaf: #4f772d; --dark: #1a1a1a; --card-bg: #242424;
+            --harvest: #e76f51; --sky: #00b4d8; --warning: #ffbe0b;
         }
-        .slider-handle::after {
-            content: '↔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; color: black; border-radius: 50%; width: 30px; height: 30px;
-            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Inter', sans-serif; }
+        
+        /* Vital Sign Animations */
+        @keyframes pulse-health {
+            0% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 119, 45, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 119, 45, 0); }
+        }
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(231, 111, 81, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
-        /* Stats Ticker Animation */
-        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .ticker-val { animation: countUp 0.5s ease-out; }
+        .seed-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 1px solid #333; }
+        .seed-card.companion-friend { border-color: #4f772d; background: #1b2e1b; transform: scale(1.05); z-index: 10; }
+        .seed-card.companion-foe { opacity: 0.3; filter: grayscale(1); animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .seed-card.dimmed { opacity: 0.2; transform: scale(0.95); }
+        
+        .health-ring { border-radius: 50%; width: 12px; height: 12px; display: inline-block; }
+        .health-good { background: #4f772d; animation: pulse-health 2s infinite; }
+        .health-danger { background: #e76f51; animation: pulse-danger 1s infinite; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-5xl mx-auto">
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-black text-white">Yield & Memory</h1>
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">ROI Tracking & Growth Journal</p>
-            </div>
-            <a href="index.html" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg border border-zinc-700 transition">← Dashboard</a>
-        </header>
-
-        <div class="bg-gradient-to-br from-green-900/40 to-zinc-900 p-8 rounded-3xl border border-green-800/30 mb-8 text-center">
-            <p class="text-xs font-bold text-green-500 uppercase tracking-[0.2em] mb-2">Total Market Value Produced</p>
-            <h2 id="total-roi" class="text-6xl md:text-8xl font-black text-white tracking-tighter ticker-val">$0.00</h2>
-            <p class="text-gray-500 text-xs mt-4 italic">Based on organic market prices in Hartford, CT</p>
+<div class="max-w-6xl mx-auto">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-4xl font-black text-white tracking-tighter">GardenHub <span class="text-green-500">OS</span></h1>
+            <p id="live-date" class="text-gray-500 font-mono text-sm uppercase mt-1">Hartford, CT | Loading...</p>
         </div>
+        <nav class="flex gap-2">
+            <a href="calendar.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">📅 Timeline</a>
+            <a href="logs.html" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">📈 ROI Logs</a>
+            <button onclick="resetMatchmaker()" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">🔄 Reset</button>
+        </nav>
+    </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-card p-6 rounded-2xl border border-zinc-800">
-                    <h3 class="font-bold mb-4 flex items-center gap-2">🧺 Log New Harvest</h3>
-                    <div class="space-y-3">
-                        <select id="crop-select" class="w-full bg-zinc-800 border-none rounded-lg p-3 text-sm"></select>
-                        <div class="flex gap-2">
-                            <input type="number" id="harvest-qty" placeholder="Weight" class="flex-1 bg-zinc-800 border-none rounded-lg p-3 text-sm">
-                            <select id="harvest-unit" class="bg-zinc-800 border-none rounded-lg p-3 text-sm">
-                                <option value="lbs">lbs</option>
-                                <option value="oz">oz</option>
-                                <option value="grams">g</option>
-                            </select>
-                        </div>
-                        <button onclick="logHarvest()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold p-3 rounded-lg transition">Update Ledger</button>
-                    </div>
-                </div>
-
-                <div class="bg-card p-6 rounded-2xl border border-zinc-800 overflow-hidden">
-                    <h3 class="font-bold mb-4 text-xs uppercase text-gray-500">Recent Payouts</h3>
-                    <div id="harvest-history" class="space-y-3 text-sm max-h-64 overflow-y-auto">
-                        </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-card p-6 rounded-2xl border border-zinc-800">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-bold">🌱 Growth Time-Lapse</h3>
-                        <span class="text-[10px] bg-zinc-800 px-2 py-1 rounded text-gray-400">Drag Slider</span>
-                    </div>
-
-                    <div class="comparison-container" id="lapse-container">
-                        <img src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=800&q=80" class="comparison-img grayscale" alt="Seedling">
-                        <div id="after-img-wrap" class="absolute top-0 left-0 h-full w-1/2 overflow-hidden border-r-2 border-white z-0">
-                            <img src="https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&w=800&q=80" class="comparison-img" style="width: 500px;" alt="Harvest">
-                        </div>
-                        <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" id="comparison-slider">
-                        <div id="slider-line" class="slider-handle" style="left: 50%;"></div>
-                    </div>
-                    
-                    <div class="mt-4 flex justify-between text-[10px] font-bold uppercase text-gray-500">
-                        <span>April 12: Seedlings</span>
-                        <span>August 20: Harvest</span>
-                    </div>
-                </div>
-
-                <div class="bg-card p-6 rounded-2xl border border-zinc-800">
-                    <h3 class="font-bold mb-4">📖 Observations</h3>
-                    <textarea id="journal-input" class="w-full bg-zinc-800 border-none rounded-xl p-4 text-sm min-h-[100px]" placeholder="Note any pests, flavor profiles, or weather impacts..."></textarea>
-                    <button onclick="saveJournal()" class="mt-2 bg-zinc-700 hover:bg-zinc-600 text-xs font-bold px-4 py-2 rounded-lg transition">Save Entry</button>
-                </div>
-            </div>
-
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active Crops</p>
+            <h3 id="stat-planted" class="text-3xl font-black text-white">0</h3>
+        </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pending Tasks</p>
+            <h3 id="stat-tasks" class="text-3xl font-black text-orange-500">0</h3>
+        </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ground Temp</p>
+            <h3 id="stat-temp" class="text-3xl font-black text-sky-400">42°F</h3>
+            <div id="frost-alert-ui" class="hidden absolute top-0 right-0 bg-red-600 text-[8px] px-2 py-1 font-bold">FROST RISK</div>
+        </div>
+        <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Season Value</p>
+            <h3 id="stat-harvest-val" class="text-3xl font-black text-green-500">$0.00</h3>
         </div>
     </div>
 
-    <script>
-        // Market Price Logic (Value per lb)
-        const marketPrices = {
-            "Tomatoes": 4.50, "Peppers": 5.00, "Carrots": 2.50,
-            "Lettuce": 3.00, "Kale": 3.50, "Basil": 12.00,
-            "Bok Choy": 4.00, "Broccoli": 3.50
-        };
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Crop Command</h2>
+                <span class="text-[10px] text-gray-500 italic">Tap card for companion matchmaking</span>
+            </div>
+            <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
 
-        // --- HARVEST & ROI LOGIC ---
-        function initHarvest() {
-            const select = document.getElementById('crop-select');
-            const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [{name: 'Tomatoes'}, {name: 'Basil'}];
-            select.innerHTML = seeds.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-            renderHistory();
-        }
+        <div class="space-y-6">
+            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-500"></span> Live Vitals
+                </h2>
+                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="ZONE 6B" data-label_2="HARTFORD" data-theme="pure" data-basecolor="#1a1a1a" data-accent="rgba(255, 255, 255, 0)">WEATHER</a>
+            </div>
 
-        function logHarvest() {
-            const crop = document.getElementById('crop-select').value;
-            const qty = parseFloat(document.getElementById('harvest-qty').value);
-            const unit = document.getElementById('harvest-unit').value;
+            <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+                <h2 class="text-lg font-bold mb-4">Urgent Actions</h2>
+                <div id="taskList" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2"></div>
+                <div class="mt-4 flex gap-2">
+                    <input type="text" id="taskDesc" placeholder="Add chore..." class="bg-zinc-800 border-none text-sm p-2 rounded-lg flex-1">
+                    <button onclick="addTask()" class="bg-green-600 p-2 rounded-lg font-bold text-xs uppercase">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const plantLogic = {
+        "Tomatoes": { emoji: "🍅", sensitivity: 45, friends: ["Basil", "Carrots"], foes: ["Broccoli", "Kale"] },
+        "Peppers": { emoji: "🫑", sensitivity: 50, friends: ["Basil", "Bok Choy"], foes: ["Kale"] },
+        "Carrots": { emoji: "🥕", sensitivity: 28, friends: ["Tomatoes", "Lettuce"], foes: ["None"] },
+        "Lettuce": { emoji: "🥬", sensitivity: 32, friends: ["Carrots", "Bok Choy"], foes: ["Broccoli"] },
+        "Kale": { emoji: "🌿", sensitivity: 20, friends: ["Lettuce"], foes: ["Tomatoes", "Peppers"] },
+        "Basil": { emoji: "🌱", sensitivity: 55, friends: ["Tomatoes", "Peppers"], foes: ["None"] },
+        "Bok Choy": { emoji: "🥬", sensitivity: 32, friends: ["Lettuce", "Peppers"], foes: ["None"] },
+        "Broccoli": { emoji: "🥦", sensitivity: 25, friends: ["None"], foes: ["Tomatoes", "Lettuce"] }
+    };
+
+    let currentTemp = 42; 
+
+    function renderSeedGrid() {
+        const seeds = JSON.parse(localStorage.getItem('mySeeds')) || [
+            {name: "Tomatoes", id: 1}, {name: "Basil", id: 2}, {name: "Broccoli", id: 3}, {name: "Peppers", id: 4}
+        ];
+        const grid = document.getElementById('seed-grid');
+        
+        grid.innerHTML = seeds.map(seed => {
+            const info = plantLogic[seed.name] || { emoji: "🌱", sensitivity: 32, friends: [], foes: [] };
+            const isAtRisk = currentTemp <= info.sensitivity;
             
-            if (!qty) return;
-
-            // Convert to lbs for valuation
-            let weightInLbs = qty;
-            if (unit === 'grams') weightInLbs = qty * 0.00220462;
-            if (unit === 'oz') weightInLbs = qty / 16;
-
-            const value = weightInLbs * (marketPrices[crop] || 3.00);
-
-            const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-            logs.push({ crop, weight: qty, unit, value, date: new Date().toLocaleDateString() });
-            localStorage.setItem('harvestLogs', JSON.stringify(logs));
-            
-            document.getElementById('harvest-qty').value = '';
-            renderHistory();
-        }
-
-        function renderHistory() {
-            const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
-            const historyCont = document.getElementById('harvest-history');
-            let total = 0;
-
-            historyCont.innerHTML = logs.slice().reverse().map(l => {
-                total += l.value;
-                return `
-                    <div class="flex justify-between items-center bg-zinc-800/30 p-3 rounded-lg border border-zinc-800/50">
-                        <div>
-                            <span class="font-bold text-white">${l.crop}</span>
-                            <p class="text-[10px] text-gray-500">${l.date} • ${l.weight}${l.unit}</p>
-                        </div>
-                        <span class="text-green-500 font-mono font-bold">+$${l.value.toFixed(2)}</span>
+            return `
+                <div id="card-${seed.name}" 
+                     onclick="handleMatchmaker('${seed.name}')"
+                     class="seed-card bg-zinc-900 p-5 rounded-2xl relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-4xl transition-transform group-hover:scale-110">${info.emoji}</span>
+                        <div class="health-ring ${isAtRisk ? 'health-danger' : 'health-good'}"></div>
                     </div>
-                `;
-            }).join('');
+                    <h4 class="text-white font-black text-xl uppercase tracking-tighter">${seed.name}</h4>
+                    <div class="flex gap-2 mt-2">
+                        <span class="text-[9px] bg-zinc-800 px-2 py-1 rounded text-gray-400 font-bold uppercase">${isAtRisk ? 'Risk: Frost' : 'Status: Optimal'}</span>
+                    </div>
+                    ${isAtRisk ? `<div class="absolute bottom-0 left-0 right-0 bg-red-600 text-[8px] text-center font-black py-0.5 animate-pulse">PROTECT CROP</div>` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('stat-planted').innerText = seeds.length;
+        updateGlobalStats();
+    }
 
-            document.getElementById('total-roi').innerText = `$${total.toFixed(2)}`;
-        }
+    function updateGlobalStats() {
+        const logs = JSON.parse(localStorage.getItem('harvestLogs')) || [];
+        const totalVal = logs.reduce((acc, log) => acc + log.value, 0);
+        document.getElementById('stat-harvest-val').innerText = `$${totalVal.toFixed(2)}`;
+    }
 
-        // --- TIME-LAPSE SLIDER LOGIC ---
-        const slider = document.getElementById('comparison-slider');
-        const afterWrap = document.getElementById('after-img-wrap');
-        const sliderLine = document.getElementById('slider-line');
+    function handleMatchmaker(activeName) {
+        const info = plantLogic[activeName];
+        if (!info) return;
 
-        slider.addEventListener('input', (e) => {
-            const val = e.target.value + "%";
-            afterWrap.style.width = val;
-            sliderLine.style.left = val;
+        document.querySelectorAll('.seed-card').forEach(card => {
+            const cardName = card.id.replace('card-', '');
+            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
+
+            if (cardName === activeName) {
+                // Focus active
+            } else if (info.friends.includes(cardName)) {
+                card.classList.add('companion-friend');
+            } else if (info.foes.includes(cardName)) {
+                card.classList.add('companion-foe');
+            } else {
+                card.classList.add('dimmed');
+            }
         });
+    }
 
-        // --- JOURNAL LOGIC ---
-        function saveJournal() {
-            const text = document.getElementById('journal-input').value;
-            localStorage.setItem('gardenJournal', text);
-            alert("Observations saved to OS memory.");
-        }
+    function resetMatchmaker() {
+        document.querySelectorAll('.seed-card').forEach(card => {
+            card.classList.remove('companion-friend', 'companion-foe', 'dimmed');
+        });
+    }
 
-        window.onload = () => {
-            initHarvest();
-            document.getElementById('journal-input').value = localStorage.getItem('gardenJournal') || "";
-        };
-    </script>
+    function addTask() {
+        const desc = document.getElementById('taskDesc').value;
+        if (!desc) return;
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks.push({ id: Date.now(), desc });
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        document.getElementById('taskDesc').value = "";
+        renderTasks();
+    }
+
+    function renderTasks() {
+        const tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        document.getElementById('taskList').innerHTML = tasks.map(t => `
+            <div class="flex items-center gap-3 bg-zinc-800/30 p-3 rounded-xl border border-zinc-800 group">
+                <input type="checkbox" onchange="removeTask(${t.id})" class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-green-600 focus:ring-green-500">
+                <span class="text-xs font-medium text-gray-400 flex-1">${t.desc}</span>
+            </div>
+        `).reverse().join('');
+        document.getElementById('stat-tasks').innerText = tasks.length;
+    }
+
+    function removeTask(id) {
+        let tasks = JSON.parse(localStorage.getItem('gardenTasks')) || [];
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem('gardenTasks', JSON.stringify(tasks));
+        setTimeout(renderTasks, 300);
+    }
+
+    window.onload = () => {
+        document.getElementById('live-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        renderSeedGrid();
+        renderTasks();
+    };
+
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+</script>
 </body>
 </html>
