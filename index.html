@@ -38,6 +38,7 @@
         <nav class="flex flex-wrap gap-2">
             <a href="calendar.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📅 Timeline</a>
             <a href="map.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">🗺️ Garden Map</a>
+            <a href="clinic.html" class="bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl text-xs font-bold transition border border-blue-200 shadow-sm text-blue-600">🏥 Plant Clinic</a>
             <a href="logs.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition border border-slate-200 shadow-sm text-slate-600">📈 ROI Logs</a>
             <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition text-white shadow-lg">🔄 Reset View</button>
         </nav>
@@ -106,9 +107,12 @@
     function renderDashboard() {
         // Seeds
         document.getElementById('seed-grid').innerHTML = plants.map(p => `
-            <div class="seed-card p-6 rounded-3xl flex flex-col justify-between">
+            <div class="seed-card p-6 rounded-3xl flex flex-col justify-between" onclick="window.location.href='clinic.html?search=${p.name}'">
                 <div class="flex justify-between items-center"><span class="text-4xl">${p.emoji}</span><div class="health-ring"></div></div>
-                <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
+                <div class="flex justify-between items-end">
+                    <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
+                    <span class="text-[10px] text-blue-500 font-bold border border-blue-200 px-2 py-1 rounded-md">Check Health</span>
+                </div>
             </div>
         `).join('');
 
@@ -171,7 +175,6 @@
     window.onload = () => {
         renderDashboard();
         renderTasks();
-        // Force Weather
         if (typeof __weatherwidget_init === 'function') __weatherwidget_init();
     };
 
