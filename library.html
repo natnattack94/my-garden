@@ -2,32 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GardenHub | Library Search</title>
     <style>
-        :root { --leaf: #4f772d; --dark: #31572c; }
+        :root { --leaf: #4f772d; --dark: #31572c; --accent: #e9c46a; }
         body { font-family: 'Segoe UI', sans-serif; background: white; margin: 0; padding: 10px; }
-        .search-row { display: flex; gap: 10px; margin-bottom: 20px; position: sticky; top: 0; background: white; padding: 10px 0; z-index: 10; }
-        input { flex-grow: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; outline: none; }
+        
+        /* Search Bar Sticky Header */
+        .search-row { 
+            display: flex; gap: 10px; margin-bottom: 20px; 
+            position: sticky; top: 0; background: white; 
+            padding: 10px 0; z-index: 10; 
+        }
+        input { flex-grow: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--leaf); }
         button { background: var(--leaf); color: white; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        button:hover { filter: brightness(1.1); }
+
+        /* Plant Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        .card { border: 1px solid #eee; border-radius: 15px; padding: 10px; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
+        .card { 
+            border: 1px solid #eee; border-radius: 15px; padding: 12px; 
+            font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; transition: 0.3s;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        
+        img { width: 100%; height: 130px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; background: #f9f9f9; }
         h3 { margin: 5px 0; font-size: 1rem; color: var(--dark); text-transform: capitalize; }
-        .msg { text-align: center; padding: 40px; color: #888; }
+        .info-text { margin: 3px 0; color: #666; }
+        
+        /* Action Button */
+        .btn-save { 
+            background: transparent; border: 2px solid var(--leaf); color: var(--leaf); 
+            margin-top: auto; padding: 8px; border-radius: 8px; font-size: 0.75rem; 
+            transition: 0.3s; cursor: pointer; font-weight: bold;
+        }
+        .btn-save:hover { background: var(--leaf); color: white; }
+
+        .msg { text-align: center; padding: 40px; color: #888; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="search-row">
-        <input type="text" id="libIn" placeholder="Search 10,000+ plants...">
+        <input type="text" id="libIn" placeholder="Search 10,000+ plants (e.g., Lavender)...">
         <button onclick="searchLib()">Search</button>
     </div>
 
     <div id="libGrid" class="grid">
-        <div class="msg">Enter a plant name to search.</div>
+        <div class="msg">🌿 Enter a plant name to search the global database.</div>
     </div>
 
 <script>
-    // Using the V1 endpoint (No "v2" in URL) as it is most stable for free keys
     const API_KEY = 'sk-7Sqq699b962b1362a14989'; 
 
     async function searchLib() {
@@ -35,37 +62,68 @@
         const grid = document.getElementById('libGrid');
         if(!q) return;
 
-        grid.innerHTML = '<div class="msg">🔎 Searching...</div>';
+        grid.innerHTML = '<div class="msg">🔎 Searching botanical archives...</div>';
 
         try {
-            // Updated URL: Removed /v2/ to fix common 404 errors
             const res = await fetch(`https://perenual.com/api/species-list?key=${API_KEY}&q=${q}`);
-            
             if (!res.ok) throw new Error("API Error " + res.status);
             
             const json = await res.json();
             
             if (!json.data || json.data.length === 0) {
-                grid.innerHTML = '<div class="msg">No plants found.</div>';
+                grid.innerHTML = '<div class="msg">No plants found. Try a broader search.</div>';
                 return;
             }
 
-            grid.innerHTML = json.data.map(p => `
-                <div class="card">
-                    <img src="${p.default_image ? p.default_image.thumbnail : 'https://via.placeholder.com/150'}">
-                    <h3>${p.common_name || 'Unknown'}</h3>
-                    <p><strong>Water:</strong> ${p.watering || 'Varies'}</p>
-                    <p><strong>Sun:</strong> ${p.sunlight ? p.sunlight[0] : 'Varies'}</p>
-                </div>
-            `).join('');
+            renderCards(json.data);
 
         } catch (err) {
-            grid.innerHTML = `<div class="msg" style="color:red">Error: ${err.message}. Your API key might still be activating.</div>`;
+            grid.innerHTML = `<div class="msg" style="color:#e76f51">Error: ${err.message}.</div>`;
         }
     }
+
+    function renderCards(plants) {
+        const grid = document.getElementById('libGrid');
+        grid.innerHTML = plants.map(p => {
+            const imgUrl = p.default_image ? p.default_image.thumbnail : 'https://img.icons8.com/color/96/leaf.png';
+            // Clean up the name for the JavaScript function call
+            const safeName = (p.common_name || 'Unknown').replace(/'/g, "\\'");
+
+            return `
+                <div class="card">
+                    <img src="${imgUrl}" onerror="this.src='https://img.icons8.com/color/96/leaf.png'">
+                    <h3>${p.common_name || 'Unknown'}</h3>
+                    <p class="info-text"><strong>Water:</strong> ${p.watering || 'Varies'}</p>
+                    <p class="info-text"><strong>Sun:</strong> ${p.sunlight ? p.sunlight[0] : 'Varies'}</p>
+                    <button class="btn-save" onclick="saveToMyGarden('${safeName}', '${p.id}')">❤️ Save to My Seeds</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function saveToMyGarden(name, id) {
+        // Pull current list from local storage
+        let myGarden = JSON.parse(localStorage.getItem('mySeeds')) || [];
+        
+        // Check for duplicates
+        if (!myGarden.find(p => p.id === id)) {
+            myGarden.push({ 
+                name: name, 
+                id: id, 
+                dateAdded: new Date().toLocaleDateString() 
+            });
+            localStorage.setItem('mySeeds', JSON.stringify(myGarden));
+            alert(name + " has been added to your Seed Planning tab!");
+        } else {
+            alert("This plant is already in your saved seeds.");
+        }
+    }
+
+    // Allow "Enter" key to trigger search
+    document.getElementById('libIn').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchLib();
+    });
 </script>
-</body>
-</html>
 
 </body>
 </html>
