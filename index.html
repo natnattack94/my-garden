@@ -59,9 +59,10 @@
     <header>
         <div>
             <h1>GardenHub OS</h1>
-            <div id="live-date" style="color: var(--dirt); font-size: 0.9rem;">Sunday, February 22, 2026</div>
+            <div id="live-date" style="color: var(--dirt); font-size: 0.9rem;">Monday, February 23, 2026</div>
         </div>
         <nav class="nav-links">
+            <a href="calendar.html" style="color: var(--harvest)">📅 Visual Timeline</a>
             <a href="map.html">🗺️ Visual Map</a>
             <a href="library.html" target="_blank">📚 Standalone Library</a>
         </nav>
@@ -95,6 +96,11 @@
     </div>
 
     <div id="planner" class="tab-content">
+        <div style="background: #fff3cd; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #ffeeba; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: #856404;">✨ View your planting schedule as a visual app-style timeline.</span>
+            <a href="calendar.html" class="btn-action" style="background: var(--harvest); padding: 8px 15px; text-decoration: none; font-size: 0.8rem;">Open Visual Calendar</a>
+        </div>
+
         <section style="background:var(--dark); color:white; padding:25px; border-radius:15px; margin-bottom:20px;">
             <h3 style="margin:0 0 10px 0;">📅 Seasonal Timeline Generator</h3>
             <input type="date" id="frostDate" onchange="generateCalendar()" style="width:100%; max-width:300px;">
@@ -172,7 +178,9 @@
         "Carrots": { sow: 0, plant: 0, maturity: 75, spacing: 16, friends: ["Tomatoes", "Onions"], foes: ["Dill"] },
         "Lettuce": { sow: -3, plant: -1, maturity: 45, spacing: 4, friends: ["Beets", "Radishes"], foes: ["None"] },
         "Kale": { sow: -4, plant: -2, maturity: 55, spacing: 1, friends: ["Cucumbers"], foes: ["Strawberries"] },
-        "Basil": { sow: -6, plant: 2, maturity: 60, spacing: 4, friends: ["Tomatoes"], foes: ["Rue"] }
+        "Basil": { sow: -6, plant: 2, maturity: 60, spacing: 4, friends: ["Tomatoes"], foes: ["Rue"] },
+        "Bok Choy": { sow: -4, plant: 0, maturity: 45, spacing: 4, friends: ["Beets"], foes: ["None"] },
+        "Broccoli": { sow: -7, plant: -2, maturity: 70, spacing: 1, friends: ["Dill"], foes: ["Strawberries"] }
     };
 
     function openTab(evt, tabName) {
@@ -227,7 +235,7 @@
         document.getElementById('companionText').innerHTML = `<strong>${name}</strong> loves <b>${info.friends.join(', ')}</b>. Avoid <b>${info.foes.join(', ')}</b>.`;
     }
 
-    // --- CORE RE-USED LOGIC FROM YOUR ORIGINAL CODE ---
+    // --- CORE RE-USED LOGIC ---
     function addTask() {
         const desc = document.getElementById('taskDesc').value;
         const date = document.getElementById('taskDate').value;
