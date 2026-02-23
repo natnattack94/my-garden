@@ -8,8 +8,8 @@
         :root { 
             --leaf: #4f772d; --dark: #31572c; --dirt: #604d3f; 
             --grass: #aacc00; --wood: #bc8a5f; --seed: #e9c46a;
-            --friend-glow: rgba(74, 222, 128, 0.7);
-            --foe-glow: rgba(239, 68, 68, 0.7);
+            --friend-glow: #4ade80;
+            --foe-glow: #f87171;
         }
         
         body { font-family: 'Segoe UI', sans-serif; background: #e9edc9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -17,7 +17,7 @@
         #sidebar {
             width: 240px; background: white; padding: 20px;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-            z-index: 10;
+            z-index: 100;
         }
         .seed-card {
             background: var(--seed); padding: 10px; border-radius: 8px;
@@ -40,49 +40,57 @@
             padding: 12px;
             border-radius: 10px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            position: relative;
         }
 
         .grid-spot {
             width: 60px; height: 60px;
             background: var(--dirt);
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s;
+            cursor: pointer; transition: background 0.2s, outline 0.2s;
             border-radius: 4px; position: relative;
             overflow: hidden;
         }
 
         .grid-spot.occupied { background: #556b2f; }
         
-        /* GHOST MODE STYLES */
+        /* REFINED GHOST MODE - Using Outline to prevent layout shifting */
         .ghost-friend { 
-            background: #dcfce7 !important; 
-            box-shadow: 0 0 15px var(--friend-glow);
-            transform: scale(1.05); z-index: 5;
+            background-color: #dcfce7 !important; 
+            outline: 3px solid var(--friend-glow);
+            outline-offset: -3px;
+            z-index: 10;
         }
         .ghost-foe { 
-            background: #fee2e2 !important; 
-            box-shadow: 0 0 15px var(--foe-glow);
-            transform: scale(0.95); z-index: 5;
+            background-color: #fee2e2 !important; 
+            outline: 3px solid var(--foe-glow);
+            outline-offset: -3px;
+            z-index: 10;
         }
 
-        /* PHOTO LOG STYLES */
+        /* Prevent children from intercepting drag events */
+        .grid-spot * { pointer-events: none; }
+        /* Re-enable for the upload button only when not dragging */
+        .grid-spot:not(.dragging-over) .photo-upload-btn { pointer-events: auto; }
+
         .photo-upload-btn {
             position: absolute; top: 2px; left: 2px;
             background: white; border-radius: 4px;
             width: 18px; height: 18px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 10px; z-index: 10; opacity: 0; transition: 0.2s;
+            font-size: 10px; z-index: 20; opacity: 0; transition: 0.2s;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            pointer-events: auto;
         }
         .grid-spot.occupied:hover .photo-upload-btn { opacity: 1; }
         
         .growth-snapshot {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
-            object-fit: cover; opacity: 0.6; z-index: 1;
+            object-fit: cover; opacity: 0.5; z-index: 1;
         }
 
-        .plant-emoji { position: relative; z-index: 2; font-size: 1.8rem; pointer-events: none; }
+        .plant-emoji { position: relative; z-index: 2; font-size: 1.8rem; }
 
         .multiplier-badge {
             position: absolute; bottom: 2px; right: 2px;
@@ -95,7 +103,7 @@
             content: "✕"; position: absolute; font-size: 1.2rem; color: white;
             background: rgba(211, 47, 47, 0.8); width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center; border-radius: 4px;
-            z-index: 15;
+            z-index: 30;
         }
 
         .btn-clear { background: #e76f51; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; }
@@ -115,7 +123,7 @@
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥬" data-name="Lettuce" data-qty="4">
         <span>🥬 Lettuce</span> <span class="qty-tag">4/sq</span>
     </div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot" data-qty="16">
+    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="Carrot" data-name="Carrot" data-qty="16">
         <span>🥕 Carrot</span> <span class="qty-tag">16/sq</span>
     </div>
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥦" data-name="Broccoli" data-qty="1">
@@ -129,7 +137,7 @@
 <div class="main-view">
     <div style="text-align:center; margin-bottom: 15px;">
         <h2 style="margin:0;">9x9 Precision Grid</h2>
-        <p id="feedback-text" style="margin:0; font-size:0.9rem; color: var(--dark);">Snapshot your weekly growth in Hartford</p>
+        <p id="feedback-text" style="margin:0; font-size:0.9rem; color: var(--dark);">Companion mapping active for Zone 6B</p>
     </div>
     <div class="grid-container" id="gardenGrid"></div>
 </div>
@@ -156,29 +164,28 @@
             spot.classList.add('grid-spot');
             spot.id = `spot-${i}`;
             
-            spot.ondragover = (e) => handleDragOver(e, i);
-            spot.ondragleave = (e) => clearGlow(e.target);
-            spot.ondrop = (e) => handleDrop(e, i);
-            spot.onclick = (e) => { if(e.target.classList.contains('photo-upload-btn')) return; removePlant(i); };
+            spot.addEventListener('dragover', (e) => handleDragOver(e, i));
+            spot.addEventListener('dragleave', (e) => clearGlow(e.currentTarget));
+            spot.addEventListener('drop', (e) => handleDrop(e, i));
+            
+            spot.onclick = (e) => {
+                // If there's an active drag, don't allow deletion clicks
+                removePlant(i);
+            };
             
             if (savedLayout[i]) {
                 const data = savedLayout[i];
-                
-                // Add Photo Background
                 if (data.photo) {
                     const img = document.createElement('img');
                     img.src = data.photo;
                     img.className = 'growth-snapshot';
                     spot.appendChild(img);
                 }
-
-                // Add Plant Emoji
                 const emojiSpan = document.createElement('span');
                 emojiSpan.className = 'plant-emoji';
                 emojiSpan.innerText = data.emoji;
                 spot.appendChild(emojiSpan);
 
-                // Add Upload Button
                 const upBtn = document.createElement('div');
                 upBtn.className = 'photo-upload-btn';
                 upBtn.innerHTML = '📷';
@@ -186,7 +193,6 @@
                 spot.appendChild(upBtn);
 
                 spot.classList.add('occupied');
-                
                 if(data.qty > 1) {
                     const badge = document.createElement('div');
                     badge.className = 'multiplier-badge';
@@ -208,21 +214,32 @@
 
     function handleDragOver(ev, index) {
         ev.preventDefault();
-        const spot = ev.target.closest('.grid-spot');
-        if (!spot || spot.classList.contains('occupied')) return;
+        const spot = ev.currentTarget;
+        
+        if (spot.classList.contains('occupied')) return;
+        
+        spot.classList.add('dragging-over');
         const status = checkCompanions(index, draggedPlantName);
-        clearGlow(spot);
-        if (status === 'friend') spot.classList.add('ghost-friend');
-        if (status === 'foe') spot.classList.add('ghost-foe');
+        
+        if (status === 'friend') {
+            spot.classList.add('ghost-friend');
+            spot.classList.remove('ghost-foe');
+        } else if (status === 'foe') {
+            spot.classList.add('ghost-foe');
+            spot.classList.remove('ghost-friend');
+        }
     }
 
-    function clearGlow(element) { element.classList.remove('ghost-friend', 'ghost-foe'); }
+    function clearGlow(element) {
+        element.classList.remove('ghost-friend', 'ghost-foe', 'dragging-over');
+    }
 
     function checkCompanions(index, newPlant) {
         const row = Math.floor(index / COLS);
         const col = index % COLS;
         const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
         let status = 'neutral';
+
         for (let i = -1; i <= 1; i++) {
             for (let j = -1; j <= 1; j++) {
                 if (i === 0 && j === 0) continue;
@@ -239,7 +256,6 @@
         return status;
     }
 
-    // PHOTO SYSTEM & COMPRESSION
     function triggerUpload(index) {
         const input = document.createElement('input');
         input.type = 'file';
@@ -259,14 +275,13 @@
             img.src = e.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 150; 
+                const MAX_WIDTH = 120; 
                 const scaleSize = MAX_WIDTH / img.width;
                 canvas.width = MAX_WIDTH;
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
                 let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
                 if (savedLayout[index]) {
                     savedLayout[index].photo = compressedDataUrl;
@@ -279,8 +294,15 @@
 
     function handleDrop(ev, index) {
         ev.preventDefault();
-        const emoji = ev.dataTransfer.getData("emoji"), name = ev.dataTransfer.getData("name"), qty = ev.dataTransfer.getData("qty");
+        const spot = ev.currentTarget;
+        clearGlow(spot);
+        
+        const emoji = ev.dataTransfer.getData("emoji");
+        const name = ev.dataTransfer.getData("name");
+        const qty = ev.dataTransfer.getData("qty");
+        
         if(!emoji) return;
+        
         let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
         savedLayout[index] = { emoji, name, qty };
         localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
