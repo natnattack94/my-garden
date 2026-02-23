@@ -9,18 +9,24 @@
     <style>
         body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
         .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        
+        /* Original Grid & Sun Map Styles */
         .sun-cell { transition: all 0.2s ease; cursor: pointer; border: 1px solid #f1f5f9; height: 30px; border-radius: 6px; }
         .sun-full { background: #fef3c7; border-color: #fcd34d; }
         .sun-partial { background: #ede9fe; border-color: #ddd6fe; }
         .sun-shade { background: #f1f5f9; border-color: #e2e8f0; }
+
         .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; height: 140px; cursor: pointer; position: relative; overflow: hidden; }
         .seed-card:hover { border-color: #22c55e; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .health-ring { border-radius: 50%; width: 10px; height: 10px; display: inline-block; background: #22c55e; }
+
         .progress-bg { background: #f1f5f9; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        
         .status-sprout { background: #99f6e4; }
         .status-grow { background: #22c55e; }
         .status-harvest { background: #f59e0b; animation: pulse 2s infinite; }
+
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     </style>
 </head>
@@ -48,6 +54,7 @@
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Temp</p><h3 class="text-2xl font-black text-blue-500">42°F</h3></div>
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Logs</p><h3 id="log-count" class="text-2xl font-black text-green-600">0</h3></div>
         </div>
+
         <div class="lg:col-span-3 glass-panel p-5">
             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Spatial Sun Map</h3>
             <div id="sun-map" class="grid grid-cols-8 gap-1"></div>
@@ -56,45 +63,60 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-8">
-            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Active Growth</h2>
+            <div class="flex justify-between items-end">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Active Growth</h2>
+                <a href="plants.html" class="text-xs text-green-600 font-bold hover:underline">Manage Vault →</a>
+            </div>
             <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            
             <div class="glass-panel p-6">
                 <h2 class="text-lg font-bold mb-6">Maturity Forecast</h2>
                 <div id="harvest-forecast" class="space-y-6"></div>
             </div>
         </div>
+
         <div class="space-y-6">
             <div class="glass-panel p-6">
-                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🌡️ Vitals</h2>
-                <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="HARTFORD" data-theme="pure" >WEATHER</a>
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🌡️ Vitals & Outlook</h2>
+                <div id="weather-container">
+                    <a class="weatherwidget-io" href="https://forecast7.com/en/41_76n72_67/hartford/" data-label_1="HARTFORD" data-theme="pure" data-basecolor="#ffffff" >WEATHER</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div id="auth-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center hidden">
-    <div class="bg-white p-8 rounded-[32px] shadow-2xl max-w-md w-full mx-4">
+    <div class="bg-white p-8 rounded-[32px] shadow-2xl max-w-md w-full mx-4 border border-slate-100">
         <div class="text-center mb-8">
             <div class="text-4xl mb-2">🌿</div>
             <h2 class="text-2xl font-black text-slate-800 tracking-tighter uppercase">GardenHub <span class="text-green-600">Cloud</span></h2>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Sign in to sync your garden</p>
         </div>
         <div class="space-y-4">
-            <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500">
-            <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500">
+            <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 font-medium">
+            <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 font-medium">
             <div class="flex gap-2">
-                <button onclick="handleSignIn()" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase text-xs">Login</button>
-                <button onclick="handleSignUp()" class="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-black uppercase text-xs">Join</button>
+                <button onclick="handleSignIn()" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-green-700 transition">Login</button>
+                <button onclick="handleSignUp()" class="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition">Join</button>
             </div>
-            <p id="auth-error" class="text-red-500 text-[10px] font-bold uppercase text-center hidden"></p>
         </div>
+        <p id="auth-error" class="text-red-500 text-[10px] font-bold uppercase mt-4 text-center hidden"></p>
     </div>
 </div>
 
 <script>
-    // 1. SUPABASE CONFIG - FILL THESE IN!
+    // FILL IN YOUR SUPABASE KEYS HERE
     const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
 
-    // 2. AUTH STATE WATCHER
+    // UTILITIES
+    function calculateMaturity(datePlanted, daysToMature) {
+        if (!datePlanted || !daysToMature) return 0;
+        const diffInDays = (new Date() - new Date(datePlanted)) / (1000 * 60 * 60 * 24);
+        return Math.min(100, Math.max(0, Math.floor((diffInDays / daysToMature) * 100)));
+    }
+
+    // AUTH STATE
     _supabase.auth.onAuthStateChange((event, session) => {
         const overlay = document.getElementById('auth-overlay');
         if (session) {
@@ -105,19 +127,20 @@
         }
     });
 
-    // 3. AUTH ACTIONS
-    async function handleSignUp() {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-password').value;
-        const { error } = await _supabase.auth.signUp({ email, password });
-        if (error) showError(error.message);
+    async function handleSignIn() {
+        const { error } = await _supabase.auth.signInWithPassword({
+            email: document.getElementById('auth-email').value,
+            password: document.getElementById('auth-password').value
+        });
+        if (error) document.getElementById('auth-error').innerText = error.message;
     }
 
-    async function handleSignIn() {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-password').value;
-        const { error } = await _supabase.auth.signInWithPassword({ email, password });
-        if (error) showError(error.message);
+    async function handleSignUp() {
+        const { error } = await _supabase.auth.signUp({
+            email: document.getElementById('auth-email').value,
+            password: document.getElementById('auth-password').value
+        });
+        if (error) alert("Check your email for confirmation!");
     }
 
     async function handleLogout() {
@@ -125,37 +148,48 @@
         location.reload();
     }
 
-    function showError(msg) {
-        const err = document.getElementById('auth-error');
-        err.innerText = msg; err.classList.remove('hidden');
-    }
-
-    // 4. CLOUD RENDER LOGIC
+    // MAIN RENDER
     async function renderDashboard() {
-        // Date Display
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Fetch from Supabase
         const { data: plants } = await _supabase.from('garden_library').select('*');
         const { data: logs } = await _supabase.from('garden_logs').select('*');
 
         document.getElementById('crop-count').innerText = plants?.length || 0;
         document.getElementById('log-count').innerText = logs?.length || 0;
 
-        // Render Growth Cards
-        document.getElementById('seed-grid').innerHTML = plants?.map(p => `
-            <div class="seed-card p-6 rounded-3xl flex flex-col justify-between">
-                <div class="flex justify-between items-center"><span class="text-4xl">${p.emoji}</span></div>
-                <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
+        // 1. Growth Cards
+        document.getElementById('seed-grid').innerHTML = plants?.length ? plants.map(p => `
+            <div class="seed-card p-6 rounded-3xl flex flex-col justify-between" onclick="window.location.href='plants.html?name=${encodeURIComponent(p.name)}'">
+                <div class="flex justify-between items-center">
+                    <span class="text-4xl">${p.emoji}</span>
+                    <div class="health-ring" style="background: ${calculateMaturity(p.date_planted, p.days_to_mature) > 90 ? '#f59e0b' : '#22c55e'}"></div>
+                </div>
+                <div>
+                    <h4 class="text-slate-800 font-black text-xl uppercase tracking-tighter">${p.name}</h4>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cloud Synced Crop</p>
+                </div>
             </div>
-        `).join('') || '<p class="text-slate-400 italic">No plants yet.</p>';
+        `).join('') : '<p class="text-slate-400 italic text-sm">No plants in your cloud library.</p>';
 
-        // Render Sun Map (Fallback to Local for now, or build a 'settings' table)
+        // 2. Forecast Bars
+        document.getElementById('harvest-forecast').innerHTML = plants?.length ? plants.map(p => {
+            const progress = calculateMaturity(p.date_planted, p.days_to_mature);
+            let colorClass = progress > 85 ? 'status-harvest' : (progress > 25 ? 'status-grow' : 'status-sprout');
+            return `
+                <div>
+                    <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2">
+                        <span>${p.name}</span><span>${progress}% Maturity</span>
+                    </div>
+                    <div class="progress-bg"><div class="progress-fill ${colorClass}" style="width: ${progress}%"></div></div>
+                </div>`;
+        }).join('') : '<p class="text-slate-400 italic text-sm">Add seeds to see timelines.</p>';
+
+        // 3. Sun Map
         let sunData = JSON.parse(localStorage.getItem('gardenSunMap')) || Array(32).fill('full');
         document.getElementById('sun-map').innerHTML = sunData.map((state, i) => `<div class="sun-cell sun-${state}"></div>`).join('');
     }
 
-    // Weather Widget Init
     !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
 </script>
 </body>
