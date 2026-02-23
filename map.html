@@ -48,6 +48,7 @@
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: 0.3s;
             border-radius: 4px; position: relative;
+            overflow: hidden;
         }
 
         .grid-spot.occupied { background: #556b2f; }
@@ -56,27 +57,45 @@
         .ghost-friend { 
             background: #dcfce7 !important; 
             box-shadow: 0 0 15px var(--friend-glow);
-            transform: scale(1.05);
-            z-index: 5;
+            transform: scale(1.05); z-index: 5;
         }
         .ghost-foe { 
             background: #fee2e2 !important; 
             box-shadow: 0 0 15px var(--foe-glow);
-            transform: scale(0.95);
-            z-index: 5;
+            transform: scale(0.95); z-index: 5;
         }
+
+        /* PHOTO LOG STYLES */
+        .photo-upload-btn {
+            position: absolute; top: 2px; left: 2px;
+            background: white; border-radius: 4px;
+            width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; z-index: 10; opacity: 0; transition: 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .grid-spot.occupied:hover .photo-upload-btn { opacity: 1; }
+        
+        .growth-snapshot {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.6; z-index: 1;
+        }
+
+        .plant-emoji { position: relative; z-index: 2; font-size: 1.8rem; pointer-events: none; }
 
         .multiplier-badge {
             position: absolute; bottom: 2px; right: 2px;
             background: var(--leaf); color: white;
             font-size: 0.6rem; padding: 1px 4px; border-radius: 3px;
-            font-weight: bold;
+            font-weight: bold; z-index: 3;
         }
 
         .grid-spot.occupied:hover::after {
             content: "✕"; position: absolute; font-size: 1.2rem; color: white;
             background: rgba(211, 47, 47, 0.8); width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center; border-radius: 4px;
+            z-index: 15;
         }
 
         .btn-clear { background: #e76f51; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; }
@@ -99,9 +118,6 @@
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥕" data-name="Carrot" data-qty="16">
         <span>🥕 Carrot</span> <span class="qty-tag">16/sq</span>
     </div>
-    <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🌶️" data-name="Pepper" data-qty="1">
-        <span>🌶️ Pepper</span> <span class="qty-tag">1/sq</span>
-    </div>
     <div class="seed-card" draggable="true" ondragstart="drag(event)" data-emoji="🥦" data-name="Broccoli" data-qty="1">
         <span>🥦 Broccoli</span> <span class="qty-tag">1/sq</span>
     </div>
@@ -112,8 +128,8 @@
 
 <div class="main-view">
     <div style="text-align:center; margin-bottom: 15px;">
-        <h2 style="margin:0;">9x9 Ghost Mapper</h2>
-        <p id="feedback-text" style="margin:0; font-size:0.9rem; color: var(--dark);">Drag a seed over the grid to see companion compatibility</p>
+        <h2 style="margin:0;">9x9 Precision Grid</h2>
+        <p id="feedback-text" style="margin:0; font-size:0.9rem; color: var(--dark);">Snapshot your weekly growth in Hartford</p>
     </div>
     <div class="grid-container" id="gardenGrid"></div>
 </div>
@@ -123,14 +139,12 @@
     const COLS = 9;
     const gridContainer = document.getElementById('gardenGrid');
 
-    // COMPANION LOGIC DATABASE
     const plantLogic = {
-        "Tomato": { friends: ["Basil", "Carrot", "Lettuce", "Pepper"], foes: ["Broccoli"] },
-        "Basil": { friends: ["Tomato", "Pepper"], foes: [] },
+        "Tomato": { friends: ["Basil", "Carrot", "Lettuce"], foes: ["Broccoli"] },
+        "Basil": { friends: ["Tomato"], foes: [] },
         "Lettuce": { friends: ["Carrot", "Tomato", "Broccoli"], foes: [] },
         "Carrot": { friends: ["Tomato", "Lettuce"], foes: [] },
-        "Pepper": { friends: ["Tomato", "Basil"], foes: [] },
-        "Broccoli": { friends: ["Lettuce"], foes: ["Tomato", "Pepper"] }
+        "Broccoli": { friends: ["Lettuce"], foes: ["Tomato"] }
     };
 
     function initGrid() {
@@ -142,18 +156,36 @@
             spot.classList.add('grid-spot');
             spot.id = `spot-${i}`;
             
-            // Drag Events
             spot.ondragover = (e) => handleDragOver(e, i);
             spot.ondragleave = (e) => clearGlow(e.target);
             spot.ondrop = (e) => handleDrop(e, i);
-            
-            spot.onclick = () => removePlant(i);
+            spot.onclick = (e) => { if(e.target.classList.contains('photo-upload-btn')) return; removePlant(i); };
             
             if (savedLayout[i]) {
                 const data = savedLayout[i];
-                spot.innerHTML = `<span style="font-size:1.8rem;">${data.emoji}</span>`;
+                
+                // Add Photo Background
+                if (data.photo) {
+                    const img = document.createElement('img');
+                    img.src = data.photo;
+                    img.className = 'growth-snapshot';
+                    spot.appendChild(img);
+                }
+
+                // Add Plant Emoji
+                const emojiSpan = document.createElement('span');
+                emojiSpan.className = 'plant-emoji';
+                emojiSpan.innerText = data.emoji;
+                spot.appendChild(emojiSpan);
+
+                // Add Upload Button
+                const upBtn = document.createElement('div');
+                upBtn.className = 'photo-upload-btn';
+                upBtn.innerHTML = '📷';
+                upBtn.onclick = (e) => { e.stopPropagation(); triggerUpload(i); };
+                spot.appendChild(upBtn);
+
                 spot.classList.add('occupied');
-                spot.setAttribute('data-plant-name', data.name);
                 
                 if(data.qty > 1) {
                     const badge = document.createElement('div');
@@ -167,7 +199,6 @@
     }
 
     let draggedPlantName = "";
-
     function drag(ev) {
         draggedPlantName = ev.target.getAttribute('data-name');
         ev.dataTransfer.setData("emoji", ev.target.getAttribute('data-emoji'));
@@ -179,44 +210,28 @@
         ev.preventDefault();
         const spot = ev.target.closest('.grid-spot');
         if (!spot || spot.classList.contains('occupied')) return;
-
-        // Run Ghost Mode Logic
         const status = checkCompanions(index, draggedPlantName);
-        
-        clearGlow(spot); // Refresh
+        clearGlow(spot);
         if (status === 'friend') spot.classList.add('ghost-friend');
         if (status === 'foe') spot.classList.add('ghost-foe');
     }
 
-    function clearGlow(element) {
-        element.classList.remove('ghost-friend', 'ghost-foe');
-    }
+    function clearGlow(element) { element.classList.remove('ghost-friend', 'ghost-foe'); }
 
     function checkCompanions(index, newPlant) {
-        if (!plantLogic[newPlant]) return 'neutral';
-
         const row = Math.floor(index / COLS);
         const col = index % COLS;
         const savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
         let status = 'neutral';
-
-        // Scan 8 neighbors (Moore Neighborhood)
         for (let i = -1; i <= 1; i++) {
             for (let j = -1; j <= 1; j++) {
                 if (i === 0 && j === 0) continue;
-
-                const nRow = row + i;
-                const nCol = col + j;
-
+                const nRow = row + i, nCol = col + j;
                 if (nRow >= 0 && nRow < COLS && nCol >= 0 && nCol < COLS) {
-                    const nIndex = nRow * COLS + nCol;
-                    const neighbor = savedLayout[nIndex];
-
-                    if (neighbor) {
-                        const neighborName = neighbor.name;
-                        // Foes take precedence
-                        if (plantLogic[newPlant].foes.includes(neighborName)) return 'foe';
-                        if (plantLogic[newPlant].friends.includes(neighborName)) status = 'friend';
+                    const neighbor = savedLayout[nRow * COLS + nCol];
+                    if (neighbor && plantLogic[newPlant]) {
+                        if (plantLogic[newPlant].foes.includes(neighbor.name)) return 'foe';
+                        if (plantLogic[newPlant].friends.includes(neighbor.name)) status = 'friend';
                     }
                 }
             }
@@ -224,14 +239,48 @@
         return status;
     }
 
+    // PHOTO SYSTEM & COMPRESSION
+    function triggerUpload(index) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) compressAndSave(file, index);
+        };
+        input.click();
+    }
+
+    function compressAndSave(file, index) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 150; 
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
+                if (savedLayout[index]) {
+                    savedLayout[index].photo = compressedDataUrl;
+                    localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
+                    initGrid();
+                }
+            };
+        };
+    }
+
     function handleDrop(ev, index) {
         ev.preventDefault();
-        const emoji = ev.dataTransfer.getData("emoji");
-        const name = ev.dataTransfer.getData("name");
-        const qty = ev.dataTransfer.getData("qty");
-        
+        const emoji = ev.dataTransfer.getData("emoji"), name = ev.dataTransfer.getData("name"), qty = ev.dataTransfer.getData("qty");
         if(!emoji) return;
-
         let savedLayout = JSON.parse(localStorage.getItem('gardenGridLayout')) || {};
         savedLayout[index] = { emoji, name, qty };
         localStorage.setItem('gardenGridLayout', JSON.stringify(savedLayout));
@@ -248,10 +297,7 @@
     }
 
     function clearFullGrid() {
-        if (confirm("Reset the garden?")) {
-            localStorage.removeItem('gardenGridLayout');
-            initGrid();
-        }
+        if (confirm("Reset the garden?")) { localStorage.removeItem('gardenGridLayout'); initGrid(); }
     }
 
     window.onload = initGrid;
