@@ -77,11 +77,11 @@
         <div id="library-drag-container" class="space-y-3 overflow-y-auto pr-2 flex-grow"></div>
 
         <div class="pt-6 border-t border-white/10 space-y-3">
-            <div class="p-4 bg-white/5 rounded-2xl">
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Solar Key</p>
-                <div class="flex gap-2">
-                    <div class="flex items-center gap-1 text-[9px]"><span class="w-2 h-2 rounded-full bg-amber-500"></span> 8h+</div>
-                    <div class="flex items-center gap-1 text-[9px]"><span class="w-2 h-2 rounded-full bg-blue-500"></span> 4-6h</div>
+            <div id="health-stat" class="p-4 bg-white/5 rounded-2xl">
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Garden Health Score</p>
+                <div class="flex items-end gap-2">
+                    <span id="health-value" class="text-2xl font-black text-green-500">100</span>
+                    <span class="text-[10px] text-slate-500 mb-1">/ 100</span>
                 </div>
             </div>
             <a href="index.html" class="block w-full text-center py-4 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-500 transition">Save & Exit</a>
@@ -127,11 +127,9 @@
     }
 
     async function init() {
-        // Fetch your plants
         const { data: lib } = await _supabase.from('garden_library').select('*');
         renderSidebar(lib || []);
 
-        // Fetch saved layout
         const { data: layout } = await _supabase
             .from('garden_settings')
             .select('value')
@@ -141,15 +139,12 @@
         gardenLayout = (layout && layout.value) ? JSON.parse(layout.value) : {};
         document.getElementById('sync-indicator').innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full"></span> Cloud Connected`;
         
+        calculateHealthScore();
         renderGrid();
     }
 
     function renderSidebar(library) {
         const container = document.getElementById('library-drag-container');
-        if (!library || library.length === 0) {
-            container.innerHTML = `<p class="text-[10px] text-slate-500 uppercase text-center mt-10">Library Empty</p>`;
-            return;
-        }
         container.innerHTML = library.map(p => `
             <div class="seed-card-sidebar p-4 flex items-center justify-between" 
                   draggable="true" ondragstart='drag(event, ${JSON.stringify(p)})'>
@@ -164,24 +159,20 @@
     function renderGrid() {
         const grid = document.getElementById('gardenGrid');
         grid.innerHTML = "";
-
         for (let i = 0; i < GRID_SIZE; i++) {
             const sun = getSolarForIndex(i);
             const plant = gardenLayout[i];
             const spot = document.createElement('div');
             spot.className = `grid-spot ${plant ? 'occupied' : ''}`;
-            
             spot.innerHTML = `
                 <div class="solar-dot ${sun >= 8 ? 'bg-amber-500' : 'bg-blue-500'}"></div>
                 ${plant ? `<span class="text-3xl relative z-10">${plant.emoji}</span>
                            <div class="info-btn" onclick="event.stopPropagation(); showInfo(${i})">?</div>` : ''}
             `;
-
             spot.ondragover = (e) => handleDragOver(e, i);
             spot.ondragleave = (e) => e.currentTarget.classList.remove('ghost-friend', 'ghost-foe');
             spot.ondrop = (e) => handleDrop(e, i);
             if(plant) spot.onclick = () => removePlant(i);
-
             grid.appendChild(spot);
         }
     }
@@ -190,12 +181,10 @@
 
     function handleDragOver(ev, i) {
         ev.preventDefault();
-        const spot = ev.currentTarget;
         if (gardenLayout[i] || !draggedPlant) return;
-
         const status = checkCompanions(i, draggedPlant.name);
-        if (status === 'friend') spot.classList.add('ghost-friend');
-        if (status === 'foe') spot.classList.add('ghost-foe');
+        if (status === 'friend') ev.currentTarget.classList.add('ghost-friend');
+        if (status === 'foe') ev.currentTarget.classList.add('ghost-foe');
     }
 
     function checkCompanions(index, name) {
@@ -218,6 +207,22 @@
         return status;
     }
 
+    function calculateHealthScore() {
+        let score = 100;
+        let alertCount = 0;
+        Object.keys(gardenLayout).forEach(idx => {
+            const status = checkCompanions(parseInt(idx), gardenLayout[idx].name);
+            if (status === 'foe') {
+                score -= 10;
+                alertCount++;
+            }
+        });
+        const scoreEl = document.getElementById('health-value');
+        scoreEl.innerText = Math.max(0, score);
+        scoreEl.className = score < 70 ? 'text-2xl font-black text-red-500' : 'text-2xl font-black text-green-500';
+        return { score, alertCount };
+    }
+
     async function handleDrop(ev, i) {
         ev.preventDefault();
         if(!draggedPlant) return;
@@ -237,21 +242,22 @@
 
     async function saveLayout() {
         document.getElementById('sync-indicator').innerText = "Saving...";
+        const { score, alertCount } = calculateHealthScore();
         const { data: { user } } = await _supabase.auth.getUser();
         
-        const { error } = await _supabase
-            .from('garden_settings')
-            .upsert(
-                { key: 'spatial_layout', value: JSON.stringify(gardenLayout), user_id: user?.id },
-                { onConflict: 'key' }
-            );
+        // Save Layout
+        await _supabase.from('garden_settings').upsert(
+            { key: 'spatial_layout', value: JSON.stringify(gardenLayout), user_id: user?.id },
+            { onConflict: 'key' }
+        );
 
-        if (error) {
-            console.error("Save error:", error);
-            document.getElementById('sync-indicator').innerText = "Sync Error ⚠️";
-        } else {
-            document.getElementById('sync-indicator').innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full"></span> Cloud Saved`;
-        }
+        // Save Health Stats for Dashboard
+        await _supabase.from('garden_settings').upsert(
+            { key: 'garden_health', value: JSON.stringify({ score, alertCount }), user_id: user?.id },
+            { onConflict: 'key' }
+        );
+
+        document.getElementById('sync-indicator').innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full"></span> Cloud Saved`;
     }
 
     function showInfo(i) {
