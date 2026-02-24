@@ -40,6 +40,13 @@
             transition: all 0.2s;
             border: 1px solid rgba(255,255,255,0.05);
         }
+        
+        /* Microclimate Layer Styles */
+        .tag-heat_pocket { background: rgba(249, 115, 22, 0.2) !important; border: 1px dashed #f97316 !important; }
+        .tag-frost_pocket { background: rgba(99, 102, 241, 0.2) !important; border: 1px dashed #6366f1 !important; }
+        .tag-wind_tunnel { background: rgba(59, 130, 246, 0.2) !important; border: 1px dashed #3b82f6 !important; }
+        .tag-wet_zone { background: rgba(6, 182, 212, 0.2) !important; border: 1px dashed #06b6d4 !important; }
+        
         .grid-spot.occupied { background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; }
         .solar-dot {
             position: absolute; top: 4px; left: 4px;
@@ -68,15 +75,26 @@
         </div>
     </div>
 
-    <aside class="w-80 bg-slate-900 border-r border-white/10 p-6 flex flex-col">
+    <aside class="w-80 bg-slate-900 border-r border-white/10 p-6 flex flex-col overflow-y-auto">
         <div class="mb-8">
-            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Spatial Engine</h2>
-            <p class="text-lg font-black text-white leading-tight">DRAG & DROP<br>PLANNING</p>
+            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1 text-center">Spatial Engine</h2>
+            <p class="text-lg font-black text-white leading-tight text-center">GARDEN<br>ARCHITECT</p>
         </div>
         
+        <div class="mb-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+            <p class="text-[9px] font-bold text-slate-500 uppercase mb-3 text-center">Microclimate Painter</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="setInteractionMode('plant')" id="btn-plant" class="col-span-2 p-2 bg-green-600 rounded-xl text-[10px] font-black uppercase mb-1">🌱 Plant Seeds</button>
+                <button onclick="setInteractionMode('tag', 'heat_pocket')" class="p-2 bg-orange-900/40 border border-orange-500/50 rounded-xl text-[9px] font-bold text-orange-200">🔥 Heat Wall</button>
+                <button onclick="setInteractionMode('tag', 'frost_pocket')" class="p-2 bg-indigo-900/40 border border-indigo-500/50 rounded-xl text-[9px] font-bold text-indigo-200">❄️ Frost</button>
+                <button onclick="setInteractionMode('tag', 'wind_tunnel')" class="p-2 bg-blue-900/40 border border-blue-500/50 rounded-xl text-[9px] font-bold text-blue-200">💨 Wind</button>
+                <button onclick="setInteractionMode('tag', 'wet_zone')" class="p-2 bg-cyan-900/40 border border-cyan-500/50 rounded-xl text-[9px] font-bold text-cyan-200">💧 Wet Area</button>
+            </div>
+        </div>
+
         <div id="library-drag-container" class="space-y-3 overflow-y-auto pr-2 flex-grow"></div>
 
-        <div class="pt-6 border-t border-white/10 space-y-3">
+        <div class="pt-6 border-t border-white/10 space-y-3 mt-4">
             <div id="health-stat" class="p-4 bg-white/5 rounded-2xl">
                 <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Garden Health Score</p>
                 <div class="flex items-end gap-2">
@@ -84,19 +102,19 @@
                     <span class="text-[10px] text-slate-500 mb-1">/ 100</span>
                 </div>
             </div>
-            <a href="index.html" class="block w-full text-center py-4 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-500 transition">Save & Exit</a>
+            <a href="index.html" class="block w-full text-center py-4 bg-slate-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10">Dashboard</a>
         </div>
     </aside>
 
     <main class="flex-grow flex flex-col items-center justify-center relative">
         <div id="sync-indicator" class="absolute top-8 right-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Initializing Cloud...
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Active
         </div>
 
         <div id="gardenGrid" class="grid-container"></div>
         
         <div class="mt-8 text-center">
-            <p id="feedback-text" class="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em]">Hartford Zone 6B • Precision Layout</p>
+            <p id="feedback-text" class="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em]">Hartford Zone 6B • Microclimate Enabled</p>
         </div>
     </main>
 
@@ -108,39 +126,82 @@
     const GRID_SIZE = 81; 
     const COLS = 9;
 
+    let interactionMode = 'plant'; // or 'tag'
+    let activeTag = null;
+    let draggedPlant = null;
+    let gardenLayout = {}; // Stores plants
+    let microclimateLayout = {}; // Stores tags
+
     const plantLogic = {
-        "Tomato": { friends: ["Basil", "Carrot", "Lettuce"], foes: ["Broccoli"], sun: 8 },
-        "Basil": { friends: ["Tomato"], foes: [], sun: 6 },
-        "Lettuce": { friends: ["Carrot", "Tomato", "Broccoli"], foes: [], sun: 4 },
-        "Carrot": { friends: ["Tomato", "Lettuce"], foes: [], sun: 6 },
-        "Broccoli": { friends: ["Lettuce"], foes: ["Tomato"], sun: 6 }
+        "Tomato": { friends: ["Basil", "Carrot", "Lettuce"], foes: ["Broccoli"], sun: 8, sensitive: 'frost' },
+        "Basil": { friends: ["Tomato"], foes: [], sun: 6, sensitive: 'frost' },
+        "Lettuce": { friends: ["Carrot", "Tomato", "Broccoli"], foes: [], sun: 4, sensitive: 'heat' },
+        "Carrot": { friends: ["Tomato", "Lettuce"], foes: [], sun: 6, sensitive: 'none' },
+        "Broccoli": { friends: ["Lettuce"], foes: ["Tomato"], sun: 6, sensitive: 'heat' }
     };
 
-    let draggedPlant = null;
-    let gardenLayout = {};
-
-    function getSolarForIndex(i) {
-        const row = Math.floor(i / COLS);
-        if (row < 3) return 9; 
-        if (row < 6) return 6; 
-        return 4; 
+    function setInteractionMode(mode, tag = null) {
+        interactionMode = mode;
+        activeTag = tag;
+        document.getElementById('btn-plant').className = mode === 'plant' ? 
+            'col-span-2 p-2 bg-green-600 rounded-xl text-[10px] font-black uppercase mb-1' : 
+            'col-span-2 p-2 bg-slate-700 rounded-xl text-[10px] font-black uppercase mb-1';
     }
 
     async function init() {
+        const { data: { user } } = await _supabase.auth.getUser();
         const { data: lib } = await _supabase.from('garden_library').select('*');
         renderSidebar(lib || []);
 
-        const { data: layout } = await _supabase
-            .from('garden_settings')
-            .select('value')
-            .eq('key', 'spatial_layout')
-            .maybeSingle();
-
-        gardenLayout = (layout && layout.value) ? JSON.parse(layout.value) : {};
-        document.getElementById('sync-indicator').innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full"></span> Cloud Connected`;
+        const { data: settings } = await _supabase.from('garden_settings').select('key, value').eq('user_id', user.id);
         
+        const layoutData = settings?.find(s => s.key === 'spatial_layout')?.value;
+        const tagData = settings?.find(s => s.key === 'microclimate_tags')?.value;
+
+        gardenLayout = layoutData ? (typeof layoutData === 'string' ? JSON.parse(layoutData) : layoutData) : {};
+        microclimateLayout = tagData ? (typeof tagData === 'string' ? JSON.parse(tagData) : tagData) : {};
+
         calculateHealthScore();
         renderGrid();
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('gardenGrid');
+        grid.innerHTML = "";
+        for (let i = 0; i < GRID_SIZE; i++) {
+            const row = Math.floor(i / COLS);
+            const sun = row < 3 ? 9 : (row < 6 ? 6 : 4);
+            const plant = gardenLayout[i];
+            const tag = microclimateLayout[i];
+            
+            const spot = document.createElement('div');
+            spot.className = `grid-spot ${plant ? 'occupied' : ''} ${tag ? 'tag-' + tag : ''}`;
+            spot.innerHTML = `
+                <div class="solar-dot ${sun >= 8 ? 'bg-amber-500' : 'bg-blue-500'}"></div>
+                ${plant ? `<span class="text-3xl relative z-10">${plant.emoji}</span>
+                           <div class="info-btn" onclick="event.stopPropagation(); showInfo(${i})">?</div>` : ''}
+            `;
+            
+            spot.ondragover = (e) => handleDragOver(e, i);
+            spot.ondrop = (e) => handleDrop(e, i);
+            spot.onclick = () => handleSpotClick(i);
+            grid.appendChild(spot);
+        }
+    }
+
+    function handleSpotClick(i) {
+        if (interactionMode === 'tag') {
+            if (microclimateLayout[i] === activeTag) delete microclimateLayout[i];
+            else microclimateLayout[i] = activeTag;
+            saveSettings();
+            renderGrid();
+        } else if (gardenLayout[i]) {
+            if(confirm("Remove this plant?")) {
+                delete gardenLayout[i];
+                saveSettings();
+                renderGrid();
+            }
+        }
     }
 
     function renderSidebar(library) {
@@ -156,125 +217,92 @@
         `).join('');
     }
 
-    function renderGrid() {
-        const grid = document.getElementById('gardenGrid');
-        grid.innerHTML = "";
-        for (let i = 0; i < GRID_SIZE; i++) {
-            const sun = getSolarForIndex(i);
-            const plant = gardenLayout[i];
-            const spot = document.createElement('div');
-            spot.className = `grid-spot ${plant ? 'occupied' : ''}`;
-            spot.innerHTML = `
-                <div class="solar-dot ${sun >= 8 ? 'bg-amber-500' : 'bg-blue-500'}"></div>
-                ${plant ? `<span class="text-3xl relative z-10">${plant.emoji}</span>
-                           <div class="info-btn" onclick="event.stopPropagation(); showInfo(${i})">?</div>` : ''}
-            `;
-            spot.ondragover = (e) => handleDragOver(e, i);
-            spot.ondragleave = (e) => e.currentTarget.classList.remove('ghost-friend', 'ghost-foe');
-            spot.ondrop = (e) => handleDrop(e, i);
-            if(plant) spot.onclick = () => removePlant(i);
-            grid.appendChild(spot);
-        }
-    }
+    function drag(ev, obj) { draggedPlant = obj; setInteractionMode('plant'); }
+    function handleDragOver(ev) { ev.preventDefault(); }
 
-    function drag(ev, obj) { draggedPlant = obj; }
-
-    function handleDragOver(ev, i) {
+    async function handleDrop(ev, i) {
         ev.preventDefault();
-        if (gardenLayout[i] || !draggedPlant) return;
-        const status = checkCompanions(i, draggedPlant.name);
-        if (status === 'friend') ev.currentTarget.classList.add('ghost-friend');
-        if (status === 'foe') ev.currentTarget.classList.add('ghost-foe');
+        if(!draggedPlant) return;
+        gardenLayout[i] = draggedPlant;
+        await saveSettings();
+        renderGrid();
     }
 
-    function checkCompanions(index, name) {
-        const row = Math.floor(index / COLS);
-        const col = index % COLS;
-        let status = 'neutral';
-        for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
-                if (i === 0 && j === 0) continue;
-                const nRow = row + i, nCol = col + j;
-                if (nRow >= 0 && nRow < 9 && nCol >= 0 && nCol < 9) {
-                    const neighbor = gardenLayout[nRow * 9 + nCol];
-                    if (neighbor && plantLogic[name]) {
-                        if (plantLogic[name].foes.includes(neighbor.name)) return 'foe';
-                        if (plantLogic[name].friends.includes(neighbor.name)) status = 'friend';
-                    }
-                }
-            }
-        }
-        return status;
+    async function saveSettings() {
+        document.getElementById('sync-indicator').innerText = "Syncing...";
+        const { data: { user } } = await _supabase.auth.getUser();
+        const { score, alertCount } = calculateHealthScore();
+
+        await _supabase.from('garden_settings').upsert([
+            { key: 'spatial_layout', value: gardenLayout, user_id: user.id },
+            { key: 'microclimate_tags', value: microclimateLayout, user_id: user.id },
+            { key: 'garden_health', value: { score, alertCount }, user_id: user.id }
+        ], { onConflict: 'user_id, key' });
+
+        document.getElementById('sync-indicator').innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full"></span> Cloud Active`;
     }
 
     function calculateHealthScore() {
         let score = 100;
         let alertCount = 0;
         Object.keys(gardenLayout).forEach(idx => {
-            const status = checkCompanions(parseInt(idx), gardenLayout[idx].name);
-            if (status === 'foe') {
-                score -= 10;
-                alertCount++;
-            }
+            const i = parseInt(idx);
+            const plant = gardenLayout[i];
+            const tag = microclimateLayout[i];
+            
+            // 1. Companion Check
+            const compStatus = checkCompanions(i, plant.name);
+            if (compStatus === 'foe') { score -= 10; alertCount++; }
+
+            // 2. Microclimate Risk Check
+            if (tag === 'frost_pocket' && plantLogic[plant.name]?.sensitive === 'frost') { score -= 15; alertCount++; }
+            if (tag === 'heat_pocket' && plantLogic[plant.name]?.sensitive === 'heat') { score -= 15; alertCount++; }
         });
+        
         const scoreEl = document.getElementById('health-value');
         scoreEl.innerText = Math.max(0, score);
         scoreEl.className = score < 70 ? 'text-2xl font-black text-red-500' : 'text-2xl font-black text-green-500';
         return { score, alertCount };
     }
 
-    async function handleDrop(ev, i) {
-        ev.preventDefault();
-        if(!draggedPlant) return;
-        gardenLayout[i] = draggedPlant;
-        ev.currentTarget.classList.remove('ghost-friend', 'ghost-foe');
-        await saveLayout();
-        renderGrid();
-    }
-
-    async function removePlant(i) {
-        if(confirm("Remove this plant?")) {
-            delete gardenLayout[i];
-            await saveLayout();
-            renderGrid();
+    function checkCompanions(index, name) {
+        const row = Math.floor(index / COLS);
+        const col = index % COLS;
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (i === 0 && j === 0) continue;
+                const nRow = row + i, nCol = col + j;
+                if (nRow >= 0 && nRow < 9 && nCol >= 0 && nCol < 9) {
+                    const neighbor = gardenLayout[nRow * 9 + nCol];
+                    if (neighbor && plantLogic[name]?.foes.includes(neighbor.name)) return 'foe';
+                }
+            }
         }
-    }
-
-    async function saveLayout() {
-        document.getElementById('sync-indicator').innerText = "Saving...";
-        const { score, alertCount } = calculateHealthScore();
-        const { data: { user } } = await _supabase.auth.getUser();
-        
-        // Save Layout
-        await _supabase.from('garden_settings').upsert(
-            { key: 'spatial_layout', value: JSON.stringify(gardenLayout), user_id: user?.id },
-            { onConflict: 'key' }
-        );
-
-        // Save Health Stats for Dashboard
-        await _supabase.from('garden_settings').upsert(
-            { key: 'garden_health', value: JSON.stringify({ score, alertCount }), user_id: user?.id },
-            { onConflict: 'key' }
-        );
-
-        document.getElementById('sync-indicator').innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full"></span> Cloud Saved`;
+        return 'neutral';
     }
 
     function showInfo(i) {
         const plant = gardenLayout[i];
-        const sun = getSolarForIndex(i);
+        const tag = microclimateLayout[i];
         const modal = document.getElementById('modal');
+        let riskMsg = "Perfect Conditions";
+        let riskClass = "text-green-500";
+
+        if (tag === 'frost_pocket' && plantLogic[plant.name]?.sensitive === 'frost') {
+            riskMsg = "⚠️ HIGH FROST RISK"; riskClass = "text-red-500";
+        }
+
         document.getElementById('modal-content').innerHTML = `
-            <h3 class="text-xl font-black text-white mb-2">${plant.emoji} ${plant.name}</h3>
-            <p class="text-xs text-slate-400 mb-4">Location: Plot ${i}</p>
-            <div class="space-y-2">
-                <div class="flex justify-between text-[10px] font-bold">
-                    <span class="text-slate-500 uppercase">Current Sun</span>
-                    <span class="text-amber-500">${sun} Hours/Day</span>
+            <h3 class="text-xl font-black text-white mb-1">${plant.emoji} ${plant.name}</h3>
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-4 tracking-widest">Plot ${i} Analysis</p>
+            <div class="space-y-3">
+                <div class="p-3 bg-white/5 rounded-xl border border-white/10">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Environmental Note</p>
+                    <p class="text-xs font-black ${riskClass} uppercase">${riskMsg}</p>
                 </div>
-                <div class="flex justify-between text-[10px] font-bold">
-                    <span class="text-slate-500 uppercase">Required Sun</span>
-                    <span class="text-green-500">${plantLogic[plant.name]?.sun || 6} Hours</span>
+                <div class="flex justify-between text-[10px] font-bold px-1">
+                    <span class="text-slate-500 uppercase">Local Tag</span>
+                    <span class="text-blue-400 uppercase">${tag || 'Standard'}</span>
                 </div>
             </div>
         `;
