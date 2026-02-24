@@ -28,7 +28,7 @@
         .type-inground { background: #065f46; border: 2px solid #064e3b; color: #d1fae5; }
         .type-wall { background: #334155; border: 2px solid #475569; color: #f1f5f9; }
         .plant-obj {
-            position: absolute; cursor: move; width: 40px; height: 40px;
+            position: absolute; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
             font-size: 20px; border-radius: 50%; z-index: 60; transition: transform 0.2s;
         }
@@ -36,9 +36,9 @@
             position: absolute; border-radius: 50%; border: 1px dashed rgba(34, 197, 94, 0.4);
             background: rgba(34, 197, 94, 0.05); pointer-events: none; z-index: 40;
         }
-        .collision-warning { border: 2px solid #ef4444 !important; background: rgba(239, 68, 68, 0.15) !important; }
         .sidebar-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); }
         .active-btn { background: #f59e0b !important; color: #000 !important; }
+        .passport-tag-active { background: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
@@ -46,9 +46,15 @@
 <body class="flex h-screen">
 
     <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
-        <div class="mb-6">
-            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v5.0</h2>
-            <p class="text-xl font-black text-white uppercase">Spatial Studio</p>
+        <div class="mb-6 flex justify-between items-start">
+            <div>
+                <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v5.5</h2>
+                <p class="text-xl font-black text-white uppercase">Spatial Studio</p>
+            </div>
+            <div class="text-right">
+                <p class="text-[8px] font-bold text-slate-500 uppercase">Opt. Score</p>
+                <p id="opt-score" class="text-xl font-black text-green-400">100%</p>
+            </div>
         </div>
 
         <div class="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
@@ -56,11 +62,10 @@
             <div class="flex gap-1">
                 <button onclick="setYear(2026)" id="yr-2026" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black active-btn">2026</button>
                 <button onclick="setYear(2027)" id="yr-2027" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black">2027</button>
-                <button onclick="setYear(2028)" id="yr-2028" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black">2028</button>
             </div>
             <div id="soil-stats" class="mt-4">
                 <div class="flex justify-between text-[8px] font-bold text-slate-400 mb-1 uppercase">
-                    <span>Nitrogen Health</span> <span id="n-val">Optimal</span>
+                    <span>Nitrogen Level</span> <span id="n-val">Optimal</span>
                 </div>
                 <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
                     <div id="n-bar" class="bg-blue-500 h-full w-[100%] transition-all"></div>
@@ -75,45 +80,21 @@
             </div>
         </div>
 
-        <div class="mb-6">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Structures</p>
-            <div class="grid grid-cols-2 gap-2">
-                <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
-                <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'inground', 100, 100)">🌱 In-Ground</div>
-                <div class="p-2 bg-slate-700 rounded-lg text-[8px] font-bold text-center cursor-grab col-span-2" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Plant Library</p>
-            <div class="grid grid-cols-2 gap-2">
-                <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 'Nightshade')">🍅 Tomato</div>
-                <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Basil', '🌿', 12, 'Lamiaceae')">🌿 Basil</div>
-                <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Fennel', '🌱', 18, 'Umbellifer')">🌱 Fennel</div>
-                <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Pea', '🫛', 8, 'Legume')">🫛 Pea (N-Fix)</div>
-            </div>
-        </div>
-
-        <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-4">
+        <div class="space-y-6">
             <div>
-                <p class="text-[9px] font-black text-amber-500 uppercase mb-3">Heliophysics</p>
-                <div class="flex gap-1">
-                    <button onclick="setSeason('spring')" id="btn-spring" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">SPR</button>
-                    <button onclick="setSeason('summer')" id="btn-summer" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold active-btn">SUM</button>
-                    <button onclick="setSeason('fall')" id="btn-fall" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">FAL</button>
+                <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Structures</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
+                    <div class="p-2 bg-slate-700 rounded-lg text-[8px] font-bold text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
                 </div>
             </div>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" id="heat-toggle" onchange="updateMicroclimate()" class="accent-orange-500">
-                <span class="text-[9px] font-bold text-slate-300">🔥 HEAT BOOST</span>
-            </label>
-        </div>
 
-        <div class="mb-6">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Tactical Paint</p>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="setTacticalMode('frost')" id="btn-frost" class="p-2 bg-indigo-900/20 border border-indigo-500/30 rounded-lg text-[8px] font-black">❄️ FROST</button>
-                <button onclick="setTacticalMode('wet')" id="btn-wet" class="p-2 bg-cyan-900/20 border border-cyan-500/30 rounded-lg text-[8px] font-black">💧 WET</button>
+            <div>
+                <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Plant Library</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 'Nightshade')">🍅 Tomato</div>
+                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Pea', '🫛', 8, 'Legume')">🫛 Pea (N-Fix)</div>
+                </div>
             </div>
         </div>
 
@@ -123,25 +104,57 @@
         </div>
     </aside>
 
-    <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center">
+    <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center relative">
         <div id="viewport" ondragover="event.preventDefault()" ondrop="handleDrop(event)"></div>
+
+        <div id="passport-modal" class="hidden absolute top-10 right-10 w-72 bg-slate-900/95 border border-white/20 rounded-2xl shadow-2xl z-[200] p-5 backdrop-blur-xl">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 id="pass-emoji" class="text-3xl mb-1">🍅</h3>
+                    <h2 id="pass-title" class="text-lg font-black uppercase tracking-tighter leading-none">Plant Passport</h2>
+                </div>
+                <button onclick="closePassport()" class="text-slate-500 hover:text-white">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[7px] font-black text-slate-500 uppercase">Cultivar / Seed Source</label>
+                    <input id="pass-variety" type="text" placeholder="e.g. Sungold / Baker Creek" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] mt-1 text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[7px] font-black text-slate-500 uppercase">Date Planted</label>
+                        <input id="pass-date" type="date" class="w-full bg-slate-800 border-none rounded p-2 text-[9px] mt-1 text-white">
+                    </div>
+                    <div>
+                        <label class="text-[7px] font-black text-slate-500 uppercase">Germination %</label>
+                        <input id="pass-germ" type="number" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] mt-1 text-white">
+                    </div>
+                </div>
+                <div class="flex gap-1 py-1">
+                    <button id="tag-overwinter" onclick="togglePassTag('overwinter')" class="flex-1 py-1 border border-white/10 rounded text-[7px] font-bold uppercase">❄️ Overwinter</button>
+                    <button id="tag-selfseed" onclick="togglePassTag('selfseed')" class="flex-1 py-1 border border-white/10 rounded text-[7px] font-bold uppercase">🌱 Self-Seed</button>
+                </div>
+                <div>
+                    <label class="text-[7px] font-black text-slate-500 uppercase">Notes</label>
+                    <textarea id="pass-notes" rows="2" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] mt-1 text-white"></textarea>
+                </div>
+                <button onclick="savePassportData()" class="w-full py-2 bg-green-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Update Passport</button>
+            </div>
+        </div>
     </main>
 
 <script>
-    const _supabase = supabase.createClient('https://zrohwzqaksqruywiedxt.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM');
+    const _supabase = supabase.createClient('https://zrohwzqaksqruywiedxt.supabase.co', 'YOUR_KEY_HERE');
 
     let bedData = [];
-    let plantData = []; // Plants for current active year
-    let yearArchive = { 2025: [] }; // Storage for rotation history
-    let tacticalData = {};
-    let activeTacticalTool = null;
-    let currentSeason = 'summer';
+    let plantData = []; 
+    let yearArchive = { 2025: [], 2026: [], 2027: [] };
     let currentYear = 2026;
+    let activePassportId = null;
 
     const RELATIONS = [
         { a: 'Tomato', b: 'Fennel', type: 'conflict', reason: 'Fennel inhibits tomato growth.' },
-        { a: 'Tomato', b: 'Basil', type: 'synergy', reason: 'Basil repels hornworms.' },
-        { a: 'Pea', b: 'Tomato', type: 'synergy', reason: 'Peas provide early N-fixing for tomatoes.' }
+        { a: 'Tomato', b: 'Basil', type: 'synergy', reason: 'Basil repels hornworms.' }
     ];
 
     function createGrid() {
@@ -150,61 +163,92 @@
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
             cell.id = `cell-${i}`;
-            cell.onclick = () => applyTactical(i);
             vp.appendChild(cell);
         }
     }
 
-    // --- DRAG HANDLERS ---
+    // --- DRAG/DROP ---
     function startBedDrag(e, type, w, h) {
-        e.dataTransfer.setData("itemType", "bed");
-        e.dataTransfer.setData("type", type);
-        e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h);
-        e.dataTransfer.setData("isNew", "true");
+        e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("type", type);
+        e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h); e.dataTransfer.setData("isNew", "true");
     }
 
     function startPlantDrag(e, name, icon, spread, family) {
-        e.dataTransfer.setData("itemType", "plant");
-        e.dataTransfer.setData("name", name);
-        e.dataTransfer.setData("icon", icon);
-        e.dataTransfer.setData("spread", spread);
-        e.dataTransfer.setData("family", family);
-        e.dataTransfer.setData("isNew", "true");
+        e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("name", name);
+        e.dataTransfer.setData("icon", icon); e.dataTransfer.setData("spread", spread);
+        e.dataTransfer.setData("family", family); e.dataTransfer.setData("isNew", "true");
     }
 
     function handleDrop(e) {
         const rect = document.getElementById('viewport').getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
         const itemType = e.dataTransfer.getData("itemType");
         const isNew = e.dataTransfer.getData("isNew") === "true";
 
         if (itemType === "bed") {
             if (isNew) {
-                const w = parseInt(e.dataTransfer.getData("w"));
-                const h = parseInt(e.dataTransfer.getData("h"));
+                const w = parseInt(e.dataTransfer.getData("w")), h = parseInt(e.dataTransfer.getData("h"));
                 bedData.push({ id: Date.now(), type: e.dataTransfer.getData("type"), x: x-(w/2), y: y-(h/2), w, h });
             } else {
-                const id = parseInt(e.dataTransfer.getData("id"));
-                const bed = bedData.find(b => b.id === id);
+                const id = parseInt(e.dataTransfer.getData("id")), bed = bedData.find(b => b.id === id);
                 if (bed) { bed.x = x-(bed.w/2); bed.y = y-(bed.h/2); }
             }
         } else if (itemType === "plant") {
             if (isNew) {
                 plantData.push({ 
                     id: Date.now(), name: e.dataTransfer.getData("name"), icon: e.dataTransfer.getData("icon"), 
-                    spread: parseInt(e.dataTransfer.getData("spread")), family: e.dataTransfer.getData("family"), x, y 
+                    spread: parseInt(e.dataTransfer.getData("spread")), family: e.dataTransfer.getData("family"), 
+                    x, y, passport: { variety: '', date: '', germ: '', notes: '', overwinter: false, selfseed: false }
                 });
             } else {
-                const id = parseInt(e.dataTransfer.getData("id"));
-                const plant = plantData.find(p => p.id === id);
+                const id = parseInt(e.dataTransfer.getData("id")), plant = plantData.find(p => p.id === id);
                 if (plant) { plant.x = x; plant.y = y; }
             }
         }
         renderAll();
     }
 
-    // --- RENDER & INTEL ---
+    // --- PASSPORT LOGIC ---
+    function openPassport(id) {
+        const plant = plantData.find(p => p.id === id);
+        if (!plant) return;
+        activePassportId = id;
+        document.getElementById('passport-modal').classList.remove('hidden');
+        document.getElementById('pass-emoji').innerText = plant.icon;
+        document.getElementById('pass-title').innerText = plant.name;
+        
+        // Load data
+        document.getElementById('pass-variety').value = plant.passport.variety;
+        document.getElementById('pass-date').value = plant.passport.date;
+        document.getElementById('pass-germ').value = plant.passport.germ;
+        document.getElementById('pass-notes').value = plant.passport.notes;
+        
+        updatePassTagUI('overwinter', plant.passport.overwinter);
+        updatePassTagUI('selfseed', plant.passport.selfseed);
+    }
+
+    function togglePassTag(tag) {
+        const plant = plantData.find(p => p.id === activePassportId);
+        plant.passport[tag] = !plant.passport[tag];
+        updatePassTagUI(tag, plant.passport[tag]);
+    }
+
+    function updatePassTagUI(tag, active) {
+        document.getElementById(`tag-${tag}`).classList.toggle('passport-tag-active', active);
+    }
+
+    function savePassportData() {
+        const plant = plantData.find(p => p.id === activePassportId);
+        plant.passport.variety = document.getElementById('pass-variety').value;
+        plant.passport.date = document.getElementById('pass-date').value;
+        plant.passport.germ = document.getElementById('pass-germ').value;
+        plant.passport.notes = document.getElementById('pass-notes').value;
+        closePassport();
+    }
+
+    function closePassport() { document.getElementById('passport-modal').classList.add('hidden'); activePassportId = null; }
+
+    // --- ENGINE ---
     function renderAll() {
         document.querySelectorAll('.bed-obj, .plant-obj, .plant-halo').forEach(el => el.remove());
         const vp = document.getElementById('viewport');
@@ -223,7 +267,6 @@
             const matureSize = (plant.spread / 12) * 50;
             const halo = document.createElement('div');
             halo.className = 'plant-halo';
-            halo.id = `halo-${plant.id}`;
             halo.style.width = `${matureSize}px`; halo.style.height = `${matureSize}px`;
             halo.style.left = `${plant.x - (matureSize/2)}px`; halo.style.top = `${plant.y - (matureSize/2)}px`;
             vp.appendChild(halo);
@@ -232,98 +275,56 @@
             el.className = 'plant-obj';
             el.style.left = `${plant.x - 20}px`; el.style.top = `${plant.y - 20}px`;
             el.innerText = plant.icon; el.draggable = true;
+            el.onclick = () => openPassport(plant.id);
             el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", plant.id); e.dataTransfer.setData("isNew", "false"); };
             vp.appendChild(el);
         });
 
-        updateMicroclimate();
         runAgronomyIntel();
     }
 
     function runAgronomyIntel() {
         const container = document.getElementById('intel-alerts');
         container.innerHTML = '';
-        let alerts = [];
-        let nitrogen = 100;
+        let alerts = [], nitrogen = 100, score = 100;
 
         plantData.forEach((p1, i) => {
-            // 1. Nutrient Tracking
             if (p1.family === 'Nightshade') nitrogen -= 10;
             if (p1.family === 'Legume') nitrogen += 15;
 
-            // 2. Rotation Conflict Check (Checking previous year)
+            // Rotation Check
             const prevYear = yearArchive[currentYear - 1] || [];
             prevYear.forEach(prevP => {
-                const dist = Math.hypot(p1.x - prevP.x, p1.y - prevP.y);
-                if (dist < 80 && p1.family === prevP.family && p1.family === 'Nightshade') {
-                    alerts.push(`⚠️ Blight Risk: ${p1.name} in same spot as ${currentYear-1}.`);
-                }
-            });
-
-            // 3. Companion Logic
-            plantData.forEach((p2, j) => {
-                if (i === j) return;
-                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                if (dist < 100) {
-                    const rel = RELATIONS.find(r => (r.a === p1.name && r.b === p2.name) || (r.b === p1.name && r.a === p2.name));
-                    if (rel && !alerts.includes(rel.reason)) alerts.push(`${rel.type === 'synergy' ? '✨' : '❌'} ${rel.reason}`);
+                if (Math.hypot(p1.x - prevP.x, p1.y - prevP.y) < 80 && p1.family === prevP.family) {
+                    alerts.push(`⚠️ Rotation Conflict: ${p1.name} on ${prevP.family} soil.`);
+                    score -= 15;
                 }
             });
         });
 
-        // Update UI
         if (alerts.length === 0) container.innerHTML = '<p class="text-slate-500 italic">No spatial risks detected.</p>';
         alerts.forEach(a => container.innerHTML += `<div class="p-2 border border-white/10 rounded bg-slate-900/50">${a}</div>`);
         
-        const nBar = document.getElementById('n-bar');
-        nBar.style.width = `${Math.min(nitrogen, 100)}%`;
-        document.getElementById('n-val').innerText = nitrogen < 60 ? 'DEPLETED' : 'OPTIMAL';
-        nBar.className = `h-full transition-all ${nitrogen < 60 ? 'bg-red-500' : 'bg-blue-500'}`;
+        document.getElementById('n-bar').style.width = `${Math.min(nitrogen, 100)}%`;
+        document.getElementById('opt-score').innerText = `${Math.max(0, score)}%`;
     }
 
     function setYear(yr) {
-        yearArchive[currentYear] = [...plantData]; // Save state
+        yearArchive[currentYear] = JSON.parse(JSON.stringify(plantData));
         currentYear = yr;
-        plantData = yearArchive[yr] || []; // Load state
+        plantData = yearArchive[yr] || [];
         document.querySelectorAll('.yr-btn').forEach(b => b.classList.toggle('active-btn', b.id === `yr-${yr}`));
         renderAll();
     }
 
-    // --- LEGACY FEATURES (Heliophysics & Tactical) ---
-    function setSeason(s) { currentSeason = s; document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active-btn', b.id === `btn-${s}`)); updateMicroclimate(); }
-    
-    function updateMicroclimate() {
-        const heatOn = document.getElementById('heat-toggle').checked;
-        const config = { 'spring': 1.5, 'summer': 0.4, 'fall': 2.5 }[currentSeason];
-        document.querySelectorAll('.grid-cell').forEach((cell, i) => {
-            const row = Math.floor(i / 20); const col = i % 20;
-            const cx = col * 50; const cy = row * 50;
-            let shade = false; let heat = false;
-            bedData.forEach(obj => {
-                if (cx >= obj.x && cx <= (obj.x + obj.w) && cy < obj.y && cy > (obj.y - (obj.h * config))) shade = true;
-                if (heatOn && obj.type === 'wall' && cx >= obj.x && cx <= (obj.x + obj.w) && cy >= (obj.y + obj.h) && cy <= (obj.y + obj.h + 80)) heat = true;
-            });
-            cell.style.backgroundColor = shade ? 'rgba(49, 46, 129, 0.25)' : (heat ? 'rgba(239, 68, 68, 0.15)' : 'rgba(251, 191, 36, 0.1)');
-        });
-    }
-
-    function setTacticalMode(mode) { activeTacticalTool = mode; document.getElementById('btn-frost').className = mode==='frost'?'p-2 bg-indigo-600 rounded-lg text-[8px] font-black':'p-2 bg-indigo-900/20 rounded-lg text-[8px] font-black'; }
-    
-    function applyTactical(id) {
-        if (!activeTacticalTool) return;
-        const cell = document.getElementById(`cell-${id}`);
-        cell.classList.toggle(`tag-${activeTacticalTool}`);
-    }
-
     function deleteItem(e) {
-        const id = parseInt(e.dataTransfer.getData("id"));
-        const type = e.dataTransfer.getData("itemType");
+        const id = parseInt(e.dataTransfer.getData("id")), type = e.dataTransfer.getData("itemType");
         if (type === "bed") bedData = bedData.filter(b => b.id !== id);
         else plantData = plantData.filter(p => p.id !== id);
         renderAll();
     }
 
-    window.onload = () => { createGrid(); updateMicroclimate(); };
+    window.onload = () => { createGrid(); renderAll(); };
 </script>
 </body>
 </html>
