@@ -38,12 +38,21 @@
             position: absolute; cursor: move; 
             display: flex; align-items: center; justify-content: center;
             font-size: 9px; font-weight: 900; text-transform: uppercase;
-            border-radius: 8px; z-index: 50;
+            border-radius: 8px; z-index: 10;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .type-raised { background: #92400e; border: 2px solid #78350f; color: #fef3c7; }
         .type-inground { background: #065f46; border: 2px solid #064e3b; color: #d1fae5; }
         .type-wall { background: #334155; border: 2px solid #475569; color: #f1f5f9; }
+
+        /* Plant Instances */
+        .plant-obj {
+            position: absolute; cursor: move;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; border-radius: 50%;
+            z-index: 60; transition: transform 0.2s;
+        }
 
         /* Plant Halos & Spacing */
         .plant-halo {
@@ -60,215 +69,273 @@
 
         .sidebar-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); }
         .season-btn.active { background: #f59e0b; color: #000; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body class="flex h-screen">
 
     <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
         <div class="mb-6">
-            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v3.2</h2>
+            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v4.0</h2>
             <p class="text-xl font-black text-white leading-tight uppercase">Spatial Studio</p>
         </div>
 
-        <div class="mb-6">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Blueprints</p>
-            <div class="grid grid-cols-2 gap-2">
-                <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
-                <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'inground', 100, 100)">🌱 In-Ground</div>
-                <div class="p-2 bg-slate-700 rounded-lg text-[8px] font-bold text-center cursor-grab col-span-2" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
+        <div class="mb-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+            <div class="flex justify-between items-center mb-3">
+                <p class="text-[9px] font-black text-purple-400 uppercase">Companion Intel</p>
+                <span id="alert-badge" class="px-2 py-0.5 bg-red-500 text-[8px] font-black rounded-full hidden">0</span>
             </div>
-        </div>
-
-        <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-            <p class="text-[9px] font-black text-amber-500 uppercase mb-3">Sun Path & Heat</p>
-            <div class="flex gap-1 mb-3">
-                <button onclick="setSeason('spring')" id="btn-spring" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">SPRING</button>
-                <button onclick="setSeason('summer')" id="btn-summer" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold active">SUMMER</button>
-                <button onclick="setSeason('fall')" id="btn-fall" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">FALL</button>
-            </div>
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" id="heat-toggle" onchange="updateMicroclimate()" class="accent-orange-500">
-                <span class="text-[9px] font-bold text-slate-300">🔥 HEAT AMPLIFICATION</span>
-            </label>
-        </div>
-
-        <div class="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-            <p class="text-[9px] font-black text-green-500 uppercase mb-2">Growth Projection</p>
-            <input type="range" id="growth-slider" min="0" max="3" step="1" value="0" oninput="updateGrowth(this.value)" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-green-500">
-            <div class="flex justify-between text-[7px] font-bold text-slate-500 mt-1">
-                <span>NEW</span><span>Y1</span><span>Y2</span><span>MATURE</span>
+            <select id="companion-mode" onchange="checkRelationships()" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-[10px] font-bold text-slate-300 mb-3">
+                <option value="info">Informational Mode</option>
+                <option value="strict">Strict Enforcement</option>
+            </select>
+            <div id="companion-alerts" class="space-y-2 max-h-32 overflow-y-auto text-[8px]">
+                <p class="text-slate-500 italic">No spatial conflicts detected.</p>
             </div>
         </div>
 
         <div class="mb-6">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Tactical Paint</p>
+            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Plant Library (Drag to Map)</p>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="setTacticalMode('frost')" id="btn-frost" class="p-2 bg-indigo-900/20 border border-indigo-500/30 rounded-lg text-[8px] font-black text-indigo-300">❄️ FROST</button>
-                <button onclick="setTacticalMode('wet')" id="btn-wet" class="p-2 bg-cyan-900/20 border border-cyan-500/30 rounded-lg text-[8px] font-black text-cyan-300">💧 WET</button>
+                <div class="p-2 bg-slate-800 rounded-lg text-[10px] flex items-center gap-2 cursor-grab border border-white/5" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24)"><span>🍅</span> Tomato</div>
+                <div class="p-2 bg-slate-800 rounded-lg text-[10px] flex items-center gap-2 cursor-grab border border-white/5" draggable="true" ondragstart="startPlantDrag(event, 'Basil', '🌿', 12)"><span>🌿</span> Basil</div>
+                <div class="p-2 bg-slate-800 rounded-lg text-[10px] flex items-center gap-2 cursor-grab border border-white/5" draggable="true" ondragstart="startPlantDrag(event, 'Fennel', '🌱', 18)"><span>🌱</span> Fennel</div>
+                <div class="p-2 bg-slate-800 rounded-lg text-[10px] flex items-center gap-2 cursor-grab border border-white/5" draggable="true" ondragstart="startPlantDrag(event, 'Marigold', '🌼', 12)"><span>🌼</span> Marigold</div>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Structures</p>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="p-2 bg-slate-800 rounded-lg text-[16px] text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫</div>
+                <div class="p-2 bg-slate-800 rounded-lg text-[16px] text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'inground', 100, 100)">🌱</div>
+                <div class="p-2 bg-slate-700 rounded-lg text-[16px] text-center cursor-grab" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱</div>
+            </div>
+        </div>
+
+        <div class="mb-6 space-y-4">
+            <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <p class="text-[9px] font-black text-amber-500 uppercase mb-3">Sun Path</p>
+                <div class="flex gap-1 mb-3">
+                    <button onclick="setSeason('spring')" id="btn-spring" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">SPR</button>
+                    <button onclick="setSeason('summer')" id="btn-summer" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold active">SUM</button>
+                    <button onclick="setSeason('fall')" id="btn-fall" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">FAL</button>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="heat-toggle" onchange="updateMicroclimate()" class="accent-orange-500">
+                    <span class="text-[9px] font-bold text-slate-300 uppercase">🔥 Heat Boost</span>
+                </label>
+            </div>
+
+            <div class="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                <p class="text-[9px] font-black text-green-500 uppercase mb-2 text-center">3-Year Growth Timeline</p>
+                <input type="range" id="growth-slider" min="0" max="3" step="1" value="0" oninput="updateGrowth(this.value)" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-green-500">
             </div>
         </div>
 
         <div class="mt-auto space-y-2">
-            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteBed(event)" class="py-3 border-2 border-dashed border-slate-800 rounded-xl text-[8px] font-bold text-slate-600 text-center uppercase">🗑️ Trash</div>
-            <button onclick="saveLayout()" class="w-full py-3 bg-white text-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest">Sync DNA</button>
+            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="py-3 border-2 border-dashed border-slate-800 rounded-xl text-[8px] font-bold text-slate-600 text-center uppercase">🗑️ Drop to Delete</div>
+            <button onclick="saveLayout()" class="w-full py-3 bg-white text-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest">Sync Garden DNA</button>
         </div>
     </aside>
 
     <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center">
-        <div id="viewport" ondragover="event.preventDefault()" ondrop="dropBed(event)"></div>
+        <div id="viewport" ondragover="event.preventDefault()" ondrop="handleDrop(event)"></div>
     </main>
 
 <script>
-    const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM'; 
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _supabase = supabase.createClient('https://zrohwzqaksqruywiedxt.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM');
 
-    let activeTacticalTool = null;
-    let tacticalData = {}; 
     let bedData = [];
+    let plantData = [];
+    let tacticalData = {};
+    let activeTacticalTool = null;
     let currentSeason = 'summer';
     let growthYear = 0;
 
-    const SEASON_DATA = {
-        'spring': { shadow: 1.5, light: 0.15 },
-        'summer': { shadow: 0.4, light: 0.25 },
-        'fall': { shadow: 2.5, light: 0.05 }
-    };
+    const RELATIONS = [
+        { a: 'Tomato', b: 'Fennel', type: 'conflict', reason: 'Fennel inhibits tomato growth.' },
+        { a: 'Tomato', b: 'Basil', type: 'synergy', reason: 'Basil repels hornworms and improves flavor.' },
+        { a: 'Tomato', b: 'Marigold', type: 'synergy', reason: 'Marigolds repel root-knot nematodes.' }
+    ];
+
+    const SEASON_DATA = { 'spring': { shadow: 1.5, light: 0.15 }, 'summer': { shadow: 0.4, light: 0.25 }, 'fall': { shadow: 2.5, light: 0.05 } };
 
     function createGrid() {
-        const viewport = document.getElementById('viewport');
+        const vp = document.getElementById('viewport');
         for (let i = 0; i < 400; i++) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
             cell.id = `cell-${i}`;
             cell.onclick = () => applyTactical(i);
-            viewport.appendChild(cell);
+            vp.appendChild(cell);
         }
     }
 
-    // --- HELIOPHYSICS & MICROCLIMATE ---
-    function setSeason(s) {
-        currentSeason = s;
-        document.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${s}`).classList.add('active');
-        updateMicroclimate();
-    }
-
-    function updateMicroclimate() {
-        const heatOn = document.getElementById('heat-toggle').checked;
-        const config = SEASON_DATA[currentSeason];
-        
-        document.querySelectorAll('.grid-cell').forEach((cell, i) => {
-            const row = Math.floor(i / 20); const col = i % 20;
-            const cx = col * 50; const cy = row * 50;
-            let shade = false; let heat = false;
-
-            bedData.forEach(obj => {
-                // Shadow Math (North of structure)
-                const shadowReach = obj.h * config.shadow;
-                if (cx >= obj.x && cx <= (obj.x + obj.w) && cy < obj.y && cy > (obj.y - shadowReach)) shade = true;
-                // Heat Math (South of wall)
-                if (heatOn && obj.type === 'wall' && cx >= obj.x && cx <= (obj.x + obj.w) && cy >= (obj.y + obj.h) && cy <= (obj.y + obj.h + 80)) heat = true;
-            });
-
-            if (shade) {
-                cell.style.backgroundColor = 'rgba(49, 46, 129, 0.25)';
-                cell.style.boxShadow = 'inset 0 0 15px rgba(30, 27, 75, 0.5)';
-            } else if (heat) {
-                cell.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-                cell.style.boxShadow = 'inset 0 0 10px rgba(239, 68, 68, 0.3)';
-            } else {
-                cell.style.backgroundColor = `rgba(251, 191, 36, ${config.light})`;
-                cell.style.boxShadow = 'none';
-            }
-        });
-    }
-
-    // --- GROWTH & SPACING ---
-    function updateGrowth(year) {
-        growthYear = year;
-        // This is where you'd re-scale plant icons if we were rendering plant instances
-        console.log("Simulating Year:", growthYear);
-    }
-
-    // --- TACTICAL LOGIC ---
-    function setTacticalMode(mode) {
-        activeTacticalTool = mode;
-        document.getElementById('btn-frost').classList.toggle('bg-indigo-600', mode === 'frost');
-        document.getElementById('btn-wet').classList.toggle('bg-cyan-600', mode === 'wet');
-    }
-
-    function applyTactical(cellId) {
-        if (!activeTacticalTool) return;
-        const cell = document.getElementById(`cell-${cellId}`);
-        const tagClass = `tag-${activeTacticalTool}`;
-        if (cell.classList.contains(tagClass)) {
-            cell.classList.remove(tagClass);
-            delete tacticalData[cellId];
-        } else {
-            cell.classList.add(tagClass);
-            tacticalData[cellId] = activeTacticalTool;
-        }
-    }
-
-    // --- BED ENGINE ---
+    // --- DRAG & DROP HANDLERS ---
     function startBedDrag(e, type, w, h) {
+        e.dataTransfer.setData("itemType", "bed");
         e.dataTransfer.setData("type", type);
-        e.dataTransfer.setData("w", w);
-        e.dataTransfer.setData("h", h);
+        e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h);
         e.dataTransfer.setData("isNew", "true");
     }
 
-    function dropBed(e) {
-        const isNew = e.dataTransfer.getData("isNew");
+    function startPlantDrag(e, name, icon, spread) {
+        e.dataTransfer.setData("itemType", "plant");
+        e.dataTransfer.setData("name", name);
+        e.dataTransfer.setData("icon", icon);
+        e.dataTransfer.setData("spread", spread);
+        e.dataTransfer.setData("isNew", "true");
+    }
+
+    function handleDrop(e) {
         const rect = document.getElementById('viewport').getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
+        const itemType = e.dataTransfer.getData("itemType");
+        const isNew = e.dataTransfer.getData("isNew") === "true";
 
-        if (isNew === "true") {
-            const w = parseInt(e.dataTransfer.getData("w"));
-            const h = parseInt(e.dataTransfer.getData("h"));
-            bedData.push({ id: Date.now(), type: e.dataTransfer.getData("type"), x: x-(w/2), y: y-(h/2), w, h });
-        } else {
-            const id = parseInt(e.dataTransfer.getData("bedId"));
-            const bed = bedData.find(b => b.id === id);
-            if (bed) { bed.x = x - (bed.w/2); bed.y = y - (bed.h/2); }
+        if (itemType === "bed") {
+            if (isNew) {
+                const w = parseInt(e.dataTransfer.getData("w"));
+                const h = parseInt(e.dataTransfer.getData("h"));
+                bedData.push({ id: Date.now(), type: e.dataTransfer.getData("type"), x: x-(w/2), y: y-(h/2), w, h });
+            } else {
+                const id = parseInt(e.dataTransfer.getData("id"));
+                const bed = bedData.find(b => b.id === id);
+                if (bed) { bed.x = x-(bed.w/2); bed.y = y-(bed.h/2); }
+            }
+        } else if (itemType === "plant") {
+            if (isNew) {
+                plantData.push({ 
+                    id: Date.now(), 
+                    name: e.dataTransfer.getData("name"), 
+                    icon: e.dataTransfer.getData("icon"), 
+                    spread: parseInt(e.dataTransfer.getData("spread")), 
+                    x, y 
+                });
+            } else {
+                const id = parseInt(e.dataTransfer.getData("id"));
+                const plant = plantData.find(p => p.id === id);
+                if (plant) { plant.x = x; plant.y = y; }
+            }
         }
-        renderBeds();
-        updateMicroclimate();
+        renderAll();
     }
 
-    function renderBeds() {
-        document.querySelectorAll('.bed-obj').forEach(b => b.remove());
+    // --- RENDER ENGINE ---
+    function renderAll() {
+        document.querySelectorAll('.bed-obj, .plant-obj, .plant-halo').forEach(el => el.remove());
+        const vp = document.getElementById('viewport');
+
+        // Render Beds
         bedData.forEach(bed => {
             const el = document.createElement('div');
             el.className = `bed-obj type-${bed.type}`;
             el.style.left = `${bed.x}px`; el.style.top = `${bed.y}px`;
             el.style.width = `${bed.w}px`; el.style.height = `${bed.h}px`;
-            el.innerText = bed.type;
-            el.draggable = true;
-            el.ondragstart = (e) => { e.dataTransfer.setData("bedId", bed.id); e.dataTransfer.setData("isNew", "false"); };
-            document.getElementById('viewport').appendChild(el);
+            el.innerText = bed.type; el.draggable = true;
+            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("id", bed.id); e.dataTransfer.setData("isNew", "false"); };
+            vp.appendChild(el);
+        });
+
+        // Render Plants & Halos
+        plantData.forEach(plant => {
+            // Growth Multiplier: Y0=40%, Y3=100%
+            const growthFactor = 0.4 + (growthYear * 0.2);
+            const currentSize = (plant.spread / 12) * 50 * growthFactor;
+            const matureSize = (plant.spread / 12) * 50;
+
+            // Halo (Mature size)
+            const halo = document.createElement('div');
+            halo.className = 'plant-halo';
+            halo.id = `halo-${plant.id}`;
+            halo.style.width = `${matureSize}px`; halo.style.height = `${matureSize}px`;
+            halo.style.left = `${plant.x - (matureSize/2)}px`; halo.style.top = `${plant.y - (matureSize/2)}px`;
+            vp.appendChild(halo);
+
+            // Plant Icon
+            const el = document.createElement('div');
+            el.className = 'plant-obj';
+            el.style.left = `${plant.x - 20}px`; el.style.top = `${plant.y - 20}px`;
+            el.innerText = plant.icon; el.draggable = true;
+            el.style.transform = `scale(${growthFactor + 0.5})`;
+            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", plant.id); e.dataTransfer.setData("isNew", "false"); };
+            vp.appendChild(el);
+        });
+
+        updateMicroclimate();
+        checkRelationships();
+    }
+
+    // --- INTELLIGENCE LOGIC ---
+    function checkRelationships() {
+        const container = document.getElementById('companion-alerts');
+        const badge = document.getElementById('alert-badge');
+        container.innerHTML = '';
+        let alerts = [];
+
+        plantData.forEach((p1, i) => {
+            let hasConflict = false;
+            plantData.forEach((p2, j) => {
+                if (i === j) return;
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                const maturePx = ((p1.spread + p2.spread) / 24) * 50;
+
+                // Collision Detection
+                if (dist < maturePx) {
+                    document.getElementById(`halo-${p1.id}`).classList.add('collision-warning');
+                    hasConflict = true;
+                }
+
+                // Companion Logic (within 2ft / 100px)
+                if (dist < 100) {
+                    const rel = RELATIONS.find(r => (r.a === p1.name && r.b === p2.name) || (r.b === p1.name && r.a === p2.name));
+                    if (rel && !alerts.includes(rel.reason)) {
+                        alerts.push(rel.reason);
+                        const color = rel.type === 'conflict' ? 'text-red-400 border-red-500/30' : 'text-green-400 border-green-500/30';
+                        container.innerHTML += `<div class="p-2 border rounded bg-slate-900/50 ${color}">${rel.reason}</div>`;
+                    }
+                }
+            });
+            if (!hasConflict) document.getElementById(`halo-${p1.id}`)?.classList.remove('collision-warning');
+        });
+
+        badge.innerText = alerts.length;
+        badge.classList.toggle('hidden', alerts.length === 0);
+        if (alerts.length === 0) container.innerHTML = '<p class="text-slate-500 italic">No spatial conflicts detected.</p>';
+    }
+
+    function updateMicroclimate() {
+        const heatOn = document.getElementById('heat-toggle').checked;
+        const config = SEASON_DATA[currentSeason];
+        document.querySelectorAll('.grid-cell').forEach((cell, i) => {
+            const row = Math.floor(i / 20); const col = i % 20;
+            const cx = col * 50; const cy = row * 50;
+            let shade = false; let heat = false;
+            bedData.forEach(obj => {
+                if (cx >= obj.x && cx <= (obj.x + obj.w) && cy < obj.y && cy > (obj.y - (obj.h * config.shadow))) shade = true;
+                if (heatOn && obj.type === 'wall' && cx >= obj.x && cx <= (obj.x + obj.w) && cy >= (obj.y + obj.h) && cy <= (obj.y + obj.h + 80)) heat = true;
+            });
+            cell.style.backgroundColor = shade ? 'rgba(49, 46, 129, 0.25)' : (heat ? 'rgba(239, 68, 68, 0.15)' : `rgba(251, 191, 36, ${config.light})`);
         });
     }
 
-    function deleteBed(e) {
-        const id = parseInt(e.dataTransfer.getData("bedId"));
-        bedData = bedData.filter(b => b.id !== id);
-        renderBeds();
-        updateMicroclimate();
+    function setSeason(s) { currentSeason = s; setSeasonBtnActive(s); renderAll(); }
+    function setSeasonBtnActive(s) { document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active', b.id === `btn-${s}`)); }
+    function updateGrowth(val) { growthYear = val; renderAll(); }
+    function deleteItem(e) {
+        const id = parseInt(e.dataTransfer.getData("id"));
+        const type = e.dataTransfer.getData("itemType");
+        if (type === "bed") bedData = bedData.filter(b => b.id !== id);
+        else plantData = plantData.filter(p => p.id !== id);
+        renderAll();
     }
 
-    async function saveLayout() {
-        const { data: { user } } = await _supabase.auth.getUser();
-        await _supabase.from('garden_settings').upsert([
-            { key: 'spatial_beds', value: bedData, user_id: user.id },
-            { key: 'microclimate_tags', value: tacticalData, user_id: user.id }
-        ], { onConflict: 'user_id, key' });
-        alert("Spatial DNA Synced!");
-    }
-
-    window.onload = () => { createGrid(); updateMicroclimate(); };
+    window.onload = () => { createGrid(); renderAll(); };
 </script>
 </body>
 </html>
