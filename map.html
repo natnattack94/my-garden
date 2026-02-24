@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spatial Studio v8.0 | Predictive GardenHub OS</title>
+    <title>Spatial Studio v9.0 | Time Intelligence OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
@@ -28,10 +28,10 @@
         .plant-obj {
             position: absolute; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 22px; border-radius: 50%; z-index: 60; transition: transform 0.2s;
+            font-size: 22px; border-radius: 50%; z-index: 60; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* 2026 Stress Risk Meter */
+        /* 2026 Stress & Growth Indicators */
         .stress-indicator {
             position: absolute; top: -5px; right: -5px; width: 12px; height: 12px;
             border-radius: 50%; border: 2px solid #0f172a; z-index: 70;
@@ -39,7 +39,12 @@
         .risk-stable { background: #22c55e; }
         .risk-mild { background: #eab308; }
         .risk-high { background: #ef4444; animation: pulse 1s infinite; }
+        .stage-bloom { box-shadow: 0 0 15px #ec4899; border: 2px solid #ec4899; }
+        
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .timeline-track { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; margin-top: 4px; position: relative; }
+        .timeline-fill { height: 100%; background: #3b82f6; border-radius: 2px; }
 
         .plant-halo {
             position: absolute; border-radius: 50%; border: 1px dashed rgba(34, 197, 94, 0.4);
@@ -48,15 +53,11 @@
         .sidebar-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); }
         .active-btn { background: #f59e0b !important; color: #000 !important; }
         
-        /* Task Cards */
         .predictive-card {
             background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px;
             border-left: 3px solid #3b82f6; margin-bottom: 8px;
         }
-        .consequence-preview {
-            display: block; font-size: 7px; text-transform: uppercase; font-weight: 900;
-            color: #f87171; margin-top: 4px; letter-spacing: 0.5px;
-        }
+        .gap-alert { border-left: 4px solid #f43f5e; background: rgba(244, 63, 94, 0.1); padding: 8px; border-radius: 8px; color: #fda4af; }
 
         .passport-tag-active { background: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; }
         ::-webkit-scrollbar { width: 4px; }
@@ -68,88 +69,78 @@
     <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
         <div class="mb-6 flex justify-between items-start">
             <div>
-                <h2 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Predictive IQ v8.0</h2>
-                <p class="text-xl font-black text-white uppercase leading-tight">Spatial Studio</p>
+                <h2 class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-1">Temporal IQ v9.0</h2>
+                <p class="text-xl font-black text-white uppercase leading-tight">Time Intelligence</p>
             </div>
             <div class="text-right">
-                <p class="text-[8px] font-bold text-slate-500 uppercase">Garden Health</p>
+                <p class="text-[8px] font-bold text-slate-500 uppercase">Garden Score</p>
                 <p id="opt-score" class="text-xl font-black text-green-400">100%</p>
             </div>
         </div>
 
         <div class="mb-4 p-4 bg-slate-900 border border-white/10 rounded-xl">
             <h3 class="text-[9px] font-black text-slate-400 uppercase mb-3 flex justify-between">
-                Weekly Snapshot <span>Feb 2026</span>
+                Biological Timeline <span id="pulse-date">Jun 15</span>
             </h3>
-            <div id="predictive-feed" class="space-y-2 max-h-64 overflow-y-auto">
+            <div id="growth-feed" class="space-y-3 max-h-64 overflow-y-auto pr-2">
                 </div>
+            <div id="gap-detector" class="mt-4 hidden">
+                <div class="gap-alert text-[9px] font-bold uppercase">
+                    ⚠️ Bloom Gap Detected: <br>Low nectar period identified.
+                </div>
+            </div>
         </div>
 
-        <div class="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-            <p class="text-[9px] font-black text-blue-400 uppercase mb-3">Rotation & Nitrogen</p>
-            <div class="flex gap-1 mb-3">
-                <button onclick="setYear(2026)" id="yr-2026" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black active-btn">2026</button>
-                <button onclick="setYear(2027)" id="yr-2027" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black">2027</button>
-            </div>
-            <div id="soil-stats">
-                <div class="flex justify-between text-[8px] font-bold text-slate-400 mb-1 uppercase">
-                    <span>Soil Depletion</span> <span id="n-val">Optimal</span>
-                </div>
-                <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                    <div id="n-bar" class="bg-blue-500 h-full w-[100%] transition-all"></div>
-                </div>
-            </div>
+        <div class="mb-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+            <p class="text-[9px] font-black text-blue-400 uppercase mb-3">Predictive Feed</p>
+            <div id="predictive-feed" class="space-y-2 text-[10px]"></div>
         </div>
 
         <div class="space-y-4 mb-6">
             <div>
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Build</p>
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Build Assets</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab border border-white/5" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
                     <div class="p-2 bg-slate-700 rounded-lg text-[8px] font-bold text-center cursor-grab border border-white/5" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
                 </div>
             </div>
             <div>
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Seedlings</p>
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">2026 Seedlings</p>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 'Nightshade')">🍅 Tomato</div>
-                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Salvia', '🌸', 12, 'Flower')">🌸 Salvia</div>
+                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 'Nightshade', 75, 140)">🍅 Tomato</div>
+                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Zinnia', '🌸', 12, 'Flower', 60, 130)">🌸 Zinnia</div>
                 </div>
             </div>
         </div>
 
         <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-4">
-            <div>
-                <p class="text-[9px] font-black text-amber-500 uppercase mb-2">Weather Forecast Simulation</p>
-                <div class="flex gap-1">
-                    <button onclick="setSeason('spring')" id="btn-spring" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">SPR</button>
-                    <button onclick="setSeason('summer')" id="btn-summer" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold active-btn">SUM</button>
-                    <button onclick="setSeason('fall')" id="btn-fall" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">FAL</button>
-                </div>
-            </div>
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" id="heat-toggle" onchange="renderAll()" class="accent-orange-500">
-                <span class="text-[9px] font-bold text-slate-300 uppercase">🔥 Incoming Heatwave</span>
+                <span class="text-[9px] font-black text-orange-500 uppercase">🔥 Simulate Heat Spike (+10d Growth)</span>
             </label>
-            <div>
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Tactical Paint</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="setTacticalMode('frost')" id="btn-frost" class="p-2 bg-indigo-900/20 border border-indigo-500/30 rounded-lg text-[8px] font-black">❄️ FROST</button>
-                    <button onclick="setTacticalMode('wet')" id="btn-wet" class="p-2 bg-cyan-900/20 border border-cyan-500/30 rounded-lg text-[8px] font-black">💧 WET</button>
-                </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="setTacticalMode('frost')" id="btn-frost" class="p-2 bg-indigo-900/20 border border-indigo-500/30 rounded-lg text-[8px] font-black uppercase tracking-tighter">❄️ Frost Paint</button>
+                <button onclick="setTacticalMode('wet')" id="btn-wet" class="p-2 bg-cyan-900/20 border border-cyan-500/30 rounded-lg text-[8px] font-black uppercase tracking-tighter">💧 Wet Paint</button>
             </div>
         </div>
 
         <div class="mt-auto space-y-2">
             <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="py-3 border-2 border-dashed border-slate-800 rounded-xl text-[8px] font-bold text-slate-600 text-center uppercase">🗑️ Delete Asset</div>
-            <button class="w-full py-3 bg-white text-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest">Global Sync</button>
         </div>
     </aside>
 
     <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center relative">
         <div id="viewport" ondragover="event.preventDefault()" ondrop="handleDrop(event)"></div>
 
-        <div id="passport-modal" class="hidden absolute top-10 right-10 w-72 bg-slate-900 border border-white/20 rounded-2xl shadow-2xl z-[200] p-5 backdrop-blur-xl">
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[700px] bg-slate-900/90 border border-white/20 p-6 rounded-3xl backdrop-blur-xl z-[200] shadow-2xl">
+            <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase mb-3 tracking-tighter">
+                <span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span class="text-pink-500">Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+            </div>
+            <input type="range" min="60" max="300" step="1" value="165" id="time-scrubber" oninput="renderAll()" class="w-full accent-pink-500 bg-slate-700 h-2 rounded-lg appearance-none cursor-pointer">
+            <p class="text-center text-[10px] font-bold text-slate-400 mt-3 uppercase tracking-widest">Biological "Season Pulse" Controller</p>
+        </div>
+
+        <div id="passport-modal" class="hidden absolute top-10 right-10 w-72 bg-slate-900 border border-white/20 rounded-2xl shadow-2xl z-[300] p-5 backdrop-blur-xl">
             <div class="flex justify-between items-start mb-4">
                 <div><h3 id="pass-emoji" class="text-3xl">🍅</h3><h2 id="pass-title" class="text-lg font-black uppercase tracking-tighter">Passport</h2></div>
                 <button onclick="closePassport()" class="text-slate-500 hover:text-white">✕</button>
@@ -165,14 +156,14 @@
                     <button id="tag-selfseed" onclick="togglePassTag('selfseed')" class="flex-1 py-1 border border-white/10 rounded text-[7px] font-bold uppercase">🌱 Self-Seed</button>
                 </div>
                 <textarea id="pass-notes" rows="2" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] text-white" placeholder="Notes..."></textarea>
-                <button onclick="savePassportData()" class="w-full py-2 bg-green-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Confirm Passport</button>
+                <button onclick="savePassportData()" class="w-full py-2 bg-green-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Update Genetics</button>
             </div>
         </div>
     </main>
 
 <script>
     let bedData = [], plantData = [], yearArchive = { 2026: [], 2027: [] };
-    let currentYear = 2026, currentSeason = 'summer', activeTacticalTool = null, activePassportId = null;
+    let activeTacticalTool = null, activePassportId = null;
 
     function createGrid() {
         const vp = document.getElementById('viewport');
@@ -189,10 +180,11 @@
         e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("type", type);
         e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h); e.dataTransfer.setData("isNew", "true");
     }
-    function startPlantDrag(e, name, icon, spread, family) {
+    function startPlantDrag(e, name, icon, spread, family, dtm, bloomStart) {
         e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("name", name);
         e.dataTransfer.setData("icon", icon); e.dataTransfer.setData("spread", spread);
-        e.dataTransfer.setData("family", family); e.dataTransfer.setData("isNew", "true");
+        e.dataTransfer.setData("family", family); e.dataTransfer.setData("dtm", dtm);
+        e.dataTransfer.setData("bloomStart", bloomStart); e.dataTransfer.setData("isNew", "true");
     }
 
     function handleDrop(e) {
@@ -210,7 +202,17 @@
             }
         } else if (itemType === "plant") {
             if (isNew) {
-                plantData.push({ id: Date.now(), name: e.dataTransfer.getData("name"), icon: e.dataTransfer.getData("icon"), spread: parseInt(e.dataTransfer.getData("spread")), family: e.dataTransfer.getData("family"), x, y, passport: { variety: '', date: '', germ: '', notes: '', overwinter: false, selfseed: false } });
+                plantData.push({ 
+                    id: Date.now(), 
+                    name: e.dataTransfer.getData("name"), 
+                    icon: e.dataTransfer.getData("icon"), 
+                    spread: parseInt(e.dataTransfer.getData("spread")), 
+                    family: e.dataTransfer.getData("family"), 
+                    dtm: parseInt(e.dataTransfer.getData("dtm")),
+                    bloomStart: parseInt(e.dataTransfer.getData("bloomStart")),
+                    x, y, 
+                    passport: { variety: '', date: '', germ: '', notes: '', overwinter: false, selfseed: false } 
+                });
             } else {
                 const id = parseInt(e.dataTransfer.getData("id")), plant = plantData.find(p => p.id === id);
                 if (plant) { plant.x = x; plant.y = y; }
@@ -219,94 +221,26 @@
         renderAll();
     }
 
-    function setSeason(s) { currentSeason = s; document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active-btn', b.id === `btn-${s}`)); renderAll(); }
     function setTacticalMode(m) { activeTacticalTool = activeTacticalTool === m ? null : m; document.getElementById('btn-frost').classList.toggle('active-btn', activeTacticalTool==='frost'); document.getElementById('btn-wet').classList.toggle('active-btn', activeTacticalTool==='wet'); }
     function applyTactical(id) { if (activeTacticalTool) document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); renderAll(); }
 
-    function updateMicroclimate() {
-        const heatOn = document.getElementById('heat-toggle').checked;
-        const config = { 'spring': 1.5, 'summer': 0.4, 'fall': 2.5 }[currentSeason];
-        document.querySelectorAll('.grid-cell').forEach((cell, i) => {
-            const row = Math.floor(i / 20), col = i % 20, cx = col * 50, cy = row * 50;
-            let shade = false, heat = false;
-            bedData.forEach(obj => {
-                if (cx >= obj.x && cx <= (obj.x + obj.w) && cy < obj.y && cy > (obj.y - (obj.h * config))) shade = true;
-                if (heatOn && obj.type === 'wall' && cx >= obj.x && cx <= (obj.x + obj.w) && cy >= (obj.y + obj.h) && cy <= (obj.y + obj.h + 80)) heat = true;
-            });
-            cell.style.backgroundColor = shade ? 'rgba(49, 46, 129, 0.25)' : (heat ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.02)');
-        });
-    }
-
-    function runPredictiveIntel() {
-        let alerts = [], nitrogen = 100, score = 100;
-        const feed = document.getElementById('predictive-feed');
-        const heatwave = document.getElementById('heat-toggle').checked;
-        const wetZones = document.querySelectorAll('.tag-wet').length;
-        const frostZones = document.querySelectorAll('.tag-frost').length;
-
-        feed.innerHTML = '';
-
-        // 1. Water Stress & Forecast Logic
-        plantData.forEach(p => {
-            let risk = 'stable';
-            let desc = "Soil moisture balanced.";
-            let cons = "Stable growth.";
-
-            if (heatwave) { risk = 'high'; desc = "Evapotranspiration spike predicted."; cons = "Skipping water today increases wilt risk by 60%."; score -= 5; }
-            else if (wetZones > 15) { risk = 'stable'; desc = "Recent rain absorption high."; cons = "Root rot risk if watered manually."; }
-            else if (currentSeason === 'summer') { risk = 'mild'; desc = "Typical summer depletion."; cons = "Expect slowed growth if skipped."; }
-
-            p.currentRisk = risk; // Store for rendering
-            
-            feed.innerHTML += `
-                <div class="predictive-card border-l-4 ${risk === 'high' ? 'border-red-500' : risk === 'mild' ? 'border-yellow-500' : 'border-green-500'}">
-                    <p class="text-[9px] font-black uppercase">${p.name} Care</p>
-                    <p class="text-[8px] text-slate-400">${desc}</p>
-                    <span class="consequence-preview">${cons}</span>
-                </div>`;
-            
-            // Nitrogen Tracking (Original Feature)
-            if (p.family === 'Nightshade') nitrogen -= 10;
-            if (p.family === 'Legume') nitrogen += 15;
-
-            // Rotation Conflicts (Original Feature)
-            (yearArchive[currentYear - 1] || []).forEach(prevP => {
-                if (Math.hypot(p.x - prevP.x, p.y - prevP.y) < 80 && p.family === prevP.family) { 
-                    score -= 15;
-                    feed.innerHTML += `<div class="predictive-card border-red-500 bg-red-500/10 text-[8px] font-bold uppercase">⚠️ Rotation Conflict: ${p.name}</div>`;
-                }
-            });
-        });
-
-        // 2. Frost Intelligence
-        if (frostZones > 0 && currentSeason === 'spring') {
-            feed.innerHTML = `
-                <div class="predictive-card border-indigo-500 bg-indigo-500/10">
-                    <p class="text-[9px] font-black uppercase">❄️ Microclimate Alert</p>
-                    <p class="text-[8px]">Frost pocket detected in painted zone.</p>
-                    <span class="consequence-preview">Expect 3-5° drop tonight. Cover tenders.</span>
-                </div>` + feed.innerHTML;
-        }
-
-        // 3. Seed Starting Countdown (Based on Hartford May 15 Frost)
-        const frostDate = new Date('2026-05-15');
-        const today = new Date('2026-02-24'); 
-        const daysToFrost = Math.ceil((frostDate - today) / (1000*60*60*24));
-        
-        feed.innerHTML += `
-            <div class="predictive-card border-purple-500">
-                <p class="text-[9px] font-black uppercase">🌱 Sowing Countdown</p>
-                <p class="text-[8px]">${daysToFrost} days to last frost.</p>
-                <span class="consequence-preview">Start Nightshades in ~15 days.</span>
-            </div>`;
-
-        document.getElementById('n-bar').style.width = `${Math.min(nitrogen, 100)}%`;
-        document.getElementById('opt-score').innerText = `${Math.max(0, score)}%`;
+    function getPulseDate(dayOfYear) {
+        const date = new Date(2026, 0); 
+        date.setDate(dayOfYear);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
     function renderAll() {
         document.querySelectorAll('.bed-obj, .plant-obj, .plant-halo, .stress-indicator').forEach(el => el.remove());
+        const growthFeed = document.getElementById('growth-feed');
+        growthFeed.innerHTML = '';
         
+        let simDay = parseInt(document.getElementById('time-scrubber').value);
+        if (document.getElementById('heat-toggle').checked) simDay += 10;
+        
+        document.getElementById('pulse-date').innerText = getPulseDate(simDay);
+        let activeBlooms = 0;
+
         bedData.forEach(bed => {
             const el = document.createElement('div'); el.className = `bed-obj type-${bed.type}`;
             el.style.cssText = `left:${bed.x}px;top:${bed.y}px;width:${bed.w}px;height:${bed.h}px;`;
@@ -315,28 +249,56 @@
             document.getElementById('viewport').appendChild(el);
         });
 
-        plantData.forEach(plant => {
-            const ms = (plant.spread / 12) * 50;
-            const halo = document.createElement('div'); halo.className = 'plant-halo';
-            halo.style.cssText = `width:${ms}px;height:${ms}px;left:${plant.x-(ms/2)}px;top:${plant.y-(ms/2)}px;`;
-            document.getElementById('viewport').appendChild(halo);
+        plantData.forEach(p => {
+            // Growth Engine
+            const ms = (p.spread / 12) * 50;
+            const plantingDay = 120; // Default May 1
+            const age = simDay - plantingDay;
+            let growthScale = Math.min(1, age / p.dtm);
+            if (age < 0) growthScale = 0;
 
-            const el = document.createElement('div'); el.className = 'plant-obj';
-            el.style.cssText = `left:${plant.x-20}px;top:${plant.y-20}px;`;
-            el.innerText = plant.icon; el.draggable = true;
-            el.onclick = () => openPassport(plant.id);
-            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", plant.id); e.dataTransfer.setData("isNew", "false"); };
+            const isBlooming = simDay >= p.bloomStart && simDay <= (p.bloomStart + 45);
+            if (isBlooming) activeBlooms++;
+
+            const el = document.createElement('div'); 
+            el.className = `plant-obj ${isBlooming ? 'stage-bloom' : ''}`;
+            el.style.cssText = `left:${p.x-20}px;top:${p.y-20}px; transform: scale(${0.2 + (growthScale * 0.8)}); opacity: ${age < -10 ? 0 : 1}`;
+            el.innerText = p.icon; el.draggable = true;
+            el.onclick = () => openPassport(p.id);
+            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", p.id); e.dataTransfer.setData("isNew", "false"); };
             
-            // Add Stress Risk Indicator
             const riskDot = document.createElement('div');
-            riskDot.className = `stress-indicator risk-${plant.currentRisk || 'stable'}`;
+            riskDot.className = `stress-indicator risk-stable`;
             el.appendChild(riskDot);
-
             document.getElementById('viewport').appendChild(el);
+
+            // Feed Update
+            const progress = Math.round(growthScale * 100);
+            growthFeed.innerHTML += `
+                <div class="text-[10px]">
+                    <div class="flex justify-between font-bold uppercase mb-1">
+                        <span>${p.icon} ${p.name}</span>
+                        <span class="${isBlooming ? 'text-pink-500' : 'text-slate-500'}">${isBlooming ? 'BLOOMING' : progress + '%'}</span>
+                    </div>
+                    <div class="timeline-track"><div class="timeline-fill" style="width:${progress}%; background:${isBlooming ? '#ec4899' : '#3b82f6'}"></div></div>
+                </div>`;
         });
 
-        updateMicroclimate();
+        document.getElementById('gap-detector').classList.toggle('hidden', activeBlooms > 0 || plantData.length === 0);
         runPredictiveIntel();
+    }
+
+    function runPredictiveIntel() {
+        const feed = document.getElementById('predictive-feed');
+        feed.innerHTML = '';
+        const simDay = parseInt(document.getElementById('time-scrubber').value);
+
+        if (simDay < 135) {
+            feed.innerHTML += `<div class="predictive-card">🌱 Peak Seed Sowing: Start remaining annuals now for July blooms.</div>`;
+        }
+        if (document.getElementById('heat-toggle').checked) {
+            feed.innerHTML += `<div class="predictive-card border-orange-500">🔥 Heat Logic: Yield probability down 12% without 2x watering.</div>`;
+        }
     }
 
     function openPassport(id) {
@@ -354,14 +316,15 @@
     function updatePassTagUI(tag, active) { document.getElementById(`tag-${tag}`).classList.toggle('passport-tag-active', active); }
     function savePassportData() { 
         const p = plantData.find(x => x.id === activePassportId);
-        p.passport.variety = document.getElementById('pass-variety').value;
-        p.passport.date = document.getElementById('pass-date').value;
-        p.passport.germ = document.getElementById('pass-germ').value;
-        p.passport.notes = document.getElementById('pass-notes').value;
+        Object.assign(p.passport, {
+            variety: document.getElementById('pass-variety').value,
+            date: document.getElementById('pass-date').value,
+            germ: document.getElementById('pass-germ').value,
+            notes: document.getElementById('pass-notes').value
+        });
         closePassport(); renderAll();
     }
     function closePassport() { document.getElementById('passport-modal').classList.add('hidden'); }
-    function setYear(yr) { yearArchive[currentYear] = JSON.parse(JSON.stringify(plantData)); currentYear = yr; plantData = yearArchive[yr] || []; renderAll(); }
     function deleteItem(e) { const id = parseInt(e.dataTransfer.getData("id")), type = e.dataTransfer.getData("itemType"); if (type === "bed") bedData = bedData.filter(b => b.id !== id); else plantData = plantData.filter(p => p.id !== id); renderAll(); }
 
     window.onload = () => { createGrid(); renderAll(); };
