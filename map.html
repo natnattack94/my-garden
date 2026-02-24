@@ -9,59 +9,53 @@
     <style>
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
         
-        /* The Spatial Engine */
         #viewport { 
             background-color: #0f172a;
             position: relative;
             width: 1000px;
             height: 1000px;
             display: grid;
-            grid-template-columns: repeat(20, 50px); /* 50px precision grid */
+            grid-template-columns: repeat(20, 50px);
             grid-template-rows: repeat(20, 50px);
             gap: 2px;
             padding: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Tactical Grid Spots (The Soil/Climate Layer) */
         .grid-cell {
-            width: 50px;
-            height: 50px;
+            width: 50px; height: 50px;
             background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.2s;
+            transition: background 0.3s, box-shadow 0.3s;
             z-index: 5;
+            position: relative;
         }
-        .grid-cell:hover { background: rgba(255,255,255,0.1); }
 
         /* Tactical Shades */
-        .tag-frost { background: rgba(99, 102, 241, 0.3) !important; border-color: #6366f1 !important; }
+        .tag-frost { background: rgba(99, 102, 241, 0.4) !important; border-color: #6366f1 !important; }
         .tag-wet { background: rgba(6, 182, 212, 0.4) !important; border-color: #06b6d4 !important; }
 
         /* Structural Bed Objects */
         .bed-obj { 
-            position: absolute; 
-            cursor: move; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            font-size: 9px;
-            font-weight: 900;
-            text-transform: uppercase;
-            border-radius: 8px;
-            z-index: 50; /* Above the grid */
+            position: absolute; cursor: move; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; font-weight: 900; text-transform: uppercase;
+            border-radius: 8px; z-index: 50;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .type-raised { background: #92400e; border: 2px solid #78350f; color: #fef3c7; }
         .type-inground { background: #065f46; border: 2px solid #064e3b; color: #d1fae5; }
+        .type-wall { background: #334155; border: 2px solid #475569; color: #f1f5f9; }
 
         .sidebar-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); }
+        .season-btn.active { background-color: #f59e0b; color: #000; border-color: #f59e0b; }
     </style>
 </head>
 <body class="flex h-screen">
 
-    <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100]">
+    <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
         <div class="mb-8">
-            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v2.9</h2>
+            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v3.0</h2>
             <p class="text-xl font-black text-white leading-tight uppercase">Spatial Studio</p>
         </div>
 
@@ -72,7 +66,22 @@
                      draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
                 <div class="p-3 bg-slate-800 rounded-xl border border-white/5 text-[9px] font-bold text-center cursor-grab hover:border-green-500 transition" 
                      draggable="true" ondragstart="startBedDrag(event, 'inground', 100, 100)">🌱 In-Ground</div>
+                <div class="p-3 bg-slate-700 rounded-xl border border-white/5 text-[9px] font-bold text-center cursor-grab hover:border-green-500 transition col-span-2" 
+                     draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Reflective Wall</div>
             </div>
+        </div>
+
+        <div class="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+            <p class="text-[9px] font-black text-amber-500 uppercase mb-3">Seasonal Heliophysics</p>
+            <div class="flex gap-1 mb-4">
+                <button onclick="setSeason('spring')" id="btn-spring" class="season-btn flex-1 p-2 bg-slate-800 rounded-lg text-[8px] font-bold uppercase">Spring</button>
+                <button onclick="setSeason('summer')" id="btn-summer" class="season-btn flex-1 p-2 bg-slate-800 rounded-lg text-[8px] font-bold uppercase active">Summer</button>
+                <button onclick="setSeason('fall')" id="btn-fall" class="season-btn flex-1 p-2 bg-slate-800 rounded-lg text-[8px] font-bold uppercase">Fall</button>
+            </div>
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="heat-toggle" onchange="toggleHeatMap()" class="w-4 h-4 rounded border-slate-700 bg-slate-900 accent-orange-500">
+                <span class="text-[10px] font-bold text-slate-300 uppercase">🔥 Heat Amplification</span>
+            </label>
         </div>
 
         <div class="mb-8">
@@ -93,8 +102,7 @@
     </aside>
 
     <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center">
-        <div id="viewport" ondragover="event.preventDefault()" ondrop="dropBed(event)">
-            </div>
+        <div id="viewport" ondragover="event.preventDefault()" ondrop="dropBed(event)"></div>
     </main>
 
 <script>
@@ -103,10 +111,17 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let activeTacticalTool = null;
-    let tacticalData = {}; // Stores { cellId: 'frost' }
+    let tacticalData = {}; 
     let bedData = [];
+    let currentSeason = 'summer';
+    let heatMapActive = false;
 
-    // Initialize Grid
+    const SEASON_OFFSETS = {
+        'spring': { shadowLength: 1.5, intensity: 0.1 },
+        'summer': { shadowLength: 0.4, intensity: 0.2 },
+        'fall': { shadowLength: 2.2, intensity: 0.05 }
+    };
+
     function createGrid() {
         const viewport = document.getElementById('viewport');
         for (let i = 0; i < 400; i++) {
@@ -120,23 +135,80 @@
 
     function setTacticalMode(mode) {
         activeTacticalTool = mode;
-        // Visual feedback for selected button
-        document.getElementById('btn-frost').classList.toggle('bg-indigo-500', mode === 'frost');
-        document.getElementById('btn-wet').classList.toggle('bg-cyan-500', mode === 'wet');
+        document.getElementById('btn-frost').classList.toggle('bg-indigo-600', mode === 'frost');
+        document.getElementById('btn-wet').classList.toggle('bg-cyan-600', mode === 'wet');
     }
 
     function applyTactical(cellId) {
-        if (!activeTacticalTool) return;
-        const cell = document.getElementById(`cell-${cellId}`);
-        
-        // Toggle the class
-        if (cell.classList.contains(`tag-${activeTacticalTool}`)) {
-            cell.classList.remove(`tag-${activeTacticalTool}`);
-            delete tacticalData[cellId];
-        } else {
-            cell.className = `grid-cell tag-${activeTacticalTool}`;
-            tacticalData[cellId] = activeTacticalTool;
+        if (activeTacticalTool) {
+            const cell = document.getElementById(`cell-${cellId}`);
+            if (cell.classList.contains(`tag-${activeTacticalTool}`)) {
+                cell.classList.remove(`tag-${activeTacticalTool}`);
+                delete tacticalData[cellId];
+            } else {
+                cell.classList.remove('tag-frost', 'tag-wet');
+                cell.classList.add(`tag-${activeTacticalTool}`);
+                tacticalData[cellId] = activeTacticalTool;
+            }
         }
+    }
+
+    // --- HELIOPHYSICS ENGINE ---
+    function setSeason(s) {
+        currentSeason = s;
+        document.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${s}`).classList.add('active');
+        updateMicroclimateVisuals();
+    }
+
+    function toggleHeatMap() {
+        heatMapActive = document.getElementById('heat-toggle').checked;
+        updateMicroclimateVisuals();
+    }
+
+    function updateMicroclimateVisuals() {
+        const seasonData = SEASON_OFFSETS[currentSeason];
+        const cells = document.querySelectorAll('.grid-cell');
+        
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / 20);
+            const col = index % 20;
+            const cx = col * 50;
+            const cy = row * 50;
+            
+            let sunScore = 1.0; 
+            let heatBoost = 0;
+
+            bedData.forEach(obj => {
+                // Shadow Logic (Cast Shadows Northwards)
+                if (obj.type === 'wall' || obj.type === 'raised') {
+                    const shadowHeight = obj.height * seasonData.shadowLength;
+                    if (cx >= obj.x && cx <= (obj.x + obj.w) &&
+                        cy < obj.y && cy > (obj.y - shadowHeight)) {
+                        sunScore = 0.3; 
+                    }
+                }
+                // Heat Amplification (Southern Face of Walls)
+                if (heatMapActive && obj.type === 'wall') {
+                    if (cx >= obj.x && cx <= (obj.x + obj.w) &&
+                        cy >= (obj.y + obj.h) && cy <= (obj.y + obj.h + 100)) {
+                        heatBoost = 1;
+                    }
+                }
+            });
+
+            // Visual Application
+            if (sunScore < 0.5) {
+                cell.style.boxShadow = 'inset 0 0 15px rgba(30, 27, 75, 0.8)';
+                cell.style.backgroundColor = 'rgba(49, 46, 129, 0.2)';
+            } else if (heatBoost > 0) {
+                cell.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                cell.style.boxShadow = 'inset 0 0 10px rgba(239, 68, 68, 0.3)';
+            } else {
+                cell.style.backgroundColor = `rgba(251, 191, 36, ${seasonData.intensity})`;
+                cell.style.boxShadow = 'none';
+            }
+        });
     }
 
     // --- BED LOGIC ---
@@ -155,17 +227,22 @@
 
         if (isNew === "true") {
             const type = e.dataTransfer.getData("type");
-            const w = e.dataTransfer.getData("w");
-            const h = e.dataTransfer.getData("h");
-            
-            const newBed = { id: Date.now(), type, x, y, w, h };
-            bedData.push(newBed);
-            renderBeds();
+            const w = parseInt(e.dataTransfer.getData("w"));
+            const h = parseInt(e.dataTransfer.getData("h"));
+            bedData.push({ id: Date.now(), type, x: x - (w/2), y: y - (h/2), w, h });
+        } else {
+            const id = parseInt(e.dataTransfer.getData("bedId"));
+            const bed = bedData.find(b => b.id === id);
+            if (bed) {
+                bed.x = x - (bed.w / 2);
+                bed.y = y - (bed.h / 2);
+            }
         }
+        renderBeds();
+        updateMicroclimateVisuals();
     }
 
     function renderBeds() {
-        // Clear existing bed elements but keep grid cells
         document.querySelectorAll('.bed-obj').forEach(b => b.remove());
         const viewport = document.getElementById('viewport');
 
@@ -190,6 +267,7 @@
         const id = parseInt(e.dataTransfer.getData("bedId"));
         bedData = bedData.filter(b => b.id !== id);
         renderBeds();
+        updateMicroclimateVisuals();
     }
 
     async function saveLayout() {
@@ -198,12 +276,12 @@
             { key: 'spatial_beds', value: bedData, user_id: user.id },
             { key: 'microclimate_tags', value: tacticalData, user_id: user.id }
         ], { onConflict: 'user_id, key' });
-        alert("Garden DNA Synced to Hartford Cloud!");
+        alert("Garden DNA & Heliophysics Synced!");
     }
 
     window.onload = () => {
         createGrid();
-        // Here you would normally fetch existing data from Supabase
+        setSeason('summer'); // Default view
     };
 </script>
 </body>
