@@ -3,92 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eco-Precision Map | GardenHub OS</title>
+    <title>Spatial Studio | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
-        .glass-sidebar { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border-right: 1px solid rgba(255,255,255,0.1); }
         
-        /* The Spatial Engine Viewport */
+        /* The Spatial Engine */
         #viewport { 
-            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); 
-            background-size: 40px 40px; /* 1ft = 40px */
             background-color: #0f172a;
             position: relative;
-            cursor: crosshair;
+            width: 1000px;
+            height: 1000px;
+            display: grid;
+            grid-template-columns: repeat(20, 50px); /* 50px precision grid */
+            grid-template-rows: repeat(20, 50px);
+            gap: 2px;
+            padding: 10px;
         }
 
-        /* Restoration of original Tagging/Eco Styles */
-        .tag-frost_pocket { background: rgba(99, 102, 241, 0.15) !important; border: 2px dashed #6366f1 !important; }
-        .tag-wet_zone { background: rgba(6, 182, 212, 0.3) !important; box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.5); }
-        
-        /* Bed Builder Styles */
-        .bed-obj { 
-            position: absolute; cursor: grab; display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: 900; text-transform: uppercase; border-radius: 8px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); z-index: 10;
+        /* Tactical Grid Spots (The Soil/Climate Layer) */
+        .grid-cell {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            z-index: 5;
         }
-        .bed-obj:active { cursor: grabbing; }
+        .grid-cell:hover { background: rgba(255,255,255,0.1); }
+
+        /* Tactical Shades */
+        .tag-frost { background: rgba(99, 102, 241, 0.3) !important; border-color: #6366f1 !important; }
+        .tag-wet { background: rgba(6, 182, 212, 0.4) !important; border-color: #06b6d4 !important; }
+
+        /* Structural Bed Objects */
+        .bed-obj { 
+            position: absolute; 
+            cursor: move; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border-radius: 8px;
+            z-index: 50; /* Above the grid */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
         .type-raised { background: #92400e; border: 2px solid #78350f; color: #fef3c7; }
         .type-inground { background: #065f46; border: 2px solid #064e3b; color: #d1fae5; }
-        .type-wall { background: #475569; border: 2px solid #334155; color: #f1f5f9; }
 
-        .sidebar-card { 
-            background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 16px; transition: all 0.2s ease; cursor: grab;
-        }
-        .sidebar-card:hover { border-color: #22c55e; transform: translateX(4px); }
+        .sidebar-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="flex h-screen">
 
-    <aside class="w-85 glass-sidebar p-6 flex flex-col overflow-y-auto z-20">
-        <div class="mb-6">
-            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v2.8</h2>
+    <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100]">
+        <div class="mb-8">
+            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v2.9</h2>
             <p class="text-xl font-black text-white leading-tight uppercase">Spatial Studio</p>
         </div>
 
-        <div class="mb-6 p-4 bg-white/5 rounded-2xl border border-white/10">
-            <p class="text-[9px] font-bold text-slate-500 uppercase mb-3 text-center">Ecoregion 59: Hartford Precision</p>
-            <select id="eco-preference" onchange="updateEcoPreference(this.value)" class="w-full bg-slate-800 border-none rounded-xl p-3 text-[10px] font-bold text-green-400 outline-none">
-                <option value="Native-leaning">Native-leaning</option>
-                <option value="Strict Native">Strict Native Only</option>
-            </select>
-        </div>
-
-        <div class="mb-6">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Bed Blueprints</p>
+        <div class="mb-8">
+            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Structural Blueprints</p>
             <div class="grid grid-cols-2 gap-2">
-                <div class="sidebar-card p-3 text-[9px] font-black uppercase text-center" draggable="true" ondragstart="handleDragStart(event)" data-cat="bed" data-type="raised" data-w="160" data-h="80">🟫 Raised (4x2)</div>
-                <div class="sidebar-card p-3 text-[9px] font-black uppercase text-center" draggable="true" ondragstart="handleDragStart(event)" data-cat="bed" data-type="inground" data-w="120" data-h="120">🌱 In-Ground</div>
+                <div class="p-3 bg-slate-800 rounded-xl border border-white/5 text-[9px] font-bold text-center cursor-grab hover:border-green-500 transition" 
+                     draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
+                <div class="p-3 bg-slate-800 rounded-xl border border-white/5 text-[9px] font-bold text-center cursor-grab hover:border-green-500 transition" 
+                     draggable="true" ondragstart="startBedDrag(event, 'inground', 100, 100)">🌱 In-Ground</div>
             </div>
         </div>
 
-        <div class="mb-6 space-y-2">
-            <p class="text-[9px] font-bold text-slate-500 uppercase px-1">Tactical Overlays</p>
+        <div class="mb-8">
+            <p class="text-[9px] font-bold text-slate-500 uppercase px-1 mb-3">Tactical Overlays</p>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="setMode('tag', 'frost_pocket')" class="p-2 bg-indigo-900/40 border border-indigo-500/30 rounded-xl text-[9px] font-bold">❄️ Frost</button>
-                <button onclick="setMode('tag', 'wet_zone')" class="p-2 bg-cyan-900/40 border border-cyan-500/30 rounded-xl text-[9px] font-bold">💧 Wet Zone</button>
+                <button onclick="setTacticalMode('frost')" id="btn-frost" class="p-3 bg-indigo-900/20 border border-indigo-500/30 rounded-xl text-[9px] font-black uppercase text-indigo-300">❄️ Frost</button>
+                <button onclick="setTacticalMode('wet')" id="btn-wet" class="p-3 bg-cyan-900/20 border border-cyan-500/30 rounded-xl text-[9px] font-black uppercase text-cyan-300">💧 Wet Zone</button>
+                <button onclick="setTacticalMode(null)" class="col-span-2 mt-2 text-[8px] uppercase text-slate-500 font-bold">Clear Tool Selection</button>
             </div>
         </div>
 
-        <div id="library-drag-container" class="space-y-3 overflow-y-auto flex-grow mb-4">
+        <div class="mt-auto space-y-3">
+            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteBed(event)" class="py-4 border-2 border-dashed border-slate-800 rounded-2xl text-[9px] font-bold text-slate-600 text-center uppercase">
+                🗑️ Drop Bed to Delete
             </div>
-
-        <div class="pt-4 border-t border-white/10">
-            <div id="trash-zone" ondragover="event.preventDefault(); this.classList.add('bg-red-500/20')" ondragleave="this.classList.remove('bg-red-500/20')" ondrop="handleDeleteDrop(event)" class="w-full py-4 border-2 border-dashed border-slate-700 rounded-2xl text-[9px] font-black uppercase text-slate-500 text-center">
-                🗑️ Drop to Remove
-            </div>
-            <button onclick="saveEverything()" class="w-full mt-4 py-4 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-400 transition">Sync DNA</button>
+            <button onclick="saveLayout()" class="w-full py-4 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest">Sync Garden DNA</button>
         </div>
     </aside>
 
-    <main class="flex-grow relative bg-slate-950 overflow-auto">
-        <div id="viewport" class="w-[2000px] h-[2000px]" ondragover="event.preventDefault()" ondrop="handleCanvasDrop(event)">
-            <div id="microclimate-layer" class="absolute inset-0 pointer-events-none"></div>
-            <div id="bed-layer" class="absolute inset-0"></div>
-        </div>
+    <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center">
+        <div id="viewport" ondragover="event.preventDefault()" ondrop="dropBed(event)">
+            </div>
     </main>
 
 <script>
@@ -96,105 +102,109 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let currentMode = 'design';
-    let activeTag = null;
-    let beds = [];
-    let climateTags = {}; 
+    let activeTacticalTool = null;
+    let tacticalData = {}; // Stores { cellId: 'frost' }
+    let bedData = [];
 
-    async function init() {
-        const { data: { user } } = await _supabase.auth.getUser();
-        // Load Plants for Sidebar
-        const { data: lib } = await _supabase.from('garden_library').select('*');
-        renderSidebar(lib || []);
-
-        // Load Spatial Data
-        const { data: savedBeds } = await _supabase.from('garden_beds').select('*').eq('user_id', user.id);
-        beds = savedBeds || [];
-
-        // Load Microclimates
-        const { data: settings } = await _supabase.from('garden_settings').select('*').eq('user_id', user.id);
-        climateTags = settings.find(s => s.key === 'microclimate_tags')?.value || {};
-
-        renderCanvas();
-    }
-
-    function setMode(mode, tag) {
-        currentMode = mode;
-        activeTag = tag;
-        alert(`Mode: ${tag || mode} active. Click canvas to apply.`);
-    }
-
-    function handleDragStart(e) {
-        const d = e.target.dataset;
-        e.dataTransfer.setData("type", d.type);
-        e.dataTransfer.setData("cat", d.cat); // 'bed' or 'plant'
-        if(d.cat === 'bed') {
-            e.dataTransfer.setData("w", d.w);
-            e.dataTransfer.setData("h", d.h);
+    // Initialize Grid
+    function createGrid() {
+        const viewport = document.getElementById('viewport');
+        for (let i = 0; i < 400; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.id = `cell-${i}`;
+            cell.onclick = () => applyTactical(i);
+            viewport.appendChild(cell);
         }
-        if(d.id) e.dataTransfer.setData("existingId", d.id);
     }
 
-    async function handleCanvasDrop(e) {
-        e.preventDefault();
-        const rect = document.getElementById('viewport').getBoundingClientRect();
-        const cat = e.dataTransfer.getData("cat");
-        const type = e.dataTransfer.getData("type");
-        const x = Math.round((e.clientX - rect.left) / 10) * 10;
-        const y = Math.round((e.clientY - rect.top) / 10) * 10;
-
-        if(cat === 'bed') {
-            const w = parseInt(e.dataTransfer.getData("w"));
-            const h = parseInt(e.dataTransfer.getData("h"));
-            await addBed(type, x, y, w, h);
-        }
-        renderCanvas();
+    function setTacticalMode(mode) {
+        activeTacticalTool = mode;
+        // Visual feedback for selected button
+        document.getElementById('btn-frost').classList.toggle('bg-indigo-500', mode === 'frost');
+        document.getElementById('btn-wet').classList.toggle('bg-cyan-500', mode === 'wet');
     }
 
-    async function addBed(type, x, y, w, h) {
-        const { data: { user } } = await _supabase.auth.getUser();
-        const newBed = { user_id: user.id, shape_type: type, x_pos: x, y_pos: y, width: w, height: h };
-        const { data } = await _supabase.from('garden_beds').insert([newBed]).select();
-        if(data) beds.push(data[0]);
-    }
-
-    function renderCanvas() {
-        const bedLayer = document.getElementById('bed-layer');
-        bedLayer.innerHTML = '';
+    function applyTactical(cellId) {
+        if (!activeTacticalTool) return;
+        const cell = document.getElementById(`cell-${cellId}`);
         
-        // Render Microclimate Tags (Old feature restored)
-        const climateLayer = document.getElementById('microclimate-layer');
-        climateLayer.innerHTML = '';
-        Object.keys(climateTags).forEach(coord => {
-            const [cx, cy] = coord.split(',').map(Number);
-            const tagDiv = document.createElement('div');
-            tagDiv.className = `absolute tag-${climateTags[coord]}`;
-            tagDiv.style.left = `${cx}px`; tagDiv.style.top = `${cy}px`;
-            tagDiv.style.width = '40px'; tagDiv.style.height = '40px';
-            climateLayer.appendChild(tagDiv);
-        });
+        // Toggle the class
+        if (cell.classList.contains(`tag-${activeTacticalTool}`)) {
+            cell.classList.remove(`tag-${activeTacticalTool}`);
+            delete tacticalData[cellId];
+        } else {
+            cell.className = `grid-cell tag-${activeTacticalTool}`;
+            tacticalData[cellId] = activeTacticalTool;
+        }
+    }
 
-        // Render Beds
-        beds.forEach(bed => {
+    // --- BED LOGIC ---
+    function startBedDrag(e, type, w, h) {
+        e.dataTransfer.setData("type", type);
+        e.dataTransfer.setData("w", w);
+        e.dataTransfer.setData("h", h);
+        e.dataTransfer.setData("isNew", "true");
+    }
+
+    function dropBed(e) {
+        const isNew = e.dataTransfer.getData("isNew");
+        const rect = document.getElementById('viewport').getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (isNew === "true") {
+            const type = e.dataTransfer.getData("type");
+            const w = e.dataTransfer.getData("w");
+            const h = e.dataTransfer.getData("h");
+            
+            const newBed = { id: Date.now(), type, x, y, w, h };
+            bedData.push(newBed);
+            renderBeds();
+        }
+    }
+
+    function renderBeds() {
+        // Clear existing bed elements but keep grid cells
+        document.querySelectorAll('.bed-obj').forEach(b => b.remove());
+        const viewport = document.getElementById('viewport');
+
+        bedData.forEach(bed => {
             const el = document.createElement('div');
-            el.className = `bed-obj type-${bed.shape_type}`;
-            el.style.left = `${bed.x_pos}px`; el.style.top = `${bed.y_pos}px`;
-            el.style.width = `${bed.width}px`; el.style.height = `${bed.height}px`;
-            el.innerText = bed.shape_type;
-            bedLayer.appendChild(el);
+            el.className = `bed-obj type-${bed.type}`;
+            el.style.left = `${bed.x}px`;
+            el.style.top = `${bed.y}px`;
+            el.style.width = `${bed.w}px`;
+            el.style.height = `${bed.h}px`;
+            el.innerText = bed.type;
+            el.draggable = true;
+            el.ondragstart = (e) => {
+                e.dataTransfer.setData("bedId", bed.id);
+                e.dataTransfer.setData("isNew", "false");
+            };
+            viewport.appendChild(el);
         });
     }
 
-    function renderSidebar(library) {
-        document.getElementById('library-drag-container').innerHTML = library.map(p => `
-            <div class="sidebar-card p-4 flex items-center gap-3" draggable="true" ondragstart='handleDragStart(event)' data-cat="plant" data-type="${p.name}">
-                <span class="text-2xl">${p.emoji}</span>
-                <span class="font-bold text-white text-sm uppercase">${p.name}</span>
-            </div>
-        `).join('');
+    function deleteBed(e) {
+        const id = parseInt(e.dataTransfer.getData("bedId"));
+        bedData = bedData.filter(b => b.id !== id);
+        renderBeds();
     }
 
-    window.onload = init;
+    async function saveLayout() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        await _supabase.from('garden_settings').upsert([
+            { key: 'spatial_beds', value: bedData, user_id: user.id },
+            { key: 'microclimate_tags', value: tacticalData, user_id: user.id }
+        ], { onConflict: 'user_id, key' });
+        alert("Garden DNA Synced to Hartford Cloud!");
+    }
+
+    window.onload = () => {
+        createGrid();
+        // Here you would normally fetch existing data from Supabase
+    };
 </script>
 </body>
 </html>
