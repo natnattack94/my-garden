@@ -13,10 +13,7 @@
             --leaf-green: #2a9d8f;
             --bg: #f8fafc;
         }
-
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: #334155; }
-
-        /* Clinic Diagnostic Cards */
         .clinic-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -24,7 +21,6 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-
         .card {
             background: white;
             border-radius: 24px;
@@ -34,16 +30,13 @@
             transition: all 0.3s ease;
             border-top: 10px solid #cbd5e1;
         }
-
         .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
         .card.pest { border-top-color: var(--pest-red); }
         .card.disease { border-top-color: var(--disease-blue); }
-
         .card.at-risk {
             outline: 3px solid var(--leaf-green);
             background: #f0fdfa;
         }
-
         .risk-badge {
             background: var(--leaf-green);
             color: white;
@@ -56,7 +49,6 @@
             left: 20px;
             text-transform: uppercase;
         }
-
         .type-badge {
             position: absolute;
             top: 15px;
@@ -68,10 +60,8 @@
             font-weight: bold;
             text-transform: uppercase;
         }
-
         .pest .type-badge { background: var(--pest-red); }
         .disease .type-badge { background: var(--disease-blue); }
-
         .fix-box {
             background: white;
             padding: 15px;
@@ -81,23 +71,9 @@
             margin-top: 15px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
-
-        /* Library Row Styles */
-        #library-vault {
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        .plant-row {
-            background: white;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .plant-row:hover {
-            border-color: var(--leaf-green);
-            background: #f0fdfa;
-        }
+        #library-vault { max-height: 300px; overflow-y: auto; padding-right: 8px; }
+        .plant-row { background: white; border: 1px solid #e2e8f0; transition: all 0.2s; cursor: pointer; }
+        .plant-row:hover { border-color: var(--leaf-green); background: #f0fdfa; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -124,8 +100,7 @@
         <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Your Cloud Library Vault</h2>
         <p id="active-risk-count" class="text-[10px] font-bold text-green-600 uppercase italic">Syncing...</p>
     </div>
-    <div id="library-vault" class="space-y-2">
-        </div>
+    <div id="library-vault" class="space-y-2"></div>
 </section>
 
 <section class="max-w-6xl mx-auto">
@@ -134,8 +109,10 @@
 </section>
 
 <script>
-    // 1. SUPABASE CONNECTION
-    const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
+    // 1. SUPABASE CONNECTION (PRE-FILLED)
+    const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // 2. EXPANDED CLINIC DATABASE
     const CLINIC_DB = [
@@ -144,7 +121,7 @@
             type: "pest",
             target: ["Tomato", "Pepper"],
             symptoms: "Large holes in leaves, missing stems, dark green droppings on foliage.",
-            fix: "Hand-pick caterpillars (check under leaves) or use Bacillus thuringiensis (Bt) spray.",
+            fix: "Hand-pick caterpillars or use Bacillus thuringiensis (Bt) spray.",
             peak: "July - August"
         },
         {
@@ -152,56 +129,40 @@
             type: "disease",
             target: ["Tomato", "Pepper", "Zucchini"],
             symptoms: "Leathery black/brown sunken spot on the bottom of the fruit.",
-            fix: "Maintain consistent soil moisture and ensure adequate calcium. Avoid high-nitrogen fertilizer.",
-            peak: "June - July (Dry spells)"
+            fix: "Maintain consistent soil moisture and ensure adequate calcium.",
+            peak: "June - July"
         },
         {
             name: "Squash Vine Borer",
             type: "pest",
             target: ["Zucchini", "Squash", "Pumpkin"],
-            symptoms: "Sudden wilting of the whole plant. Yellow sawdust-like 'frass' at the base of the stem.",
-            fix: "Check stem bases for holes. Slit stem and remove larvae, then bury the stem in soil to encourage re-rooting.",
+            symptoms: "Sudden wilting. Yellow sawdust-like 'frass' at the base of the stem.",
+            fix: "Slit stem and remove larvae, then bury the stem in soil to re-root.",
             peak: "June - July"
         },
         {
             name: "Aphids",
             type: "pest",
             target: ["Lettuce", "Broccoli", "Kale", "Peas"],
-            symptoms: "Tiny green/black bugs on undersides of leaves, sticky residue, curling growth.",
-            fix: "Blast plants with a strong stream of water or use insecticidal soap/Neem oil.",
-            peak: "May - June & September"
+            symptoms: "Tiny green/black bugs on undersides, sticky residue, curling growth.",
+            fix: "Blast plants with water or use Neem oil.",
+            peak: "May - June"
         },
         {
             name: "Early Blight",
             type: "disease",
             target: ["Tomato", "Potato"],
-            symptoms: "Brown spots on older leaves with 'target' ring patterns. Yellowing halos.",
-            fix: "Prune lower branches to prevent soil splash. Use copper-based fungicide if severe.",
-            peak: "July (After heavy rain)"
-        },
-        {
-            name: "Cucumber Beetle",
-            type: "pest",
-            target: ["Cucumber", "Melon", "Squash"],
-            symptoms: "Yellow/black striped or spotted beetles eating leaves and flowers.",
-            fix: "Use yellow sticky traps. Cover young plants with row covers until they flower.",
-            peak: "June - August"
+            symptoms: "Brown spots on older leaves with 'target' ring patterns.",
+            fix: "Prune lower branches to prevent soil splash.",
+            peak: "July (Post-Rain)"
         },
         {
             name: "Powdery Mildew",
             type: "disease",
-            target: ["Zucchini", "Squash", "Broccoli", "Cucumber"],
-            symptoms: "White, flour-like dust covering leaves. Stunted growth.",
-            fix: "Mix 1 part milk with 9 parts water; spray on leaves in direct sunlight.",
+            target: ["Zucchini", "Squash", "Cucumber"],
+            symptoms: "White, flour-like dust covering leaves.",
+            fix: "Mix 1 part milk with 9 parts water; spray in direct sunlight.",
             peak: "August - September"
-        },
-        {
-            name: "Slugs & Snails",
-            type: "pest",
-            target: ["Lettuce", "Basil", "Strawberries"],
-            symptoms: "Irregular holes with smooth edges. Shimmering slime trails.",
-            fix: "Set out beer traps or use iron phosphate pellets (Sluggo).",
-            peak: "April - June"
         }
     ];
 
@@ -209,19 +170,27 @@
 
     // 3. CLOUD SYNC
     async function syncAndRender() {
-        const { data, error } = await _supabase
-            .from('garden_library')
-            .select('*');
+        try {
+            // Check if user is logged in
+            const { data: { user } } = await _supabase.auth.getUser();
+            
+            // Fetch library data for this user
+            const { data, error } = await _supabase
+                .from('garden_library')
+                .select('*');
 
-        if (!error && data) {
-            myFullLibrary = data;
+            if (!error && data) {
+                myFullLibrary = data;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialSearch = urlParams.get('name') || "";
+            document.getElementById('clinicSearch').value = initialSearch;
+            
+            refreshUI(initialSearch);
+        } catch (e) {
+            console.error("Clinic sync failed:", e);
         }
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const initialSearch = urlParams.get('name') || urlParams.get('search') || "";
-        document.getElementById('clinicSearch').value = initialSearch;
-        
-        refreshUI(initialSearch);
     }
 
     function refreshUI(filter = "") {
@@ -238,11 +207,8 @@
             p.name.toLowerCase().includes(searchTerm)
         );
 
-        if (filteredPlants.length === 0 && myFullLibrary.length > 0) {
-            vault.innerHTML = `<p class="text-center py-8 text-slate-400 text-xs font-bold uppercase">No matching plants in vault</p>`;
-            return;
-        } else if (myFullLibrary.length === 0) {
-            vault.innerHTML = `<p class="text-center py-8 text-slate-400 text-xs font-bold uppercase">Vault Empty - Add plants in Library</p>`;
+        if (myFullLibrary.length === 0) {
+            vault.innerHTML = `<div class="p-8 text-center border-2 border-dashed rounded-2xl text-slate-400 text-xs font-bold uppercase">No plants in cloud vault</div>`;
             return;
         }
 
@@ -252,12 +218,11 @@
                     <span class="text-2xl">${plant.emoji || '🌱'}</span>
                     <div>
                         <h4 class="font-black text-slate-800 text-sm uppercase">${plant.name}</h4>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Sector 6B • Active Crop</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Active Crop</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-md uppercase">Vitals Clear</span>
-                    <span class="text-slate-300">→</span>
+                    <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-md uppercase tracking-widest">Check Risks</span>
                 </div>
             </div>
         `).join('');
@@ -288,31 +253,24 @@
                 ${isAtRisk ? '<div class="risk-badge">Active Garden Threat</div>' : ''}
                 <div class="type-badge">${issue.type}</div>
                 <h3 class="text-xl font-black text-slate-800 mb-4 mt-4">${issue.name}</h3>
-                
                 <div class="mb-4 text-sm">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Targets</span>
                     <div class="font-bold text-slate-600">${issue.target.join(', ')}</div>
                 </div>
-
                 <div class="mb-4 text-sm">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Symptoms</span>
                     <div class="text-slate-500 italic">"${issue.symptoms}"</div>
                 </div>
-
                 <div class="fix-box">
                     <span class="block text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Solution</span>
                     <div class="font-medium text-slate-700 text-xs">${issue.fix}</div>
-                </div>
-
-                <div class="mt-4 text-[9px] font-bold text-slate-400 uppercase">
-                    📅 Peak: <span class="text-slate-600">${issue.peak}</span>
                 </div>
             `;
             clinicGrid.appendChild(card);
         });
 
         document.getElementById('active-risk-count').innerText = 
-            myFullLibrary.length ? `${riskCount} detected threats for your garden` : "Add plants to your library to track threats";
+            myFullLibrary.length ? `${riskCount} detected threats for your garden` : "Add plants to track threats";
     }
 
     document.getElementById('clinicSearch').addEventListener('input', (e) => refreshUI(e.target.value));
