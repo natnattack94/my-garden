@@ -3,26 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spatial Studio v9.0 | Time Intelligence OS</title>
+    <title>GardenHub OS | Spatial Studio v10.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
+        
+        /* Grid System */
         #viewport { 
             background-color: #0f172a; position: relative; width: 1000px; height: 1000px;
             display: grid; grid-template-columns: repeat(20, 50px); grid-template-rows: repeat(20, 50px);
             gap: 2px; padding: 10px; border: 2px solid rgba(255,255,255,0.05);
         }
-        .grid-cell { width: 50px; height: 50px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease; z-index: 5; }
+        .grid-cell { width: 50px; height: 50px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease; }
+        .grid-cell:hover { background: rgba(255,255,255,0.08); }
+        
+        /* Tactical Layers */
         .tag-frost { background: rgba(99, 102, 241, 0.4) !important; border-color: #6366f1 !important; }
         .tag-wet { background: rgba(6, 182, 212, 0.4) !important; border-color: #06b6d4 !important; }
         
+        /* Assets */
         .bed-obj { 
             position: absolute; cursor: move; display: flex; align-items: center; justify-content: center;
             font-size: 9px; font-weight: 900; text-transform: uppercase; border-radius: 8px; z-index: 10;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .type-raised { background: #92400e; border: 2px solid #78350f; color: #fef3c7; }
-        .type-inground { background: #065f46; border: 2px solid #064e3b; color: #d1fae5; }
         .type-wall { background: #334155; border: 2px solid #475569; color: #f1f5f9; }
         
         .plant-obj {
@@ -30,140 +36,98 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 22px; border-radius: 50%; z-index: 60; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        /* 2026 Stress & Growth Indicators */
-        .stress-indicator {
-            position: absolute; top: -5px; right: -5px; width: 12px; height: 12px;
-            border-radius: 50%; border: 2px solid #0f172a; z-index: 70;
-        }
-        .risk-stable { background: #22c55e; }
-        .risk-mild { background: #eab308; }
-        .risk-high { background: #ef4444; animation: pulse 1s infinite; }
         .stage-bloom { box-shadow: 0 0 15px #ec4899; border: 2px solid #ec4899; }
-        
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        .timeline-track { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; margin-top: 4px; position: relative; }
+        /* UI Components */
+        .glass-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
+        .active-btn { background: #3b82f6 !important; color: white !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .timeline-track { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; position: relative; }
         .timeline-fill { height: 100%; background: #3b82f6; border-radius: 2px; }
-
-        .plant-halo {
-            position: absolute; border-radius: 50%; border: 1px dashed rgba(34, 197, 94, 0.4);
-            background: rgba(34, 197, 94, 0.05); pointer-events: none; z-index: 40;
-        }
-        .sidebar-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); }
-        .active-btn { background: #f59e0b !important; color: #000 !important; }
         
-        .predictive-card {
-            background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px;
-            border-left: 3px solid #3b82f6; margin-bottom: 8px;
-        }
-        .gap-alert { border-left: 4px solid #f43f5e; background: rgba(244, 63, 94, 0.1); padding: 8px; border-radius: 8px; color: #fda4af; }
-
-        .passport-tag-active { background: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body class="flex h-screen">
 
-    <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
-        <div class="mb-6 flex justify-between items-start">
+    <aside class="w-[360px] bg-slate-900/90 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col gap-5 overflow-y-auto z-[100]">
+        <div class="flex justify-between items-start">
             <div>
-                <h2 class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-1">Temporal IQ v9.0</h2>
-                <p class="text-xl font-black text-white uppercase leading-tight">Time Intelligence</p>
+                <h2 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Temporal IQ v10.0</h2>
+                <p class="text-2xl font-black text-white uppercase tracking-tighter leading-none">Spatial Studio</p>
             </div>
             <div class="text-right">
-                <p class="text-[8px] font-bold text-slate-500 uppercase">Garden Score</p>
-                <p id="opt-score" class="text-xl font-black text-green-400">100%</p>
+                <span class="text-[9px] font-bold text-slate-500 uppercase">Opt. Score</span>
+                <p class="text-xl font-black text-green-400">100%</p>
             </div>
         </div>
 
-        <div class="mb-4 p-4 bg-slate-900 border border-white/10 rounded-xl">
-            <h3 class="text-[9px] font-black text-slate-400 uppercase mb-3 flex justify-between">
-                Biological Timeline <span id="pulse-date">Jun 15</span>
-            </h3>
-            <div id="growth-feed" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+        <div class="glass-panel p-4">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-[9px] font-bold text-slate-400 uppercase">Care Calendar</h3>
+                <span class="text-[8px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase">Hartford Live</span>
+            </div>
+            <div id="growth-feed" class="space-y-3 max-h-48 overflow-y-auto pr-2">
                 </div>
-            <div id="gap-detector" class="mt-4 hidden">
-                <div class="gap-alert text-[9px] font-bold uppercase">
-                    ⚠️ Bloom Gap Detected: <br>Low nectar period identified.
-                </div>
+        </div>
+
+        <div class="glass-panel p-4">
+            <h3 class="text-[9px] font-bold text-slate-400 uppercase mb-3">Crop Rotation & Soil</h3>
+            <div class="flex gap-2 mb-3">
+                <button class="flex-1 py-1 bg-amber-600/20 text-amber-500 rounded-lg text-[10px] font-black border border-amber-600/30">2026</button>
+                <button class="flex-1 py-1 bg-white/5 text-slate-500 rounded-lg text-[10px] font-black border border-white/5">2027</button>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold text-slate-300">NITROGEN HEALTH</span>
+                <span class="text-[10px] font-black text-green-400 uppercase tracking-widest">Optimal</span>
             </div>
         </div>
 
-        <div class="mb-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-            <p class="text-[9px] font-black text-blue-400 uppercase mb-3">Predictive Feed</p>
-            <div id="predictive-feed" class="space-y-2 text-[10px]"></div>
-        </div>
-
-        <div class="space-y-4 mb-6">
-            <div>
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Build Assets</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="p-2 bg-slate-800 rounded-lg text-[8px] font-bold text-center cursor-grab border border-white/5" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
-                    <div class="p-2 bg-slate-700 rounded-lg text-[8px] font-bold text-center cursor-grab border border-white/5" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
-                </div>
+        <div>
+            <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Inventory</p>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold flex items-center gap-2" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
+                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold flex items-center gap-2" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
             </div>
-            <div>
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">2026 Seedlings</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 'Nightshade', 75, 140)">🍅 Tomato</div>
-                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Zinnia', '🌸', 12, 'Flower', 60, 130)">🌸 Zinnia</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" id="heat-toggle" onchange="renderAll()" class="accent-orange-500">
-                <span class="text-[9px] font-black text-orange-500 uppercase">🔥 Simulate Heat Spike (+10d Growth)</span>
-            </label>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="setTacticalMode('frost')" id="btn-frost" class="p-2 bg-indigo-900/20 border border-indigo-500/30 rounded-lg text-[8px] font-black uppercase tracking-tighter">❄️ Frost Paint</button>
-                <button onclick="setTacticalMode('wet')" id="btn-wet" class="p-2 bg-cyan-900/20 border border-cyan-500/30 rounded-lg text-[8px] font-black uppercase tracking-tighter">💧 Wet Paint</button>
+                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold flex items-center gap-2" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 75, 140)">🍅 Tomato</div>
+                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold flex items-center gap-2" draggable="true" ondragstart="startPlantDrag(event, 'Zinnia', '🌸', 12, 60, 130)">🌸 Zinnia</div>
             </div>
         </div>
 
-        <div class="mt-auto space-y-2">
-            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="py-3 border-2 border-dashed border-slate-800 rounded-xl text-[8px] font-bold text-slate-600 text-center uppercase">🗑️ Delete Asset</div>
+        <div class="mt-auto border-t border-white/10 pt-4 space-y-4">
+            <div>
+                <h3 class="text-[9px] font-bold text-amber-500 uppercase mb-2 tracking-widest">Heliophysics</h3>
+                <div class="flex gap-1">
+                    <button class="flex-1 py-1.5 bg-white/5 text-[9px] font-black rounded-md uppercase">Spring</button>
+                    <button class="flex-1 py-1.5 bg-amber-600 text-white text-[9px] font-black rounded-md uppercase shadow-lg shadow-amber-600/20">Summer</button>
+                    <button class="flex-1 py-1.5 bg-white/5 text-[9px] font-black rounded-md uppercase">Fall</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="setTacticalMode('frost')" id="btn-frost" class="py-3 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-tighter hover:border-indigo-500 transition">❄️ Frost Paint</button>
+                <button onclick="setTacticalMode('wet')" id="btn-wet" class="py-3 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-tighter hover:border-cyan-500 transition">💧 Wet Paint</button>
+            </div>
+
+            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="py-3 border-2 border-dashed border-red-900/30 rounded-xl text-[8px] font-bold text-red-500/50 text-center uppercase">🗑️ Drop to Delete</div>
         </div>
     </aside>
 
     <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center relative">
         <div id="viewport" ondragover="event.preventDefault()" ondrop="handleDrop(event)"></div>
 
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[700px] bg-slate-900/90 border border-white/20 p-6 rounded-3xl backdrop-blur-xl z-[200] shadow-2xl">
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[700px] bg-slate-900/90 border border-white/10 p-6 rounded-3xl backdrop-blur-xl z-[200] shadow-2xl">
             <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase mb-3 tracking-tighter">
-                <span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span class="text-pink-500">Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+                <span>Mar</span><span>Apr</span><span>May</span><span class="text-blue-400">Jun</span><span class="text-pink-500">Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
             </div>
             <input type="range" min="60" max="300" step="1" value="165" id="time-scrubber" oninput="renderAll()" class="w-full accent-pink-500 bg-slate-700 h-2 rounded-lg appearance-none cursor-pointer">
-            <p class="text-center text-[10px] font-bold text-slate-400 mt-3 uppercase tracking-widest">Biological "Season Pulse" Controller</p>
-        </div>
-
-        <div id="passport-modal" class="hidden absolute top-10 right-10 w-72 bg-slate-900 border border-white/20 rounded-2xl shadow-2xl z-[300] p-5 backdrop-blur-xl">
-            <div class="flex justify-between items-start mb-4">
-                <div><h3 id="pass-emoji" class="text-3xl">🍅</h3><h2 id="pass-title" class="text-lg font-black uppercase tracking-tighter">Passport</h2></div>
-                <button onclick="closePassport()" class="text-slate-500 hover:text-white">✕</button>
-            </div>
-            <div class="space-y-3">
-                <input id="pass-variety" type="text" placeholder="Variety / Source" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] text-white">
-                <div class="grid grid-cols-2 gap-2">
-                    <input id="pass-date" type="date" class="w-full bg-slate-800 border-none rounded p-2 text-[9px] text-white">
-                    <input id="pass-germ" type="number" placeholder="Germ %" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] text-white">
-                </div>
-                <div class="flex gap-1">
-                    <button id="tag-overwinter" onclick="togglePassTag('overwinter')" class="flex-1 py-1 border border-white/10 rounded text-[7px] font-bold uppercase">❄️ Overwinter</button>
-                    <button id="tag-selfseed" onclick="togglePassTag('selfseed')" class="flex-1 py-1 border border-white/10 rounded text-[7px] font-bold uppercase">🌱 Self-Seed</button>
-                </div>
-                <textarea id="pass-notes" rows="2" class="w-full bg-slate-800 border-none rounded p-2 text-[10px] text-white" placeholder="Notes..."></textarea>
-                <button onclick="savePassportData()" class="w-full py-2 bg-green-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Update Genetics</button>
-            </div>
+            <p class="text-center text-[9px] font-bold text-slate-400 mt-3 uppercase tracking-[0.3em]">Biological "Season Pulse" Controller — <span id="pulse-date" class="text-white">Jun 15</span></p>
         </div>
     </main>
 
 <script>
-    let bedData = [], plantData = [], yearArchive = { 2026: [], 2027: [] };
-    let activeTacticalTool = null, activePassportId = null;
+    let bedData = [], plantData = [], activeTacticalTool = null;
 
     function createGrid() {
         const vp = document.getElementById('viewport');
@@ -180,17 +144,19 @@
         e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("type", type);
         e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h); e.dataTransfer.setData("isNew", "true");
     }
-    function startPlantDrag(e, name, icon, spread, family, dtm, bloomStart) {
+
+    function startPlantDrag(e, name, icon, spread, dtm, bloomStart) {
         e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("name", name);
         e.dataTransfer.setData("icon", icon); e.dataTransfer.setData("spread", spread);
-        e.dataTransfer.setData("family", family); e.dataTransfer.setData("dtm", dtm);
-        e.dataTransfer.setData("bloomStart", bloomStart); e.dataTransfer.setData("isNew", "true");
+        e.dataTransfer.setData("dtm", dtm); e.dataTransfer.setData("bloomStart", bloomStart);
+        e.dataTransfer.setData("isNew", "true");
     }
 
     function handleDrop(e) {
         const rect = document.getElementById('viewport').getBoundingClientRect();
         const x = e.clientX - rect.left, y = e.clientY - rect.top;
-        const itemType = e.dataTransfer.getData("itemType"), isNew = e.dataTransfer.getData("isNew") === "true";
+        const itemType = e.dataTransfer.getData("itemType");
+        const isNew = e.dataTransfer.getData("isNew") === "true";
 
         if (itemType === "bed") {
             if (isNew) {
@@ -203,15 +169,9 @@
         } else if (itemType === "plant") {
             if (isNew) {
                 plantData.push({ 
-                    id: Date.now(), 
-                    name: e.dataTransfer.getData("name"), 
-                    icon: e.dataTransfer.getData("icon"), 
-                    spread: parseInt(e.dataTransfer.getData("spread")), 
-                    family: e.dataTransfer.getData("family"), 
-                    dtm: parseInt(e.dataTransfer.getData("dtm")),
-                    bloomStart: parseInt(e.dataTransfer.getData("bloomStart")),
-                    x, y, 
-                    passport: { variety: '', date: '', germ: '', notes: '', overwinter: false, selfseed: false } 
+                    id: Date.now(), name: e.dataTransfer.getData("name"), 
+                    icon: e.dataTransfer.getData("icon"), dtm: parseInt(e.dataTransfer.getData("dtm")),
+                    bloomStart: parseInt(e.dataTransfer.getData("bloomStart")), x, y 
                 });
             } else {
                 const id = parseInt(e.dataTransfer.getData("id")), plant = plantData.find(p => p.id === id);
@@ -221,25 +181,24 @@
         renderAll();
     }
 
-    function setTacticalMode(m) { activeTacticalTool = activeTacticalTool === m ? null : m; document.getElementById('btn-frost').classList.toggle('active-btn', activeTacticalTool==='frost'); document.getElementById('btn-wet').classList.toggle('active-btn', activeTacticalTool==='wet'); }
-    function applyTactical(id) { if (activeTacticalTool) document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); renderAll(); }
+    function setTacticalMode(m) { 
+        activeTacticalTool = activeTacticalTool === m ? null : m; 
+        document.getElementById('btn-frost').classList.toggle('active-btn', activeTacticalTool === 'frost');
+        document.getElementById('btn-wet').classList.toggle('active-btn', activeTacticalTool === 'wet');
+    }
 
-    function getPulseDate(dayOfYear) {
-        const date = new Date(2026, 0); 
-        date.setDate(dayOfYear);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    function applyTactical(id) { 
+        if (activeTacticalTool) document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); 
     }
 
     function renderAll() {
-        document.querySelectorAll('.bed-obj, .plant-obj, .plant-halo, .stress-indicator').forEach(el => el.remove());
-        const growthFeed = document.getElementById('growth-feed');
-        growthFeed.innerHTML = '';
+        document.querySelectorAll('.bed-obj, .plant-obj').forEach(el => el.remove());
+        const feed = document.getElementById('growth-feed');
+        feed.innerHTML = '';
         
-        let simDay = parseInt(document.getElementById('time-scrubber').value);
-        if (document.getElementById('heat-toggle').checked) simDay += 10;
-        
-        document.getElementById('pulse-date').innerText = getPulseDate(simDay);
-        let activeBlooms = 0;
+        const simDay = parseInt(document.getElementById('time-scrubber').value);
+        const date = new Date(2026, 0); date.setDate(simDay);
+        document.getElementById('pulse-date').innerText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
         bedData.forEach(bed => {
             const el = document.createElement('div'); el.className = `bed-obj type-${bed.type}`;
@@ -250,31 +209,20 @@
         });
 
         plantData.forEach(p => {
-            // Growth Engine
-            const ms = (p.spread / 12) * 50;
-            const plantingDay = 120; // Default May 1
+            const plantingDay = 120; // May 1st
             const age = simDay - plantingDay;
-            let growthScale = Math.min(1, age / p.dtm);
-            if (age < 0) growthScale = 0;
-
-            const isBlooming = simDay >= p.bloomStart && simDay <= (p.bloomStart + 45);
-            if (isBlooming) activeBlooms++;
+            const growthScale = Math.max(0, Math.min(1, age / p.dtm));
+            const isBlooming = simDay >= p.bloomStart && simDay <= (p.bloomStart + 40);
 
             const el = document.createElement('div'); 
             el.className = `plant-obj ${isBlooming ? 'stage-bloom' : ''}`;
-            el.style.cssText = `left:${p.x-20}px;top:${p.y-20}px; transform: scale(${0.2 + (growthScale * 0.8)}); opacity: ${age < -10 ? 0 : 1}`;
+            el.style.cssText = `left:${p.x-20}px;top:${p.y-20}px; transform: scale(${0.3 + (growthScale * 0.7)}); opacity: ${age < -5 ? 0 : 1}`;
             el.innerText = p.icon; el.draggable = true;
-            el.onclick = () => openPassport(p.id);
             el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", p.id); e.dataTransfer.setData("isNew", "false"); };
-            
-            const riskDot = document.createElement('div');
-            riskDot.className = `stress-indicator risk-stable`;
-            el.appendChild(riskDot);
             document.getElementById('viewport').appendChild(el);
 
-            // Feed Update
             const progress = Math.round(growthScale * 100);
-            growthFeed.innerHTML += `
+            feed.innerHTML += `
                 <div class="text-[10px]">
                     <div class="flex justify-between font-bold uppercase mb-1">
                         <span>${p.icon} ${p.name}</span>
@@ -283,49 +231,14 @@
                     <div class="timeline-track"><div class="timeline-fill" style="width:${progress}%; background:${isBlooming ? '#ec4899' : '#3b82f6'}"></div></div>
                 </div>`;
         });
-
-        document.getElementById('gap-detector').classList.toggle('hidden', activeBlooms > 0 || plantData.length === 0);
-        runPredictiveIntel();
     }
 
-    function runPredictiveIntel() {
-        const feed = document.getElementById('predictive-feed');
-        feed.innerHTML = '';
-        const simDay = parseInt(document.getElementById('time-scrubber').value);
-
-        if (simDay < 135) {
-            feed.innerHTML += `<div class="predictive-card">🌱 Peak Seed Sowing: Start remaining annuals now for July blooms.</div>`;
-        }
-        if (document.getElementById('heat-toggle').checked) {
-            feed.innerHTML += `<div class="predictive-card border-orange-500">🔥 Heat Logic: Yield probability down 12% without 2x watering.</div>`;
-        }
+    function deleteItem(e) { 
+        const id = parseInt(e.dataTransfer.getData("id")), type = e.dataTransfer.getData("itemType");
+        if (type === "bed") bedData = bedData.filter(b => b.id !== id);
+        else plantData = plantData.filter(p => p.id !== id);
+        renderAll();
     }
-
-    function openPassport(id) {
-        const plant = plantData.find(p => p.id === id);
-        activePassportId = id;
-        document.getElementById('passport-modal').classList.remove('hidden');
-        document.getElementById('pass-variety').value = plant.passport.variety;
-        document.getElementById('pass-date').value = plant.passport.date;
-        document.getElementById('pass-germ').value = plant.passport.germ;
-        document.getElementById('pass-notes').value = plant.passport.notes;
-        updatePassTagUI('overwinter', plant.passport.overwinter);
-        updatePassTagUI('selfseed', plant.passport.selfseed);
-    }
-    function togglePassTag(tag) { const p = plantData.find(x => x.id === activePassportId); p.passport[tag] = !p.passport[tag]; updatePassTagUI(tag, p.passport[tag]); }
-    function updatePassTagUI(tag, active) { document.getElementById(`tag-${tag}`).classList.toggle('passport-tag-active', active); }
-    function savePassportData() { 
-        const p = plantData.find(x => x.id === activePassportId);
-        Object.assign(p.passport, {
-            variety: document.getElementById('pass-variety').value,
-            date: document.getElementById('pass-date').value,
-            germ: document.getElementById('pass-germ').value,
-            notes: document.getElementById('pass-notes').value
-        });
-        closePassport(); renderAll();
-    }
-    function closePassport() { document.getElementById('passport-modal').classList.add('hidden'); }
-    function deleteItem(e) { const id = parseInt(e.dataTransfer.getData("id")), type = e.dataTransfer.getData("itemType"); if (type === "bed") bedData = bedData.filter(b => b.id !== id); else plantData = plantData.filter(p => p.id !== id); renderAll(); }
 
     window.onload = () => { createGrid(); renderAll(); };
 </script>
