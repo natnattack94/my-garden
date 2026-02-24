@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spatial Studio v7.0 | GardenHub OS</title>
+    <title>Spatial Studio v8.0 | Predictive GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
         #viewport { 
@@ -13,12 +12,10 @@
             display: grid; grid-template-columns: repeat(20, 50px); grid-template-rows: repeat(20, 50px);
             gap: 2px; padding: 10px; border: 2px solid rgba(255,255,255,0.05);
         }
-        .grid-cell {
-            width: 50px; height: 50px; background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease; z-index: 5;
-        }
+        .grid-cell { width: 50px; height: 50px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease; z-index: 5; }
         .tag-frost { background: rgba(99, 102, 241, 0.4) !important; border-color: #6366f1 !important; }
         .tag-wet { background: rgba(6, 182, 212, 0.4) !important; border-color: #06b6d4 !important; }
+        
         .bed-obj { 
             position: absolute; cursor: move; display: flex; align-items: center; justify-content: center;
             font-size: 9px; font-weight: 900; text-transform: uppercase; border-radius: 8px; z-index: 10;
@@ -27,26 +24,41 @@
         .type-raised { background: #92400e; border: 2px solid #78350f; color: #fef3c7; }
         .type-inground { background: #065f46; border: 2px solid #064e3b; color: #d1fae5; }
         .type-wall { background: #334155; border: 2px solid #475569; color: #f1f5f9; }
+        
         .plant-obj {
             position: absolute; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
             font-size: 22px; border-radius: 50%; z-index: 60; transition: transform 0.2s;
         }
+
+        /* 2026 Stress Risk Meter */
+        .stress-indicator {
+            position: absolute; top: -5px; right: -5px; width: 12px; height: 12px;
+            border-radius: 50%; border: 2px solid #0f172a; z-index: 70;
+        }
+        .risk-stable { background: #22c55e; }
+        .risk-mild { background: #eab308; }
+        .risk-high { background: #ef4444; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
         .plant-halo {
             position: absolute; border-radius: 50%; border: 1px dashed rgba(34, 197, 94, 0.4);
             background: rgba(34, 197, 94, 0.05); pointer-events: none; z-index: 40;
         }
         .sidebar-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); }
         .active-btn { background: #f59e0b !important; color: #000 !important; }
-        .passport-tag-active { background: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; }
         
-        /* Task Cards CSS */
-        .task-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; position: relative; overflow: hidden; }
-        .task-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #3b82f6; }
-        .task-urgent::before { background: #ef4444; }
-        .task-water::before { background: #06b6d4; }
-        .task-prune::before { background: #10b981; }
+        /* Task Cards */
+        .predictive-card {
+            background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px;
+            border-left: 3px solid #3b82f6; margin-bottom: 8px;
+        }
+        .consequence-preview {
+            display: block; font-size: 7px; text-transform: uppercase; font-weight: 900;
+            color: #f87171; margin-top: 4px; letter-spacing: 0.5px;
+        }
 
+        .passport-tag-active { background: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
@@ -56,45 +68,36 @@
     <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
         <div class="mb-6 flex justify-between items-start">
             <div>
-                <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v7.0</h2>
+                <h2 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Predictive IQ v8.0</h2>
                 <p class="text-xl font-black text-white uppercase leading-tight">Spatial Studio</p>
             </div>
             <div class="text-right">
-                <p class="text-[8px] font-bold text-slate-500 uppercase">Opt. Score</p>
+                <p class="text-[8px] font-bold text-slate-500 uppercase">Garden Health</p>
                 <p id="opt-score" class="text-xl font-black text-green-400">100%</p>
             </div>
         </div>
 
-        <div class="mb-4 p-4 bg-blue-950/40 border border-blue-400/30 rounded-xl">
-            <div class="flex justify-between items-center mb-3">
-                <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Care Calendar</p>
-                <span class="text-[7px] px-2 py-0.5 bg-blue-500 rounded-full font-bold">HARTFORD LIVE</span>
-            </div>
-            <div id="care-schedule" class="space-y-2">
-                <p class="text-[8px] text-slate-500 italic text-center py-2">Place plants to generate tasks...</p>
-            </div>
+        <div class="mb-4 p-4 bg-slate-900 border border-white/10 rounded-xl">
+            <h3 class="text-[9px] font-black text-slate-400 uppercase mb-3 flex justify-between">
+                Weekly Snapshot <span>Feb 2026</span>
+            </h3>
+            <div id="predictive-feed" class="space-y-2 max-h-64 overflow-y-auto">
+                </div>
         </div>
 
         <div class="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-            <p class="text-[9px] font-black text-blue-400 uppercase mb-3">Crop Rotation Year</p>
-            <div class="flex gap-1">
+            <p class="text-[9px] font-black text-blue-400 uppercase mb-3">Rotation & Nitrogen</p>
+            <div class="flex gap-1 mb-3">
                 <button onclick="setYear(2026)" id="yr-2026" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black active-btn">2026</button>
                 <button onclick="setYear(2027)" id="yr-2027" class="yr-btn flex-1 py-1 bg-slate-800 rounded text-[10px] font-black">2027</button>
             </div>
-            <div id="soil-stats" class="mt-4">
+            <div id="soil-stats">
                 <div class="flex justify-between text-[8px] font-bold text-slate-400 mb-1 uppercase">
-                    <span>Nitrogen Health</span> <span id="n-val">Optimal</span>
+                    <span>Soil Depletion</span> <span id="n-val">Optimal</span>
                 </div>
                 <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
                     <div id="n-bar" class="bg-blue-500 h-full w-[100%] transition-all"></div>
                 </div>
-            </div>
-        </div>
-
-        <div class="mb-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-            <p class="text-[9px] font-black text-purple-400 uppercase mb-2">Agronomy Alerts</p>
-            <div id="intel-alerts" class="space-y-2 max-h-24 overflow-y-auto text-[8px]">
-                <p class="text-slate-500 italic text-[7px]">Ready for layout...</p>
             </div>
         </div>
 
@@ -110,14 +113,14 @@
                 <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Seedlings</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 'Nightshade')">🍅 Tomato</div>
-                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Pea', '🫛', 8, 'Legume')">🫛 Pea</div>
+                    <div class="p-2 bg-slate-800 border border-white/5 rounded-lg text-[10px] cursor-grab" draggable="true" ondragstart="startPlantDrag(event, 'Salvia', '🌸', 12, 'Flower')">🌸 Salvia</div>
                 </div>
             </div>
         </div>
 
         <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-4">
             <div>
-                <p class="text-[9px] font-black text-amber-500 uppercase mb-2">Heliophysics</p>
+                <p class="text-[9px] font-black text-amber-500 uppercase mb-2">Weather Forecast Simulation</p>
                 <div class="flex gap-1">
                     <button onclick="setSeason('spring')" id="btn-spring" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold">SPR</button>
                     <button onclick="setSeason('summer')" id="btn-summer" class="season-btn flex-1 py-1 bg-slate-800 rounded text-[8px] font-bold active-btn">SUM</button>
@@ -125,8 +128,8 @@
                 </div>
             </div>
             <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" id="heat-toggle" onchange="updateMicroclimate()" class="accent-orange-500">
-                <span class="text-[9px] font-bold text-slate-300 uppercase">🔥 Activate Heat Walls</span>
+                <input type="checkbox" id="heat-toggle" onchange="renderAll()" class="accent-orange-500">
+                <span class="text-[9px] font-bold text-slate-300 uppercase">🔥 Incoming Heatwave</span>
             </label>
             <div>
                 <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Tactical Paint</p>
@@ -138,8 +141,8 @@
         </div>
 
         <div class="mt-auto space-y-2">
-            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="py-3 border-2 border-dashed border-slate-800 rounded-xl text-[8px] font-bold text-slate-600 text-center uppercase">🗑️ Drop to Delete</div>
-            <button onclick="saveLayout()" class="w-full py-3 bg-white text-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest">Global Sync</button>
+            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="py-3 border-2 border-dashed border-slate-800 rounded-xl text-[8px] font-bold text-slate-600 text-center uppercase">🗑️ Delete Asset</div>
+            <button class="w-full py-3 bg-white text-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest">Global Sync</button>
         </div>
     </aside>
 
@@ -182,7 +185,6 @@
         }
     }
 
-    // --- Drag Logic ---
     function startBedDrag(e, type, w, h) {
         e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("type", type);
         e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h); e.dataTransfer.setData("isNew", "true");
@@ -192,6 +194,7 @@
         e.dataTransfer.setData("icon", icon); e.dataTransfer.setData("spread", spread);
         e.dataTransfer.setData("family", family); e.dataTransfer.setData("isNew", "true");
     }
+
     function handleDrop(e) {
         const rect = document.getElementById('viewport').getBoundingClientRect();
         const x = e.clientX - rect.left, y = e.clientY - rect.top;
@@ -216,8 +219,7 @@
         renderAll();
     }
 
-    // --- Environmental Sensors ---
-    function setSeason(s) { currentSeason = s; document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active-btn', b.id === `btn-${s}`)); updateMicroclimate(); renderAll(); }
+    function setSeason(s) { currentSeason = s; document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active-btn', b.id === `btn-${s}`)); renderAll(); }
     function setTacticalMode(m) { activeTacticalTool = activeTacticalTool === m ? null : m; document.getElementById('btn-frost').classList.toggle('active-btn', activeTacticalTool==='frost'); document.getElementById('btn-wet').classList.toggle('active-btn', activeTacticalTool==='wet'); }
     function applyTactical(id) { if (activeTacticalTool) document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); renderAll(); }
 
@@ -235,53 +237,108 @@
         });
     }
 
-    // --- Automated Care Calendar Logic ---
-    function generateCareCalendar() {
-        const container = document.getElementById('care-schedule');
-        container.innerHTML = '';
-        if (plantData.length === 0) { container.innerHTML = '<p class="text-[8px] text-slate-500 italic text-center py-2">No plants detected.</p>'; return; }
+    function runPredictiveIntel() {
+        let alerts = [], nitrogen = 100, score = 100;
+        const feed = document.getElementById('predictive-feed');
+        const heatwave = document.getElementById('heat-toggle').checked;
+        const wetZones = document.querySelectorAll('.tag-wet').length;
+        const frostZones = document.querySelectorAll('.tag-frost').length;
 
-        let tasks = [];
-        const wetCells = document.querySelectorAll('.tag-wet').length;
-        const isRainy = wetCells > 15; // Simulated Rainfall check
-        const frostCells = document.querySelectorAll('.tag-frost').length;
+        feed.innerHTML = '';
 
-        // Global Frost Alert
-        if (currentSeason === 'spring' || frostCells > 5) {
-            tasks.push({ title: "Frost Alert", desc: "Hartford Frost risk high. Cover seedlings.", icon: "❄️", type: "task-urgent" });
+        // 1. Water Stress & Forecast Logic
+        plantData.forEach(p => {
+            let risk = 'stable';
+            let desc = "Soil moisture balanced.";
+            let cons = "Stable growth.";
+
+            if (heatwave) { risk = 'high'; desc = "Evapotranspiration spike predicted."; cons = "Skipping water today increases wilt risk by 60%."; score -= 5; }
+            else if (wetZones > 15) { risk = 'stable'; desc = "Recent rain absorption high."; cons = "Root rot risk if watered manually."; }
+            else if (currentSeason === 'summer') { risk = 'mild'; desc = "Typical summer depletion."; cons = "Expect slowed growth if skipped."; }
+
+            p.currentRisk = risk; // Store for rendering
+            
+            feed.innerHTML += `
+                <div class="predictive-card border-l-4 ${risk === 'high' ? 'border-red-500' : risk === 'mild' ? 'border-yellow-500' : 'border-green-500'}">
+                    <p class="text-[9px] font-black uppercase">${p.name} Care</p>
+                    <p class="text-[8px] text-slate-400">${desc}</p>
+                    <span class="consequence-preview">${cons}</span>
+                </div>`;
+            
+            // Nitrogen Tracking (Original Feature)
+            if (p.family === 'Nightshade') nitrogen -= 10;
+            if (p.family === 'Legume') nitrogen += 15;
+
+            // Rotation Conflicts (Original Feature)
+            (yearArchive[currentYear - 1] || []).forEach(prevP => {
+                if (Math.hypot(p.x - prevP.x, p.y - prevP.y) < 80 && p.family === prevP.family) { 
+                    score -= 15;
+                    feed.innerHTML += `<div class="predictive-card border-red-500 bg-red-500/10 text-[8px] font-bold uppercase">⚠️ Rotation Conflict: ${p.name}</div>`;
+                }
+            });
+        });
+
+        // 2. Frost Intelligence
+        if (frostZones > 0 && currentSeason === 'spring') {
+            feed.innerHTML = `
+                <div class="predictive-card border-indigo-500 bg-indigo-500/10">
+                    <p class="text-[9px] font-black uppercase">❄️ Microclimate Alert</p>
+                    <p class="text-[8px]">Frost pocket detected in painted zone.</p>
+                    <span class="consequence-preview">Expect 3-5° drop tonight. Cover tenders.</span>
+                </div>` + feed.innerHTML;
         }
 
-        plantData.forEach(p => {
-            // Watering Logic
-            if (!isRainy) {
-                tasks.push({ title: `Water ${p.name}`, desc: `Check soil moisture for ${p.family}.`, icon: "💧", type: "task-water" });
-            }
-            // Maintenance logic
-            if (p.name === 'Tomato') tasks.push({ title: "Prune Suckers", desc: "Remove side shoots for airflow.", icon: "✂️", type: "task-prune" });
-            if (p.family === 'Legume') tasks.push({ title: "Check Support", desc: "Ensure trellises are secure.", icon: "🪜", type: "task-card" });
-            
-            // Seed Countdown
-            if (p.passport.date) {
-                const plantDate = new Date(p.passport.date);
-                const today = new Date();
-                const diff = Math.ceil((today - plantDate) / (1000 * 60 * 60 * 24));
-                if (diff < 14) tasks.push({ title: "Germination Watch", desc: `${p.name} Day ${diff}. Look for sprouts.`, icon: "🌱", type: "task-card" });
-            }
-        });
+        // 3. Seed Starting Countdown (Based on Hartford May 15 Frost)
+        const frostDate = new Date('2026-05-15');
+        const today = new Date('2026-02-24'); 
+        const daysToFrost = Math.ceil((frostDate - today) / (1000*60*60*24));
+        
+        feed.innerHTML += `
+            <div class="predictive-card border-purple-500">
+                <p class="text-[9px] font-black uppercase">🌱 Sowing Countdown</p>
+                <p class="text-[8px]">${daysToFrost} days to last frost.</p>
+                <span class="consequence-preview">Start Nightshades in ~15 days.</span>
+            </div>`;
 
-        tasks.slice(0, 5).forEach(t => {
-            container.innerHTML += `
-                <div class="task-card ${t.type} mb-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[9px] font-black uppercase tracking-tight">${t.title}</span>
-                        <span>${t.icon}</span>
-                    </div>
-                    <p class="text-[8px] text-slate-400 mt-1 leading-tight">${t.desc}</p>
-                </div>`;
-        });
+        document.getElementById('n-bar').style.width = `${Math.min(nitrogen, 100)}%`;
+        document.getElementById('opt-score').innerText = `${Math.max(0, score)}%`;
     }
 
-    // --- Passport & Engine ---
+    function renderAll() {
+        document.querySelectorAll('.bed-obj, .plant-obj, .plant-halo, .stress-indicator').forEach(el => el.remove());
+        
+        bedData.forEach(bed => {
+            const el = document.createElement('div'); el.className = `bed-obj type-${bed.type}`;
+            el.style.cssText = `left:${bed.x}px;top:${bed.y}px;width:${bed.w}px;height:${bed.h}px;`;
+            el.innerText = bed.type; el.draggable = true;
+            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("id", bed.id); e.dataTransfer.setData("isNew", "false"); };
+            document.getElementById('viewport').appendChild(el);
+        });
+
+        plantData.forEach(plant => {
+            const ms = (plant.spread / 12) * 50;
+            const halo = document.createElement('div'); halo.className = 'plant-halo';
+            halo.style.cssText = `width:${ms}px;height:${ms}px;left:${plant.x-(ms/2)}px;top:${plant.y-(ms/2)}px;`;
+            document.getElementById('viewport').appendChild(halo);
+
+            const el = document.createElement('div'); el.className = 'plant-obj';
+            el.style.cssText = `left:${plant.x-20}px;top:${plant.y-20}px;`;
+            el.innerText = plant.icon; el.draggable = true;
+            el.onclick = () => openPassport(plant.id);
+            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", plant.id); e.dataTransfer.setData("isNew", "false"); };
+            
+            // Add Stress Risk Indicator
+            const riskDot = document.createElement('div');
+            riskDot.className = `stress-indicator risk-${plant.currentRisk || 'stable'}`;
+            el.appendChild(riskDot);
+
+            document.getElementById('viewport').appendChild(el);
+        });
+
+        updateMicroclimate();
+        runPredictiveIntel();
+    }
+
     function openPassport(id) {
         const plant = plantData.find(p => p.id === id);
         activePassportId = id;
@@ -304,48 +361,7 @@
         closePassport(); renderAll();
     }
     function closePassport() { document.getElementById('passport-modal').classList.add('hidden'); }
-
-    function renderAll() {
-        document.querySelectorAll('.bed-obj, .plant-obj, .plant-halo').forEach(el => el.remove());
-        bedData.forEach(bed => {
-            const el = document.createElement('div'); el.className = `bed-obj type-${bed.type}`;
-            el.style.cssText = `left:${bed.x}px;top:${bed.y}px;width:${bed.w}px;height:${bed.h}px;`;
-            el.innerText = bed.type; el.draggable = true;
-            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("id", bed.id); e.dataTransfer.setData("isNew", "false"); };
-            document.getElementById('viewport').appendChild(el);
-        });
-        plantData.forEach(plant => {
-            const ms = (plant.spread / 12) * 50;
-            const halo = document.createElement('div'); halo.className = 'plant-halo';
-            halo.style.cssText = `width:${ms}px;height:${ms}px;left:${plant.x-(ms/2)}px;top:${plant.y-(ms/2)}px;`;
-            document.getElementById('viewport').appendChild(halo);
-            const el = document.createElement('div'); el.className = 'plant-obj';
-            el.style.cssText = `left:${plant.x-20}px;top:${plant.y-20}px;`;
-            el.innerText = plant.icon; el.draggable = true;
-            el.onclick = () => openPassport(plant.id);
-            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", plant.id); e.dataTransfer.setData("isNew", "false"); };
-            document.getElementById('viewport').appendChild(el);
-        });
-        updateMicroclimate();
-        runAgronomyIntel();
-        generateCareCalendar();
-    }
-
-    function runAgronomyIntel() {
-        let alerts = [], nitrogen = 100, score = 100;
-        plantData.forEach(p1 => {
-            if (p1.family === 'Nightshade') nitrogen -= 10;
-            if (p1.family === 'Legume') nitrogen += 15;
-            (yearArchive[currentYear - 1] || []).forEach(prevP => {
-                if (Math.hypot(p1.x - prevP.x, p1.y - prevP.y) < 80 && p1.family === prevP.family) { alerts.push(`⚠️ Rotation Conflict: ${p1.name}`); score -= 15; }
-            });
-        });
-        document.getElementById('intel-alerts').innerHTML = alerts.length ? alerts.map(a => `<div class="p-1 border-b border-white/5">${a}</div>`).join('') : '<p class="text-slate-500 italic text-[7px]">Ready for layout...</p>';
-        document.getElementById('n-bar').style.width = `${Math.min(nitrogen, 100)}%`;
-        document.getElementById('opt-score').innerText = `${Math.max(0, score)}%`;
-    }
-
-    function setYear(yr) { yearArchive[currentYear] = JSON.parse(JSON.stringify(plantData)); currentYear = yr; plantData = yearArchive[yr] || []; document.querySelectorAll('.yr-btn').forEach(b => b.classList.toggle('active-btn', b.id === `yr-${yr}`)); renderAll(); }
+    function setYear(yr) { yearArchive[currentYear] = JSON.parse(JSON.stringify(plantData)); currentYear = yr; plantData = yearArchive[yr] || []; renderAll(); }
     function deleteItem(e) { const id = parseInt(e.dataTransfer.getData("id")), type = e.dataTransfer.getData("itemType"); if (type === "bed") bedData = bedData.filter(b => b.id !== id); else plantData = plantData.filter(p => p.id !== id); renderAll(); }
 
     window.onload = () => { createGrid(); renderAll(); };
