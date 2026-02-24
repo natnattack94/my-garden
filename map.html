@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spatial Studio v6.0 | GardenHub OS</title>
+    <title>Spatial Studio v7.0 | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -39,6 +39,14 @@
         .sidebar-panel { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); }
         .active-btn { background: #f59e0b !important; color: #000 !important; }
         .passport-tag-active { background: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; }
+        
+        /* Task Cards CSS */
+        .task-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; position: relative; overflow: hidden; }
+        .task-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #3b82f6; }
+        .task-urgent::before { background: #ef4444; }
+        .task-water::before { background: #06b6d4; }
+        .task-prune::before { background: #10b981; }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
@@ -48,12 +56,22 @@
     <aside class="w-80 sidebar-panel border-r border-white/10 p-6 flex flex-col z-[100] overflow-y-auto">
         <div class="mb-6 flex justify-between items-start">
             <div>
-                <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v6.0</h2>
+                <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v7.0</h2>
                 <p class="text-xl font-black text-white uppercase leading-tight">Spatial Studio</p>
             </div>
             <div class="text-right">
                 <p class="text-[8px] font-bold text-slate-500 uppercase">Opt. Score</p>
                 <p id="opt-score" class="text-xl font-black text-green-400">100%</p>
+            </div>
+        </div>
+
+        <div class="mb-4 p-4 bg-blue-950/40 border border-blue-400/30 rounded-xl">
+            <div class="flex justify-between items-center mb-3">
+                <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Care Calendar</p>
+                <span class="text-[7px] px-2 py-0.5 bg-blue-500 rounded-full font-bold">HARTFORD LIVE</span>
+            </div>
+            <div id="care-schedule" class="space-y-2">
+                <p class="text-[8px] text-slate-500 italic text-center py-2">Place plants to generate tasks...</p>
             </div>
         </div>
 
@@ -199,9 +217,9 @@
     }
 
     // --- Environmental Sensors ---
-    function setSeason(s) { currentSeason = s; document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active-btn', b.id === `btn-${s}`)); updateMicroclimate(); }
+    function setSeason(s) { currentSeason = s; document.querySelectorAll('.season-btn').forEach(b => b.classList.toggle('active-btn', b.id === `btn-${s}`)); updateMicroclimate(); renderAll(); }
     function setTacticalMode(m) { activeTacticalTool = activeTacticalTool === m ? null : m; document.getElementById('btn-frost').classList.toggle('active-btn', activeTacticalTool==='frost'); document.getElementById('btn-wet').classList.toggle('active-btn', activeTacticalTool==='wet'); }
-    function applyTactical(id) { if (activeTacticalTool) document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); }
+    function applyTactical(id) { if (activeTacticalTool) document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); renderAll(); }
 
     function updateMicroclimate() {
         const heatOn = document.getElementById('heat-toggle').checked;
@@ -214,6 +232,52 @@
                 if (heatOn && obj.type === 'wall' && cx >= obj.x && cx <= (obj.x + obj.w) && cy >= (obj.y + obj.h) && cy <= (obj.y + obj.h + 80)) heat = true;
             });
             cell.style.backgroundColor = shade ? 'rgba(49, 46, 129, 0.25)' : (heat ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.02)');
+        });
+    }
+
+    // --- Automated Care Calendar Logic ---
+    function generateCareCalendar() {
+        const container = document.getElementById('care-schedule');
+        container.innerHTML = '';
+        if (plantData.length === 0) { container.innerHTML = '<p class="text-[8px] text-slate-500 italic text-center py-2">No plants detected.</p>'; return; }
+
+        let tasks = [];
+        const wetCells = document.querySelectorAll('.tag-wet').length;
+        const isRainy = wetCells > 15; // Simulated Rainfall check
+        const frostCells = document.querySelectorAll('.tag-frost').length;
+
+        // Global Frost Alert
+        if (currentSeason === 'spring' || frostCells > 5) {
+            tasks.push({ title: "Frost Alert", desc: "Hartford Frost risk high. Cover seedlings.", icon: "❄️", type: "task-urgent" });
+        }
+
+        plantData.forEach(p => {
+            // Watering Logic
+            if (!isRainy) {
+                tasks.push({ title: `Water ${p.name}`, desc: `Check soil moisture for ${p.family}.`, icon: "💧", type: "task-water" });
+            }
+            // Maintenance logic
+            if (p.name === 'Tomato') tasks.push({ title: "Prune Suckers", desc: "Remove side shoots for airflow.", icon: "✂️", type: "task-prune" });
+            if (p.family === 'Legume') tasks.push({ title: "Check Support", desc: "Ensure trellises are secure.", icon: "🪜", type: "task-card" });
+            
+            // Seed Countdown
+            if (p.passport.date) {
+                const plantDate = new Date(p.passport.date);
+                const today = new Date();
+                const diff = Math.ceil((today - plantDate) / (1000 * 60 * 60 * 24));
+                if (diff < 14) tasks.push({ title: "Germination Watch", desc: `${p.name} Day ${diff}. Look for sprouts.`, icon: "🌱", type: "task-card" });
+            }
+        });
+
+        tasks.slice(0, 5).forEach(t => {
+            container.innerHTML += `
+                <div class="task-card ${t.type} mb-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[9px] font-black uppercase tracking-tight">${t.title}</span>
+                        <span>${t.icon}</span>
+                    </div>
+                    <p class="text-[8px] text-slate-400 mt-1 leading-tight">${t.desc}</p>
+                </div>`;
         });
     }
 
@@ -237,7 +301,7 @@
         p.passport.date = document.getElementById('pass-date').value;
         p.passport.germ = document.getElementById('pass-germ').value;
         p.passport.notes = document.getElementById('pass-notes').value;
-        closePassport(); 
+        closePassport(); renderAll();
     }
     function closePassport() { document.getElementById('passport-modal').classList.add('hidden'); }
 
@@ -264,6 +328,7 @@
         });
         updateMicroclimate();
         runAgronomyIntel();
+        generateCareCalendar();
     }
 
     function runAgronomyIntel() {
