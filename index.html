@@ -9,15 +9,10 @@
     <style>
         body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
         .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); min-height: 100px; }
-        .sun-cell { transition: all 0.2s ease; cursor: pointer; border: 1px solid #f1f5f9; height: 30px; border-radius: 6px; }
-        .sun-full { background: #fef3c7; border-color: #fcd34d; }
-        .sun-partial { background: #ede9fe; border-color: #ddd6fe; }
-        .sun-shade { background: #f1f5f9; border-color: #e2e8f0; }
         .seed-card { background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease; height: 160px; cursor: pointer; position: relative; overflow: hidden; }
         .seed-card:hover { border-color: #22c55e; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .progress-bg { background: #f1f5f9; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .status-sprout { background: #99f6e4; }
         .status-grow { background: #22c55e; }
         .status-harvest { background: #f59e0b; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
@@ -33,6 +28,7 @@
         </div>
         <nav class="flex flex-wrap gap-2">
             <a href="map.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 shadow-sm text-slate-600">🗺️ Map</a>
+            <a href="clinic.html" class="bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl text-xs font-bold border border-red-200 shadow-sm text-red-700">🏥 Clinic</a>
             <a href="plants.html" class="bg-green-50 hover:bg-green-100 px-4 py-2 rounded-xl text-xs font-bold border border-green-200 shadow-sm text-green-700">🌿 Library</a>
             <button onclick="handleLogout()" class="bg-slate-100 hover:bg-red-50 hover:text-red-500 px-4 py-2 rounded-xl text-xs font-bold text-slate-400">🚪 Logout</button>
         </nav>
@@ -41,23 +37,31 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div class="lg:col-span-1 grid grid-cols-2 gap-4">
             <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Crops</p><h3 id="crop-count" class="text-2xl font-black text-slate-800">0</h3></div>
-            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Logs</p><h3 id="log-count" class="text-2xl font-black text-green-600">0</h3></div>
+            <div class="glass-panel p-4 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Alerts</p><h3 id="log-count" class="text-2xl font-black text-red-500">0</h3></div>
         </div>
-        <div class="lg:col-span-3 glass-panel p-5">
-            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Spatial Sun Map</h3>
-            <div id="sun-map" class="grid grid-cols-8 gap-1"></div>
+        <div class="lg:col-span-3 glass-panel p-5 flex items-center justify-between">
+            <div>
+                <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">System Status</h3>
+                <p class="text-sm font-medium text-slate-600">All garden sensors operational. Zone 6B data synced.</p>
+            </div>
+            <div class="px-4 py-2 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase">Cloud Online</div>
         </div>
     </div>
 
-    <div class="lg:col-span-2 space-y-8">
-        <div class="flex justify-between items-end">
-            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Active Growth</h2>
-            <button onclick="openModal()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold">+ Plant Seed</button>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-8">
+            <div class="flex justify-between items-end">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Active Growth</h2>
+                <button onclick="openModal()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition">+ Plant Seed</button>
+            </div>
+            <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
-        <div id="seed-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        <div class="glass-panel p-6">
-            <h2 class="text-lg font-bold mb-6">Maturity Forecast</h2>
-            <div id="harvest-forecast" class="space-y-6 min-h-[100px]"></div>
+
+        <div class="lg:col-span-1">
+            <div class="glass-panel p-6">
+                <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Maturity Forecast</h2>
+                <div id="harvest-forecast" class="space-y-6"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -92,38 +96,35 @@
 </div>
 
 <script>
-    // --- SUPABASE CONFIG ---
     const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- UI HELPERS ---
     function openModal() { document.getElementById('add-modal').classList.remove('hidden'); }
     function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
 
-    // --- DASHBOARD RENDERING ---
     async function renderDashboard() {
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         
         try {
             const { data: plants } = await _supabase.from('garden_library').select('*');
-            const { data: logs } = await _supabase.from('garden_logs').select('*');
-
             document.getElementById('crop-count').innerText = plants?.length || 0;
-            document.getElementById('log-count').innerText = logs?.length || 0;
 
             document.getElementById('seed-grid').innerHTML = plants?.length ? plants.map(p => `
-                <div class="seed-card p-6 rounded-3xl flex flex-col justify-between">
-                    <span class="text-4xl">${p.emoji}</span>
-                    <h4 class="text-slate-800 font-black text-xl uppercase">${p.name}</h4>
+                <div class="seed-card p-6 rounded-3xl flex flex-col justify-between" onclick="window.location.href='clinic.html?name=${p.name}'">
+                    <span class="text-4xl">${p.emoji || '🌱'}</span>
+                    <div>
+                        <h4 class="text-slate-800 font-black text-xl uppercase">${p.name}</h4>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Click for Health Check</p>
+                    </div>
                 </div>
             `).join('') : '<div class="col-span-full py-12 border-2 border-dashed rounded-3xl text-center text-slate-400">No active growth</div>';
 
             document.getElementById('harvest-forecast').innerHTML = plants?.length ? plants.map(p => {
                 const progress = calculateMaturity(p.date_planted, p.days_to_mature);
                 let color = progress > 85 ? 'status-harvest' : 'status-grow';
-                return `<div><p class="text-[10px] font-bold uppercase mb-2">${p.name} (${progress}%)</p><div class="progress-bg"><div class="progress-fill ${color}" style="width: ${progress}%"></div></div></div>`;
-            }).join('') : '<p class="text-slate-400 text-xs">No timelines available</p>';
+                return `<div><p class="text-[10px] font-bold uppercase mb-2 text-slate-500">${p.name} — ${progress}%</p><div class="progress-bg"><div class="progress-fill ${color}" style="width: ${progress}%"></div></div></div>`;
+            }).join('') : '<p class="text-slate-400 text-xs text-center py-4 uppercase font-bold">Waiting for seeds...</p>';
         } catch (e) { console.error("Load error:", e); }
     }
 
@@ -133,12 +134,10 @@
         return Math.min(100, Math.max(0, Math.floor((diffInDays / daysToMature) * 100)));
     }
 
-    // --- SAVE LOGIC ---
     async function saveNewPlant() {
         const btn = document.getElementById('save-btn');
         const name = document.getElementById('p-name').value;
         const days = parseInt(document.getElementById('p-days').value);
-
         if(!name || !days) return alert("Fill out all fields!");
 
         btn.innerText = "PLANTING...";
@@ -146,42 +145,25 @@
 
         try {
             const { data: { user } } = await _supabase.auth.getUser();
-            if(!user) throw new Error("Please log in first!");
-
-            const { error } = await _supabase.from('garden_library').insert([
-                { 
-                    name: name, 
-                    emoji: '🌱', 
-                    days_to_mature: days, 
-                    date_planted: new Date().toISOString(),
-                    user_id: user.id 
-                }
-            ]);
-
+            const { error } = await _supabase.from('garden_library').insert([{ 
+                name: name, emoji: '🌱', days_to_mature: days, 
+                date_planted: new Date().toISOString(), user_id: user.id 
+            }]);
             if (error) throw error;
-
             document.getElementById('p-name').value = '';
             document.getElementById('p-days').value = '';
             closeModal();
-            await renderDashboard(); 
-        } catch (err) {
-            console.error(err);
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerText = "PLANT IT";
-            btn.disabled = false;
-        }
+            renderDashboard(); 
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.innerText = "PLANT IT"; btn.disabled = false; }
     }
 
-    // --- AUTH LOGIC ---
     _supabase.auth.onAuthStateChange((event, session) => {
         const overlay = document.getElementById('auth-overlay');
         if (session) {
             overlay.classList.add('hidden');
             renderDashboard();
-        } else {
-            overlay.classList.remove('hidden');
-        }
+        } else { overlay.classList.remove('hidden'); }
     });
 
     async function handleSignIn() {
@@ -197,7 +179,7 @@
             email: document.getElementById('auth-email').value,
             password: document.getElementById('auth-password').value
         });
-        if (error) alert("Check your email for a verification link!");
+        if (error) alert("Join successful. Login to enter.");
     }
 
     async function handleLogout() {
