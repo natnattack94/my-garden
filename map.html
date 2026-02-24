@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Spatial & Defense Engine</title>
+    <title>9x9 Eco-Precision Grid | GardenHub OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -25,10 +25,11 @@
             border: 1px solid rgba(255,255,255,0.05);
         }
         
-        /* Layer Overlays */
-        .tag-heat_pocket { background: rgba(249, 115, 22, 0.15) !important; border: 1px dashed #f97316 !important; }
+        /* Eco & Microclimate Shaders */
         .tag-frost_pocket { background: rgba(99, 102, 241, 0.15) !important; border: 1px dashed #6366f1 !important; }
         .tag-wet_zone { background: rgba(6, 182, 212, 0.3) !important; box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.5); }
+        .is-native { box-shadow: inset 0 0 12px rgba(34, 197, 94, 0.3); border-color: #22c55e !important; }
+        .is-invasive { background: rgba(239, 68, 68, 0.25) !important; border: 1px dashed #ef4444 !important; }
         
         .grid-spot.occupied { background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.4); }
         .info-btn {
@@ -43,39 +44,38 @@
 </head>
 <body class="flex h-screen">
 
-    <div id="modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
-        <div class="bg-slate-900 border border-white/20 p-8 rounded-[32px] max-w-sm w-full shadow-2xl">
+    <div id="modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60">
+        <div class="bg-slate-900 border border-white/20 p-8 rounded-[32px] max-w-sm w-full shadow-2xl relative">
             <div id="modal-content"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/5 hover:bg-slate-700 transition">Dismiss</button>
+            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/5">Dismiss</button>
         </div>
     </div>
 
     <aside class="w-80 bg-slate-900 border-r border-white/10 p-6 flex flex-col overflow-y-auto">
-        <div class="mb-6">
-            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Spatial Engine v2.6</h2>
-            <p class="text-xl font-black text-white leading-tight uppercase">Defense &<br>Precision</p>
+        <div class="mb-8">
+            <h2 class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Eco-Intelligence v2.7</h2>
+            <p class="text-xl font-black text-white leading-tight uppercase">Native Plant<br>Integrator</p>
         </div>
 
         <div class="mb-6 p-4 bg-white/5 rounded-2xl border border-white/10">
-            <p class="text-[9px] font-bold text-slate-500 uppercase mb-3 flex justify-between">
-                Browse Pressure <span id="pressure-label" class="text-green-500">Low</span>
-            </p>
-            <input type="range" min="0" max="3" value="0" id="pressure-slider" class="w-full accent-green-500" onchange="updatePressure(this.value)">
-            <div class="flex justify-between mt-2 text-[7px] font-black uppercase text-slate-600">
-                <span>Safe</span>
-                <span>Mild</span>
-                <span>Heavy</span>
-                <span class="text-red-500">Extreme</span>
+            <p class="text-[9px] font-bold text-slate-500 uppercase mb-3">Native Preference</p>
+            <select id="eco-preference" onchange="updateEcoPreference(this.value)" class="w-full bg-slate-800 border-none rounded-xl p-3 text-[10px] font-bold text-green-400 outline-none">
+                <option value="Strict Native">Strict Native Only</option>
+                <option value="Native-leaning" selected>Native-leaning</option>
+                <option value="Open to Cultivars">Open to Cultivars</option>
+                <option value="No Preference">No Preference</option>
+            </select>
+            <div id="ecoregion-badge" class="mt-3 text-[8px] font-black bg-blue-500/10 text-blue-400 p-2 rounded-lg text-center border border-blue-500/20 uppercase tracking-tighter">
+                Ecoregion 59: Northeastern Coastal
             </div>
         </div>
         
         <div class="mb-6 space-y-2">
-            <button onclick="setMode('plant')" id="btn-plant" class="w-full p-3 bg-green-600 rounded-xl text-[10px] font-black uppercase transition-all mb-2">🌱 Seeding Mode</button>
+            <p class="text-[9px] font-bold text-slate-500 uppercase px-1">Tactical Modes</p>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="setMode('soil')" id="btn-soil" class="p-2 bg-slate-800 border border-white/5 rounded-xl text-[9px] font-bold">🧪 Soil Lab</button>
-                <button onclick="setMode('damage')" id="btn-damage" class="p-2 bg-red-900/20 border border-red-500/20 rounded-xl text-[9px] font-bold text-red-400">🦌 Browse Log</button>
+                <button onclick="setMode('plant')" id="m-plant" class="col-span-2 p-3 bg-green-600 rounded-xl text-[10px] font-black uppercase transition-all">🌱 Seeding Mode</button>
                 <button onclick="setMode('tag', 'frost_pocket')" class="p-2 bg-indigo-900/40 border border-indigo-500/30 rounded-xl text-[9px] font-bold">❄️ Frost</button>
-                <button onclick="setMode('tag', 'wet_zone')" class="p-2 bg-cyan-900/40 border border-cyan-500/30 rounded-xl text-[9px] font-bold">💧 Drainage</button>
+                <button onclick="setMode('soil_lab')" class="p-2 bg-amber-900/40 border border-amber-500/30 rounded-xl text-[9px] font-bold text-amber-200">🧪 Soil Lab</button>
             </div>
         </div>
 
@@ -83,25 +83,28 @@
 
         <div class="pt-6 border-t border-white/10 space-y-3 mt-4">
             <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
-                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2">Garden Viability</p>
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase">Garden Impact</p>
+                    <span id="pollinator-hits" class="text-[9px] font-black text-blue-400 uppercase">0 Pollinators</span>
+                </div>
                 <div class="flex items-end gap-2">
                     <span id="health-value" class="text-2xl font-black text-green-500">100</span>
                     <span class="text-[10px] text-slate-500 mb-1">/ 100</span>
                 </div>
             </div>
-            <button onclick="saveEverything()" class="w-full py-4 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-400 transition">Sync Updates</button>
+            <button onclick="saveEverything()" class="w-full py-4 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-400 transition">Sync Garden DNA</button>
         </div>
     </aside>
 
-    <main class="flex-grow flex flex-col items-center justify-center bg-slate-950 relative">
+    <main class="flex-grow flex flex-col items-center justify-center relative bg-slate-950">
         <div id="sync-indicator" class="absolute top-8 right-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Cloud Link Active
+            <span class="w-2 h-2 bg-green-500 rounded-full"></span> System Ready
         </div>
 
         <div id="gardenGrid" class="grid-container"></div>
         
         <div class="mt-8 text-center">
-            <p id="feedback-text" class="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em]">Hartford Zone 6B • Localized Pressure Engine</p>
+            <p id="feedback-text" class="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em]">Hartford Ecoregion 59 • Ecological Precision</p>
         </div>
     </main>
 
@@ -111,36 +114,40 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let mode = 'plant';
-    let activeTag = null;
-    let pressureLevel = 0; 
+    let ecoPreference = 'Native-leaning';
     let gardenLayout = {}; 
     let microclimates = {}; 
     let soilProfiles = {}; 
     let draggedPlant = null;
 
+    // Enhanced Ecological Plant Logic
     const plantLogic = {
-        "Tomato": { sun: 8, ph: [6.0, 7.0], browseRisk: 65, sensitive: 'frost' },
-        "Basil": { sun: 6, ph: [6.0, 7.0], browseRisk: 15, sensitive: 'frost' },
-        "Lettuce": { sun: 4, ph: [6.0, 7.0], browseRisk: 90, sensitive: 'heat' },
-        "Lavender": { sun: 8, ph: [6.5, 7.5], browseRisk: 5, sensitive: 'none' },
-        "Hosta": { sun: 2, ph: [6.0, 7.0], browseRisk: 98, sensitive: 'none' }
+        "Tomato": { native: false, invasive: false, pollinatorValue: 2, ph: [6.0, 7.0], sensitive: 'frost' },
+        "Milkweed": { native: true, invasive: false, pollinatorValue: 10, ph: [6.0, 7.5], sensitive: 'none' },
+        "Coneflower": { native: true, invasive: false, pollinatorValue: 8, ph: [6.0, 7.0], sensitive: 'none' },
+        "English Ivy": { native: false, invasive: true, pollinatorValue: 0, ph: [5.0, 8.0], sensitive: 'none' },
+        "Lettuce": { native: false, invasive: false, pollinatorValue: 1, ph: [6.0, 7.0], sensitive: 'heat' }
     };
+
+    function setMode(m, tag = null) {
+        mode = m; activeTag = tag;
+        document.getElementById('m-plant').className = m === 'plant' ? 'col-span-2 p-3 bg-green-600 rounded-xl text-[10px] font-black uppercase' : 'col-span-2 p-3 bg-slate-800 rounded-xl text-[10px] font-black uppercase text-slate-500';
+    }
 
     async function init() {
         const { data: { user } } = await _supabase.auth.getUser();
         const { data: lib } = await _supabase.from('garden_library').select('*');
         renderSidebar(lib || []);
 
-        const { data: settings } = await _supabase.from('garden_settings').select('*').eq('user_id', user.id);
+        const { data: settings } = await _supabase.from('garden_settings').select('key, value').eq('user_id', user.id);
         gardenLayout = settings?.find(s => s.key === 'spatial_layout')?.value || {};
         microclimates = settings?.find(s => s.key === 'microclimate_tags')?.value || {};
         soilProfiles = settings?.find(s => s.key === 'soil_profiles')?.value || {};
-        pressureLevel = settings?.find(s => s.key === 'pressure_level')?.value || 0;
+        ecoPreference = settings?.find(s => s.key === 'eco_preference')?.value || 'Native-leaning';
         
-        document.getElementById('pressure-slider').value = pressureLevel;
-        updatePressureLabel(pressureLevel);
+        document.getElementById('eco-preference').value = ecoPreference;
         renderGrid();
-        calculateHealthScore();
+        calculateEcoScore();
     }
 
     function renderGrid() {
@@ -148,157 +155,95 @@
         grid.innerHTML = "";
         for (let i = 0; i < 81; i++) {
             const plant = gardenLayout[i];
+            const logic = plant ? plantLogic[plant.name] : null;
             const tag = microclimates[i];
+            
+            let ecoClass = "";
+            if (logic?.native) ecoClass = "is-native";
+            if (logic?.invasive) ecoClass = "is-invasive";
+
             const spot = document.createElement('div');
-            spot.className = `grid-spot ${plant ? 'occupied' : ''} ${tag ? 'tag-' + tag : ''}`;
-            spot.innerHTML = plant ? `<span class="text-3xl z-10">${plant.emoji}</span><div class="info-btn" onclick="event.stopPropagation(); showInfo(${i})">?</div>` : '';
+            spot.className = `grid-spot ${plant ? 'occupied' : ''} ${tag ? 'tag-' + tag : ''} ${ecoClass}`;
+            spot.innerHTML = plant ? `<span class="text-3xl z-10">${plant.emoji}</span><div class="info-btn" onclick="event.stopPropagation(); showEcoInfo(${i})">i</div>` : '';
+            
             spot.onclick = () => handleSpotClick(i);
             spot.ondragover = (e) => e.preventDefault();
-            spot.ondrop = (e) => handleDrop(e, i);
+            spot.ondrop = (e) => { 
+                e.preventDefault(); 
+                if(draggedPlant) { 
+                    gardenLayout[i] = draggedPlant; 
+                    saveEverything(); 
+                    renderGrid(); 
+                    calculateEcoScore(); 
+                } 
+            };
             grid.appendChild(spot);
         }
     }
 
-    function handleSpotClick(i) {
-        if (mode === 'tag') {
-            if (microclimates[i] === activeTag) delete microclimates[i];
-            else microclimates[i] = activeTag;
-            saveEverything(); renderGrid();
-        } else if (mode === 'soil') {
-            openSoilLab(i);
-        } else if (mode === 'damage' && gardenLayout[i]) {
-            reportBrowseEvent(i);
-        } else if (gardenLayout[i]) {
-            if(confirm("Remove plant?")) { delete gardenLayout[i]; saveEverything(); renderGrid(); }
-        }
-    }
-
-    function handleDrop(e, i) {
-        e.preventDefault();
-        if(draggedPlant) {
-            gardenLayout[i] = draggedPlant;
-            saveEverything();
-            renderGrid();
-            calculateHealthScore();
-        }
-    }
-
-    function updatePressure(val) {
-        pressureLevel = parseInt(val);
-        updatePressureLabel(val);
-        calculateHealthScore();
-        saveEverything();
-    }
-
-    function updatePressureLabel(val) {
-        const labels = ['Low', 'Medium', 'High', 'THEY EAT EVERYTHING'];
-        const el = document.getElementById('pressure-label');
-        el.innerText = labels[val];
-        el.className = val > 1 ? 'text-red-500' : 'text-green-500';
-    }
-
-    function calculateHealthScore() {
+    function calculateEcoScore() {
         let score = 100;
-        let alerts = 0;
+        let totalPollinators = 0;
+
         Object.keys(gardenLayout).forEach(idx => {
-            const i = parseInt(idx);
-            const plant = gardenLayout[i];
+            const plant = gardenLayout[idx];
             const logic = plantLogic[plant.name];
             if (!logic) return;
 
-            // Wildlife Risk Factor
-            const snackProb = (logic.browseRisk * (pressureLevel + 1)) / 1.5;
-            if (snackProb > 75) { score -= 10; alerts++; }
+            totalPollinators += logic.pollinatorValue;
 
-            // Microclimate Conflicts
-            if (microclimates[i] === 'frost_pocket' && logic.sensitive === 'frost') { score -= 15; alerts++; }
-            
-            // Soil Conflicts
-            const soil = soilProfiles[i];
-            if (soil && (soil.ph < logic.ph[0] || soil.ph > logic.ph[1])) { score -= 10; alerts++; }
+            if (logic.invasive) score -= 25;
+            if (ecoPreference === 'Strict Native' && !logic.native) score -= 15;
+            if (ecoPreference === 'Native-leaning' && logic.native) score += 2;
         });
-        document.getElementById('health-value').innerText = Math.max(0, score);
-        return { score, alertCount: alerts };
+
+        document.getElementById('health-value').innerText = Math.min(100, Math.max(0, score));
+        document.getElementById('pollinator-hits').innerText = `${totalPollinators} Pollinator Hits`;
     }
 
-    function showInfo(i) {
+    function showEcoInfo(i) {
         const plant = gardenLayout[i];
         const logic = plantLogic[plant.name];
-        const soil = soilProfiles[i] || { ph: 6.5 };
-        const snackProb = Math.min(100, (logic.browseRisk * (pressureLevel + 1)) / 1.5).toFixed(0);
         
         document.getElementById('modal-content').innerHTML = `
             <h3 class="text-2xl font-black mb-1">${plant.emoji} ${plant.name}</h3>
-            <p class="text-[9px] font-bold text-slate-500 uppercase mb-6">Localized Diagnostic</p>
-            
+            <p class="text-[9px] font-bold text-slate-500 uppercase mb-6">Ecological Audit</p>
             <div class="space-y-4">
-                <div class="p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <div class="flex justify-between text-[10px] font-bold mb-1">
-                        <span class="text-slate-500 uppercase">Snack Probability</span>
-                        <span class="${snackProb > 70 ? 'text-red-500' : 'text-green-500'}">${snackProb}%</span>
-                    </div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div class="h-full ${snackProb > 70 ? 'bg-red-500' : 'bg-green-500'}" style="width: ${snackProb}%"></div>
-                    </div>
+                <div class="p-4 rounded-2xl border ${logic.native ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}">
+                    <p class="text-[10px] font-black uppercase ${logic.native ? 'text-green-400' : 'text-slate-400'}">
+                        ${logic.native ? 'Native Asset' : 'Non-Native Species'}
+                    </p>
+                    <p class="text-[9px] mt-1 text-slate-400">Pollinator Value: ${logic.pollinatorValue}/10</p>
                 </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                        <p class="text-[8px] text-slate-500 uppercase font-black">Metabolic pH</p>
-                        <p class="text-xs font-black ${ (soil.ph >= logic.ph[0] && soil.ph <= logic.ph[1]) ? 'text-green-500' : 'text-red-500' }">${soil.ph}</p>
-                    </div>
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/5">
-                        <p class="text-[8px] text-slate-500 uppercase font-black">Required</p>
-                        <p class="text-xs font-black">${logic.ph[0]}-${logic.ph[1]}</p>
-                    </div>
-                </div>
+                ${logic.invasive ? `
+                <div class="p-4 bg-red-500/20 border border-red-500/30 rounded-2xl">
+                    <p class="text-[10px] font-black uppercase text-red-500">⚠️ Invasive Threat</p>
+                    <p class="text-[9px] mt-1 text-red-400">Aggressive spread risk in Ecoregion 59.</p>
+                </div>` : ''}
             </div>
         `;
         document.getElementById('modal').style.display = 'flex';
     }
 
-    async function reportBrowseEvent(i) {
-        const plant = gardenLayout[i];
-        const { data: { user } } = await _supabase.auth.getUser();
-        
-        const { error } = await _supabase.from('garden_browse_logs').insert([
-            { user_id: user.id, plant_name: plant.name, severity: 3, pest_type: 'Deer' }
-        ]);
-
-        if (!error) {
-            alert(`Logged browse damage for ${plant.name}. System is learning local taste preferences.`);
+    function handleSpotClick(i) {
+        if (mode === 'tag') {
+            microclimates[i] = (microclimates[i] === activeTag) ? null : activeTag;
+            saveEverything(); renderGrid();
+        } else if (gardenLayout[i]) {
+            if(confirm("Uproot?")) { delete gardenLayout[i]; renderGrid(); calculateEcoScore(); saveEverything(); }
         }
-    }
-
-    function openSoilLab(i) {
-        const profile = soilProfiles[i] || { ph: 6.5, type: 'Loam' };
-        document.getElementById('modal-content').innerHTML = `
-            <h3 class="text-xl font-black mb-4 uppercase">Plot ${i} Soil Analysis</h3>
-            <label class="text-[9px] font-bold text-slate-500 uppercase">Current pH</label>
-            <input type="number" id="new-ph" step="0.1" value="${profile.ph}" class="w-full bg-slate-800 p-4 rounded-2xl mb-4 text-green-500 font-bold border border-white/10">
-            <button onclick="updateSoil(${i})" class="w-full py-4 bg-green-600 rounded-2xl text-[10px] font-black uppercase">Commit to Record</button>
-        `;
-        document.getElementById('modal').style.display = 'flex';
-    }
-
-    function updateSoil(i) {
-        soilProfiles[i] = { ph: parseFloat(document.getElementById('new-ph').value) };
-        saveEverything(); closeModal();
     }
 
     async function saveEverything() {
         const { data: { user } } = await _supabase.auth.getUser();
-        const health = calculateHealthScore();
-
         await _supabase.from('garden_settings').upsert([
             { key: 'spatial_layout', value: gardenLayout, user_id: user.id },
             { key: 'microclimate_tags', value: microclimates, user_id: user.id },
-            { key: 'soil_profiles', value: soilProfiles, user_id: user.id },
-            { key: 'pressure_level', value: pressureLevel, user_id: user.id },
-            { key: 'garden_health', value: health, user_id: user.id }
+            { key: 'eco_preference', value: ecoPreference, user_id: user.id }
         ], { onConflict: 'user_id, key' });
     }
 
+    function updateEcoPreference(val) { ecoPreference = val; calculateEcoScore(); saveEverything(); }
     function renderSidebar(library) {
         document.getElementById('library-drag-container').innerHTML = library.map(p => `
             <div class="seed-card-sidebar p-4 flex items-center gap-3" draggable="true" ondragstart='drag(event, ${JSON.stringify(p)})'>
@@ -307,15 +252,8 @@
             </div>
         `).join('');
     }
-
     function drag(ev, obj) { draggedPlant = obj; }
-    function setMode(m, tag = null) { 
-        mode = m; activeTag = tag; 
-        document.querySelectorAll('button[id^="btn-"]').forEach(b => b.classList.replace('bg-green-600', 'bg-slate-800'));
-        if(document.getElementById('btn-'+m)) document.getElementById('btn-'+m).classList.replace('bg-slate-800', 'bg-green-600');
-    }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
-    
     window.onload = init;
 </script>
 </body>
