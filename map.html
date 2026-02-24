@@ -8,8 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
-        
-        /* Sidebar Styling */
         .seed-card-sidebar { 
             background: rgba(30, 41, 59, 0.7); 
             border: 1px solid rgba(255,255,255,0.1); 
@@ -22,8 +20,6 @@
             transform: translateX(4px); 
             background: rgba(30, 41, 59, 1);
         }
-
-        /* Grid Styling */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(9, 60px); 
@@ -36,7 +32,6 @@
             border: 1px solid rgba(255,255,255,0.1);
             position: relative;
         }
-
         .grid-spot {
             width: 60px; height: 60px;
             background: rgba(15, 23, 42, 0.5);
@@ -45,14 +40,11 @@
             transition: all 0.2s;
             border: 1px solid rgba(255,255,255,0.05);
         }
-
         .grid-spot.occupied { background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; }
-
         .solar-dot {
             position: absolute; top: 4px; left: 4px;
             width: 6px; height: 6px; border-radius: 50%;
         }
-
         .info-btn {
             position: absolute; bottom: 2px; right: 2px;
             background: #10b981; border-radius: 50%;
@@ -62,10 +54,8 @@
             opacity: 0; transition: opacity 0.2s; z-index: 40;
         }
         .grid-spot.occupied:hover .info-btn { opacity: 1; }
-
         .ghost-friend { background-color: #064e3b !important; outline: 2px solid #10b981; }
         .ghost-foe { background-color: #450a0a !important; outline: 2px solid #ef4444; }
-        
         #modal { backdrop-filter: blur(4px); display: none; }
     </style>
 </head>
@@ -111,8 +101,9 @@
     </main>
 
 <script>
-    // REPLACE WITH YOUR ACTUAL SUPABASE CREDENTIALS
-    const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
+    const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
     const GRID_SIZE = 81; 
     const COLS = 9;
@@ -136,11 +127,12 @@
     }
 
     async function init() {
-        const { data: lib, error: libErr } = await _supabase.from('garden_library').select('*');
-        if (libErr) console.error("Library load error:", libErr);
+        // Fetch your plants
+        const { data: lib } = await _supabase.from('garden_library').select('*');
         renderSidebar(lib || []);
 
-        const { data: layout, error: layErr } = await _supabase
+        // Fetch saved layout
+        const { data: layout } = await _supabase
             .from('garden_settings')
             .select('value')
             .eq('key', 'spatial_layout')
@@ -154,13 +146,13 @@
 
     function renderSidebar(library) {
         const container = document.getElementById('library-drag-container');
-        if (library.length === 0) {
+        if (!library || library.length === 0) {
             container.innerHTML = `<p class="text-[10px] text-slate-500 uppercase text-center mt-10">Library Empty</p>`;
             return;
         }
         container.innerHTML = library.map(p => `
             <div class="seed-card-sidebar p-4 flex items-center justify-between" 
-                 draggable="true" ondragstart="drag(event, ${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                  draggable="true" ondragstart='drag(event, ${JSON.stringify(p)})'>
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">${p.emoji}</span>
                     <span class="font-bold text-white text-sm">${p.name}</span>
@@ -210,13 +202,12 @@
         const row = Math.floor(index / COLS);
         const col = index % COLS;
         let status = 'neutral';
-
         for (let i = -1; i <= 1; i++) {
             for (let j = -1; j <= 1; j++) {
                 if (i === 0 && j === 0) continue;
                 const nRow = row + i, nCol = col + j;
-                if (nRow >= 0 && nRow < COLS && nCol >= 0 && nCol < COLS) {
-                    const neighbor = gardenLayout[nRow * COLS + nCol];
+                if (nRow >= 0 && nRow < 9 && nCol >= 0 && nCol < 9) {
+                    const neighbor = gardenLayout[nRow * 9 + nCol];
                     if (neighbor && plantLogic[name]) {
                         if (plantLogic[name].foes.includes(neighbor.name)) return 'foe';
                         if (plantLogic[name].friends.includes(neighbor.name)) status = 'friend';
@@ -246,10 +237,12 @@
 
     async function saveLayout() {
         document.getElementById('sync-indicator').innerText = "Saving...";
+        const { data: { user } } = await _supabase.auth.getUser();
+        
         const { error } = await _supabase
             .from('garden_settings')
             .upsert(
-                { key: 'spatial_layout', value: JSON.stringify(gardenLayout) },
+                { key: 'spatial_layout', value: JSON.stringify(gardenLayout), user_id: user?.id },
                 { onConflict: 'key' }
             );
 
