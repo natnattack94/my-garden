@@ -100,7 +100,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span class="text-[10px] font-black text-slate-400 uppercase group-hover:text-emerald-400 text-center">Capture Observation</span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase text-center">Capture Observation</span>
                     <input type="file" id="plant-scan-input" accept="image/*" capture="environment" class="hidden" onchange="initiateContextualCapture(event)">
                 </label>
                 <div id="scan-status" class="mt-3 text-center text-[9px] font-bold text-emerald-500 uppercase tracking-tighter hidden animate-pulse">Contextualizing...</div>
@@ -124,6 +124,21 @@
     </div>
 </div>
 
+<div id="auth-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center hidden">
+    <div class="bg-white p-8 rounded-[32px] max-w-md w-full mx-4 shadow-2xl text-center">
+        <h2 class="text-2xl font-black text-slate-800 mb-6 uppercase">GardenHub <span class="text-green-600">v10.6</span></h2>
+        <div class="space-y-4">
+            <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 font-medium text-center">
+            <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 font-medium text-center">
+            <div class="flex gap-2">
+                <button onclick="handleSignIn()" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase text-xs">Login</button>
+                <button onclick="handleSignUp()" class="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-black uppercase text-xs">Register</button>
+            </div>
+        </div>
+        <p id="auth-error" class="text-red-500 text-[10px] font-bold uppercase mt-4 hidden"></p>
+    </div>
+</div>
+
 <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center hidden">
     <div class="bg-white p-8 rounded-[32px] max-w-md w-full mx-4 shadow-2xl">
         <h2 class="text-2xl font-black text-slate-800 mb-6 tracking-tighter">Plant Resident 🌱</h2>
@@ -142,29 +157,14 @@
     </div>
 </div>
 
-<div id="auth-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center hidden">
-    <div class="bg-white p-8 rounded-[32px] max-w-md w-full mx-4 shadow-2xl text-center">
-        <h2 class="text-2xl font-black text-slate-800 mb-6 uppercase">GardenHub <span class="text-green-600">v10.6</span></h2>
-        <div class="space-y-4">
-            <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 font-medium text-center">
-            <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-green-500 font-medium text-center">
-            <div class="flex gap-2">
-                <button onclick="handleSignIn()" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase text-xs">Login</button>
-                <button onclick="handleSignUp()" class="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-black uppercase text-xs">Register</button>
-            </div>
-        </div>
-        <p id="auth-error" class="text-red-500 text-[10px] font-bold uppercase mt-4 hidden"></p>
-    </div>
-</div>
-
 <script>
     const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
-    const SUPABASE_KEY = 'YOUR_KEY_HERE'; // MUST REPLACE WITH YOUR ACTUAL KEY
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let targetDate = new Date();
 
-    // --- AUTHENTICATION LOGIC ---
+    // AUTH LOGIC
     async function handleSignIn() {
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;
@@ -179,7 +179,7 @@
         const errorEl = document.getElementById('auth-error');
         const { error } = await _supabase.auth.signUp({ email, password });
         if (error) { errorEl.innerText = error.message; errorEl.classList.remove('hidden'); }
-        else { alert("Verify your email!"); }
+        else { alert("Check email for verification!"); }
     }
 
     async function handleLogout() { await _supabase.auth.signOut(); location.reload(); }
@@ -189,19 +189,17 @@
         else { document.getElementById('auth-overlay').classList.remove('hidden'); }
     });
 
-    // --- DASHBOARD LOGIC ---
+    // DASHBOARD LOGIC
     function init() {
+        document.getElementById('current-date').innerText = targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
         renderDashboard();
     }
 
     async function renderDashboard() {
-        document.getElementById('current-date').innerText = targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        
         try {
             const { data: { user } } = await _supabase.auth.getUser();
-            const [plantsRes, logsRes, scansRes] = await Promise.all([
+            const [plantsRes, scansRes] = await Promise.all([
                 _supabase.from('garden_library').select('*'),
-                _supabase.from('garden_logs').select('*').order('timestamp', { ascending: false }).limit(5),
                 _supabase.from('plant_health_scans').select('*').eq('is_resolved', false)
             ]);
 
@@ -218,13 +216,19 @@
             document.getElementById('host-plant-count').innerText = hostCount;
             document.getElementById('monarch-bar').style.width = `${monarchScore}%`;
 
-            // Render Growth Cards
+            // Forecast Rendering
             document.getElementById('harvest-forecast').innerHTML = `<h2 class="text-[10px] font-black text-slate-400 uppercase mb-6 tracking-widest">Temporal Pulse</h2>` + plants.map(p => {
                 const maturity = calculateMaturity(p.date_planted, p.days_to_mature, targetDate);
                 return `<div class="mb-4"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>${p.name}</span><span>${maturity}%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="progress-fill ${maturity >= 100 ? 'status-harvest' : 'bg-emerald-500'}" style="width: ${maturity}%"></div></div></div>`;
             }).join('');
 
-        } catch (e) { console.error("Dashboard Sync Error:", e); }
+            // Smart Recs Logic
+            if (scans.some(s => s.severity_level > 7)) {
+                document.getElementById('smart-recs-container').classList.remove('hidden');
+                document.getElementById('rec-output').innerHTML = `<div class="p-3 bg-white rounded-xl border border-indigo-100"><p class="text-[11px] font-bold text-slate-700">⚠️ Critical failures detected. Visit Clinic for native replacements.</p></div>`;
+            }
+
+        } catch (e) { console.error("Sync Error:", e); }
     }
 
     function calculateMaturity(planted, days, refDate) {
@@ -238,9 +242,7 @@
         const days = document.getElementById('p-days').value;
         const { data: { user } } = await _supabase.auth.getUser();
         await _supabase.from('garden_library').insert([{ 
-            name, 
-            days_to_mature: days, 
-            user_id: user.id,
+            name, days_to_mature: days, user_id: user.id,
             is_native: document.getElementById('p-native').checked,
             is_host: document.getElementById('p-host').checked,
             date_planted: new Date().toISOString()
