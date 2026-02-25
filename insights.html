@@ -1,183 +1,1010 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Horticultural Memory Engine</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #020617; font-family: 'Inter', sans-serif; color: white; min-height: 100vh; }
-        .glass-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; backdrop-filter: blur(12px); }
-        .stat-value { font-family: 'Inter'; font-weight: 900; letter-spacing: -0.05em; }
-        .gradient-text { background: linear-gradient(to right, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GardenHub OS | Garden Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+<style>
+/* ── Tokens ──────────────────────────────── */
+:root {
+  --bg:        #020a04;
+  --surface:   #0b140d;
+  --surface2:  #111c13;
+  --surface3:  #172119;
+  --border:    #1a2e1c;
+  --border2:   #243628;
+  --green:     #3ddc6e;
+  --green-dim: #1a6b34;
+  --green-pale:#a8f5bc;
+  --amber:     #f5a623;
+  --red:       #f05252;
+  --blue:      #5ba4f5;
+  --purple:    #a78bfa;
+  --text:      #c8e0ca;
+  --muted:     #4d7050;
+  --mono:      'DM Mono', monospace;
+  --serif:     'Fraunces', serif;
+  --sans:      'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* scanline */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,60,0.008) 3px, rgba(0,255,60,0.008) 4px);
+  pointer-events: none; z-index: 9999;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
+
+/* ── Auth Overlay ─────────────────────────── */
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(2,10,4,0.97);
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-overlay.hidden { display: none; }
+.auth-box {
+  border: 1px solid var(--green);
+  background: var(--surface);
+  padding: 2.5rem; width: 360px; position: relative;
+}
+.auth-box::before {
+  content: 'GARDENHUB OS // GARDEN INTELLIGENCE';
+  font-family: var(--mono); font-size: 0.52rem; color: var(--green-dim);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  position: absolute; top: -0.6rem; left: 1rem;
+  background: var(--surface); padding: 0 0.4rem;
+}
+.auth-title { font-family: var(--serif); font-size: 1.7rem; color: var(--green); margin-bottom: 1.5rem; font-style: italic; }
+.auth-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 0.6rem 0.75rem;
+  font-family: var(--mono); font-size: 0.75rem;
+  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
+}
+.auth-input:focus { border-color: var(--green); }
+.auth-btn {
+  width: 100%; font-family: var(--mono); font-size: 0.7rem;
+  font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.65rem; border: none; cursor: pointer;
+  margin-bottom: 0.4rem; transition: opacity 0.15s;
+}
+.auth-btn.primary { background: var(--green); color: var(--bg); }
+.auth-btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.auth-btn:hover { opacity: 0.82; }
+#auth-err { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
+
+/* ── Top Bar ──────────────────────────────── */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 100;
+}
+.top-bar-left { display: flex; align-items: baseline; gap: 0.75rem; }
+.logo-eyebrow { font-family: var(--mono); font-size: 0.52rem; color: var(--green-dim); letter-spacing: 0.22em; text-transform: uppercase; }
+.page-title { font-family: var(--serif); font-size: 1.3rem; color: #e0f0e2; font-style: italic; }
+.page-title em { color: var(--green); }
+
+nav { display: flex; gap: 0.5rem; align-items: center; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em;
+  text-transform: uppercase; text-decoration: none;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border); color: var(--muted);
+  background: transparent; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-link:hover { border-color: var(--green-dim); color: var(--green-pale); }
+.nav-link.active { border-color: var(--green); color: var(--green); }
+.nav-link.danger:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Climate Bar ──────────────────────────── */
+.climate-bar {
+  display: flex; align-items: stretch;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 0.7rem; overflow-x: auto;
+}
+.climate-cell {
+  padding: 0.5rem 1.25rem; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 0.1rem; white-space: nowrap;
+}
+.c-label { color: var(--muted); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.c-val   { color: var(--green); font-weight: 500; }
+.c-val.warn   { color: var(--amber); }
+.c-val.danger { color: var(--red); }
+
+/* ── Page Shell ───────────────────────────── */
+main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
+
+/* section dividers */
+.sec-head {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 2rem 0 1.1rem;
+}
+.sec-head h2 {
+  font-family: var(--mono); font-size: 0.55rem;
+  letter-spacing: 0.22em; color: var(--green-dim); text-transform: uppercase;
+  white-space: nowrap;
+}
+.sec-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── Glass Card (from mockup) ─────────────── */
+.glass {
+  background: rgba(11,20,13,0.7);
+  border: 1px solid var(--border2);
+  backdrop-filter: blur(8px);
+}
+
+/* ── KPI Row ──────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; }
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1.2rem 1.4rem; position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 3px; height: 100%; background: var(--green);
+}
+.kpi-card.a::before { background: var(--amber); }
+.kpi-card.r::before { background: var(--red); }
+.kpi-card.b::before { background: var(--blue); }
+.kpi-card.p::before { background: var(--purple); }
+.kpi-num {
+  font-family: var(--serif); font-size: 2.6rem; font-style: italic;
+  line-height: 1; color: #e0f0e2; margin-bottom: 0.3rem;
+}
+.kpi-label { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.kpi-delta { font-family: var(--mono); font-size: 0.58rem; margin-top: 0.5rem; }
+.up   { color: var(--green); }
+.down { color: var(--red); }
+.neu  { color: var(--muted); }
+
+/* ── Hero row: spotlight cards + main chart ─ */
+.hero-row { display: grid; grid-template-columns: 280px 1fr; gap: 0.9rem; }
+
+/* Spotlight cards (from mockup "Top Performer" style) */
+.spotlight-col { display: flex; flex-direction: column; gap: 0.9rem; }
+.spotlight {
+  background: var(--surface); border: 1px solid var(--border2);
+  padding: 1.1rem 1.25rem;
+}
+.spotlight.green-accent { border-left: 3px solid var(--green); }
+.spotlight.amber-accent { border-left: 3px solid var(--amber); }
+.spotlight.red-accent   { border-left: 3px solid var(--red); }
+.spotlight.blue-accent  { border-left: 3px solid var(--blue); }
+.sp-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+.sp-name { font-family: var(--serif); font-size: 1.3rem; font-style: italic; color: #e0f0e2; line-height: 1.1; }
+.sp-sub  { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; color: var(--muted); margin-top: 0.35rem; text-transform: uppercase; }
+.sp-icon { font-size: 1.8rem; }
+
+/* ── Chart Panels ─────────────────────────── */
+.chart-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1.25rem;
+}
+.cp-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-dim); margin-bottom: 0.2rem; }
+.cp-title { font-family: var(--serif); font-size: 1rem; font-style: italic; color: #d0e8d2; margin-bottom: 1rem; }
+.chart-wrap { position: relative; }
+
+/* two-col chart grid */
+.chart-2col { display: grid; grid-template-columns: 2fr 1fr; gap: 0.9rem; }
+.chart-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.9rem; }
+.chart-1col { display: grid; grid-template-columns: 1fr; gap: 0.9rem; }
+.span2 { grid-column: span 2; }
+
+/* ── Loading bar ──────────────────────────── */
+.lb { height: 2px; background: var(--border); margin-bottom: 1rem; overflow: hidden; }
+.lb::after {
+  content: ''; display: block; height: 100%; width: 35%;
+  background: var(--green);
+  animation: scan 1.1s ease-in-out infinite;
+}
+.lb.done { display: none; }
+@keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(340%)} }
+
+/* ── Insight callout ──────────────────────── */
+.insight-box {
+  background: rgba(61,220,110,0.05); border-left: 3px solid var(--green-dim);
+  padding: 0.7rem 0.9rem; margin-top: 1rem;
+  font-family: var(--mono); font-size: 0.65rem; color: var(--green-pale); line-height: 1.6;
+}
+.insight-box.warn { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,0.05); }
+.insight-box.info { border-color: var(--blue);  color: var(--blue);  background: rgba(91,164,245,0.05); }
+
+/* ── AI Consultant (from mockup, fixed) ────── */
+.consultant-band {
+  display: flex; gap: 1.5rem; align-items: flex-start;
+  background: rgba(61,220,110,0.04);
+  border: 1px solid rgba(61,220,110,0.18);
+  padding: 1.5rem;
+  margin-top: 0.9rem;
+}
+.consultant-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--green-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(61,220,110,0.25);
+}
+.consultant-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; color: var(--green); text-transform: uppercase; margin-bottom: 0.4rem; }
+.consultant-text { font-size: 0.82rem; color: var(--text); line-height: 1.7; }
+.consultant-text strong { color: var(--green-pale); }
+
+/* ── Scan table ───────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.65rem; }
+.data-table th { color: var(--muted); text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.data-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(26,46,28,0.5); }
+.data-table tr:last-child td { border-bottom: none; }
+.sev-tag { display: inline-block; padding: 0.1rem 0.4rem; font-size: 0.5rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+.sev-high   { background: rgba(240,82,82,0.12);  color: var(--red); }
+.sev-medium { background: rgba(245,166,35,0.12); color: var(--amber); }
+.sev-low    { background: rgba(61,220,110,0.12); color: var(--green); }
+
+/* ── Pest bars (from mockup) ──────────────── */
+.pest-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.pest-row:last-child { border-bottom: none; }
+.pest-name { font-family: var(--mono); font-size: 0.62rem; color: var(--text); }
+.pest-bar-track { width: 120px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.pest-bar-fill  { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.8s ease; }
+.pest-pct { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); min-width: 2.5rem; text-align: right; }
+
+/* ── Export btn ───────────────────────────── */
+.export-btn {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 0.4rem 0.85rem;
+  background: var(--green-dim); color: var(--green-pale);
+  border: 1px solid var(--green-dim); cursor: pointer; transition: opacity 0.15s;
+}
+.export-btn:hover { opacity: 0.8; }
+
+.empty-state { text-align: center; padding: 2.5rem; font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
+</style>
 </head>
-<body class="p-8">
+<body>
 
-    <header class="max-w-7xl mx-auto flex justify-between items-center mb-12">
-        <div>
-            <h2 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em]">Horticultural Memory Engine</h2>
-            <h1 class="text-4xl font-black uppercase tracking-tighter">Garden <span class="gradient-text">Intelligence</span></h1>
+<!-- ═══ AUTH OVERLAY ═══ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-title">Garden Intelligence</div>
+    <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
+    <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
+    <div id="auth-err"></div>
+    <button class="auth-btn primary"    id="btn-login">Initialize Session</button>
+    <button class="auth-btn secondary"  id="btn-reg">Register</button>
+  </div>
+</div>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <div class="logo-eyebrow">GardenHub OS // v10.6</div>
+    <div class="page-title">Garden <em>Intelligence</em></div>
+  </div>
+  <nav>
+    <a href="index.html"    class="nav-link">Dashboard</a>
+    <a href="map.html"      class="nav-link">Map View</a>
+    <a href="clinic.html"   class="nav-link">Clinic</a>
+    <a href="insights.html" class="nav-link active">Insights</a>
+    <button class="export-btn" id="export-btn" onclick="exportReport()">↓ Export</button>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
+</div>
+
+<!-- ═══ CLIMATE BAR ═══ -->
+<div class="climate-bar">
+  <div class="climate-cell"><div class="c-label">Zone</div><div class="c-val">6b (CT)</div></div>
+  <div class="climate-cell"><div class="c-label">Live Temp</div><div class="c-val" id="w-temp">--</div></div>
+  <div class="climate-cell"><div class="c-label">Feels Like</div><div class="c-val" id="w-feels">--</div></div>
+  <div class="climate-cell"><div class="c-label">Solar Hrs</div><div class="c-val" id="w-solar">--</div></div>
+  <div class="climate-cell"><div class="c-label">Humidity</div><div class="c-val" id="w-humidity">--</div></div>
+  <div class="climate-cell" id="w-risk-cell"><div class="c-label">Risk Level</div><div class="c-val" id="w-risk">Scanning…</div></div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+
+  <!-- KPI Row -->
+  <div class="sec-head"><h2>// Season KPIs</h2></div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-num" id="kpi-plants">--</div>
+      <div class="kpi-label">Plants Tracked</div>
+      <div class="kpi-delta neu" id="kpi-plants-d"></div>
+    </div>
+    <div class="kpi-card a">
+      <div class="kpi-num" id="kpi-maturity" style="color:var(--amber)">--%</div>
+      <div class="kpi-label">Avg Garden Maturity</div>
+      <div class="kpi-delta neu" id="kpi-maturity-d"></div>
+    </div>
+    <div class="kpi-card r">
+      <div class="kpi-num" id="kpi-incidents" style="color:var(--red)">--</div>
+      <div class="kpi-label">Health Incidents (90d)</div>
+      <div class="kpi-delta neu" id="kpi-incidents-d"></div>
+    </div>
+    <div class="kpi-card b">
+      <div class="kpi-num" id="kpi-iq" style="color:var(--blue)">--</div>
+      <div class="kpi-label">Pollinator IQ</div>
+      <div class="kpi-delta neu" id="kpi-iq-d"></div>
+    </div>
+  </div>
+
+  <!-- Hero Row: Spotlight cards + Disease×Temp chart -->
+  <div class="sec-head"><h2>// Spotlight & Disease Correlation</h2></div>
+  <div class="hero-row">
+
+    <!-- Spotlight sidebar -->
+    <div class="spotlight-col">
+      <div class="spotlight green-accent">
+        <div class="sp-eye">Top Performer</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="sp-name" id="sp-top-name">--</div>
+            <div class="sp-sub"  id="sp-top-sub">Loading…</div>
+          </div>
+          <div class="sp-icon" id="sp-top-icon">🌱</div>
         </div>
-        <nav class="flex gap-4">
-            <a href="index.html" class="px-6 py-3 glass-card text-[12px] font-bold hover:bg-white/10 transition uppercase tracking-widest">Map View</a>
-            <button class="px-6 py-3 bg-emerald-600 rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-lg shadow-emerald-900/20">Export Report</button>
-        </nav>
-    </header>
+      </div>
+      <div class="spotlight amber-accent">
+        <div class="sp-eye">Most Penalized</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="sp-name" id="sp-penalty-name">--</div>
+            <div class="sp-sub"  id="sp-penalty-sub">Loading…</div>
+          </div>
+          <div class="sp-icon" id="sp-penalty-icon">⚠️</div>
+        </div>
+      </div>
+      <div class="spotlight blue-accent">
+        <div class="sp-eye">Longest to Harvest</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="sp-name" id="sp-longest-name">--</div>
+            <div class="sp-sub"  id="sp-longest-sub">Loading…</div>
+          </div>
+          <div class="sp-icon" id="sp-longest-icon">📅</div>
+        </div>
+      </div>
+    </div>
 
-    <main class="max-w-7xl mx-auto grid grid-cols-12 gap-6">
-        
-        <section class="col-span-12 lg:col-span-4 space-y-6">
-            
-            <div class="glass-card p-8">
-                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Garden Success Score</h3>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-7xl stat-value text-emerald-400">88</span>
-                    <span class="text-2xl font-bold text-slate-500">/100</span>
-                </div>
-                <p class="text-[11px] text-slate-400 mt-4 leading-relaxed">
-                    Based on <span class="text-white font-bold">142 plant instances</span> across 3 seasons. Performance is 12% higher than your regional average.
-                </p>
-            </div>
+    <!-- Disease × Temp correlation chart -->
+    <div class="chart-panel">
+      <div class="cp-eye">Consultant View // 30-Day Window</div>
+      <div class="cp-title">Disease Incidents × Temperature</div>
+      <div class="lb" id="lb-disease"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-disease"></canvas></div>
+      <div class="insight-box" id="insight-disease" style="display:none"></div>
+    </div>
+  </div>
 
-            <div class="glass-card p-6 border-l-4 border-blue-500">
-                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-blue-400">Top Performer</h3>
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-2xl font-black">Sungold Tomato</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">94% Reliability Rating</p>
-                    </div>
-                    <span class="text-4xl">🍅</span>
-                </div>
-            </div>
+  <!-- Scan Table + Severity Donut -->
+  <div class="chart-2col" style="margin-top:0.9rem;">
+    <div class="chart-panel">
+      <div class="cp-eye">Clinic // Recent Health Scans</div>
+      <div class="cp-title">Last 20 Incidents</div>
+      <div class="lb" id="lb-table"></div>
+      <div id="scan-table-wrap"><div class="empty-state">Loading…</div></div>
+    </div>
+    <div class="chart-panel">
+      <div class="cp-eye">Clinic // Severity Distribution</div>
+      <div class="cp-title">Scan Outcomes</div>
+      <div class="lb" id="lb-severity"></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-severity"></canvas></div>
 
-            <div class="glass-card p-6 border-l-4 border-amber-500">
-                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-amber-500">Drought Resilience</h3>
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-2xl font-black">Coneflower</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Survives 95°F+ without wilting</p>
-                    </div>
-                    <span class="text-4xl">🌸</span>
-                </div>
-            </div>
+      <!-- Pest Vulnerability (from mockup, now data-driven) -->
+      <div style="margin-top:1.25rem;">
+        <div class="cp-eye" style="margin-bottom:0.75rem;">Top Issue Types</div>
+        <div id="pest-bars"><div class="empty-state" style="padding:1rem">Loading…</div></div>
+      </div>
+    </div>
+  </div>
 
-        </section>
+  <!-- Maturity + Penalty charts -->
+  <div class="sec-head"><h2>// Biological Pulse — Maturity & Feedback Loop</h2></div>
+  <div class="chart-2col">
+    <div class="chart-panel">
+      <div class="cp-eye">Growth Engine // Maturity Algorithm</div>
+      <div class="cp-title">Plant Maturity Progress (Base vs Effective)</div>
+      <div class="lb" id="lb-maturity"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-maturity"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="cp-eye">Feedback Loop // Penalty Accumulation</div>
+      <div class="cp-title">Recovery Days by Plant</div>
+      <div class="lb" id="lb-penalty"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-penalty"></canvas></div>
+    </div>
+  </div>
 
-        <section class="col-span-12 lg:col-span-8 space-y-6">
-            
-            <div class="glass-card p-8">
-                <div class="flex justify-between items-center mb-8">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Yield Trends (Year-over-Year)</h3>
-                    <div class="flex gap-2 text-[10px] font-bold">
-                        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-blue-500"></div> 2024</span>
-                        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> 2025</span>
-                    </div>
-                </div>
-                <div class="h-[300px]">
-                    <canvas id="yieldChart"></canvas>
-                </div>
-            </div>
+  <!-- Monarch Path -->
+  <div class="sec-head"><h2>// Monarch Path — Pollinator Ecosystem</h2></div>
+  <div class="chart-2col">
+    <div class="chart-panel">
+      <div class="cp-eye">Monarch // Native vs Host Trend</div>
+      <div class="cp-title">Library Composition Over Time</div>
+      <div class="lb" id="lb-monarch"></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-monarch"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="cp-eye">Pollinator IQ // Species Breakdown</div>
+      <div class="cp-title">Current Composition</div>
+      <div class="lb" id="lb-pie"></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-pie"></canvas></div>
+      <div class="insight-box" id="iq-callout" style="display:none;margin-top:0.75rem;"></div>
+    </div>
+  </div>
 
-            <div class="grid grid-cols-2 gap-6">
-                <div class="glass-card p-6">
-                    <h3 class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-6">Pest Vulnerability Trend</h3>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[11px] font-bold">Aphids</span>
-                            <div class="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full bg-red-500" style="width: 80%"></div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-[11px] font-bold">Slugs</span>
-                            <div class="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full bg-red-500" style="width: 35%"></div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-[11px] font-bold">Cabbage Worm</span>
-                            <div class="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full bg-red-500" style="width: 15%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  <!-- Activity heatmap -->
+  <div class="sec-head"><h2>// Temporal Pulse — Activity Density</h2></div>
+  <div class="chart-panel">
+    <div class="cp-eye">Garden Logs // 90-Day Activity</div>
+    <div class="cp-title">Watering, Fertilizing, Pruning & Observations</div>
+    <div class="lb" id="lb-activity"></div>
+    <div class="chart-wrap" style="height:180px"><canvas id="chart-activity"></canvas></div>
+  </div>
 
-                <div class="glass-card p-6">
-                    <h3 class="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-6">Self-Seeding Naturalization</h3>
-                    <ul class="space-y-3">
-                        <li class="flex items-center gap-3 text-[11px]">
-                            <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-[9px] font-black">HIGH</span>
-                            Calendula (Bed 1)
-                        </li>
-                        <li class="flex items-center gap-3 text-[11px]">
-                            <span class="px-2 py-1 bg-amber-500/20 text-amber-400 rounded text-[9px] font-black">MED</span>
-                            Cosmos (Sector 4)
-                        </li>
-                        <li class="flex items-center gap-3 text-[11px]">
-                            <span class="px-2 py-1 bg-slate-500/20 text-slate-400 rounded text-[9px] font-black">LOW</span>
-                            Poppies (Edge)
-                        </li>
-                    </ul>
-                </div>
-            </div>
+  <!-- AI Consultant band (from mockup — now dynamically generated, label corrected) -->
+  <div class="sec-head"><h2>// Strategic Recommendations</h2></div>
+  <div class="consultant-band" id="consultant-band">
+    <div class="consultant-icon">🌿</div>
+    <div>
+      <div class="consultant-eye">Season Analysis — Auto-generated from your garden data</div>
+      <div class="consultant-text" id="consultant-text">Analyzing garden data…</div>
+    </div>
+  </div>
 
-        </section>
+</main>
 
-        <section class="col-span-12 glass-card p-8 bg-emerald-500/5 border border-emerald-500/20">
-            <div class="flex gap-6 items-center">
-                <div class="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/20">🧠</div>
-                <div>
-                    <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">AI Consultant: Strategy for 2026</h3>
-                    <p class="text-sm text-slate-300 leading-relaxed">
-                        "Your **Sungold Tomatoes** yield 18% more in Bed 2 than Bed 1. However, Bed 2 shows a recurring **Aphid Spike** in early June. I recommend moving Tomatoes to Bed 3 this year and using the vacant Bed 2 for **Calendula** to encourage self-seeding beneficial insect habitats."
-                    </p>
-                </div>
-            </div>
-        </section>
+<script>
+// ══════════════════════════════════════════════
+//  GardenHub OS — Garden Intelligence v10.6
+//  Fixes: BUG-01 auth, BUG-02 live data,
+//  BUG-03 export, BUG-04 markdown, BUG-05 labels,
+//  BUG-06 version pin, ISSUE-01–09
+// ══════════════════════════════════════════════
 
-    </main>
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <script>
-        // YIELD CHART LOGIC
-        const ctx = document.getElementById('yieldChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-                datasets: [{
-                    label: '2025 Yield (lbs)',
-                    data: [5, 12, 45, 88, 62, 20],
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 4,
-                    pointRadius: 0
-                }, {
-                    label: '2024 Yield (lbs)',
-                    data: [3, 8, 30, 70, 45, 15],
-                    borderColor: '#3b82f6',
-                    borderDash: [5, 5],
-                    fill: false,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
-                }
-            }
-        });
-    </script>
+// ── Chart.js defaults ─────────────────────────
+Chart.defaults.color          = '#4d7050';
+Chart.defaults.font.family    = "'DM Mono', monospace";
+Chart.defaults.font.size      = 10;
+Chart.defaults.borderColor    = '#1a2e1c';
+const charts = {};
+
+// ── Helpers ───────────────────────────────────
+const $  = id => document.getElementById(id);
+const done = id => $(`lb-${id}`)?.classList.add('done');
+const daysAgo = n => { const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
+const today   = () => new Date().toISOString().slice(0,10);
+
+function mkChart(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); }
+  const ctx = $(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, cfg);
+  return charts[id];
+}
+
+// ── Auth ──────────────────────────────────────
+// FIX BUG-01: Auth is fully implemented
+$('btn-login').onclick = async () => {
+  $('auth-err').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('a-email').value.trim(), password: $('a-pass').value
+  });
+  if (error) { $('auth-err').textContent = error.message; }
+};
+$('btn-reg').onclick = async () => {
+  $('auth-err').textContent = '';
+  const { error } = await sb.auth.signUp({
+    email: $('a-email').value.trim(), password: $('a-pass').value
+  });
+  $('auth-err').style.color = error ? 'var(--red)' : 'var(--green)';
+  $('auth-err').textContent = error ? error.message : 'Check email to confirm.';
+};
+$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+// FIX BUG-01: Gate on SIGNED_IN only
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    $('auth-overlay').classList.add('hidden');
+    boot();
+  } else if (event === 'SIGNED_OUT') {
+    $('auth-overlay').classList.remove('hidden');
+  }
+});
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { $('auth-overlay').classList.add('hidden'); boot(); }
+})();
+
+// ── Boot ──────────────────────────────────────
+async function boot() {
+  loadWeather();
+  await Promise.all([
+    loadKPIs(),
+    loadSpotlights(),
+    loadDiseaseChart(),
+    loadSeverityChart(),
+    loadScanTable(),
+    loadPestBars(),
+    loadMaturityChart(),
+    loadPenaltyChart(),
+    loadMonarchChart(),
+    loadPieChart(),
+    loadActivityChart(),
+  ]);
+  buildConsultant();
+}
+
+// ── Weather (FIX BUG-01 / ISSUE-02) ──────────
+async function loadWeather() {
+  const WMO = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:'🌧',80:'🌦',95:'⛈'};
+  try {
+    const r = await fetch(
+      'https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635' +
+      '&current=temperature_2m,apparent_temperature,weathercode,relative_humidity_2m' +
+      '&daily=sunshine_duration&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=1'
+    );
+    const d = await r.json();
+    const c = d.current;
+    const tempF   = Math.round(c.temperature_2m);
+    const feelsF  = Math.round(c.apparent_temperature);
+    const solar   = ((d.daily.sunshine_duration?.[0]||0)/3600).toFixed(1);
+    const icon    = WMO[c.weathercode] || '🌡';
+
+    let riskLabel = '✅ LOW', riskClass = '';
+    if (tempF <= 36)      { riskLabel = '❄️ FROST';    riskClass = 'danger'; }
+    else if (tempF >= 90) { riskLabel = '🔥 HEAT';     riskClass = 'danger'; }
+    else if (tempF < 50)  { riskLabel = '⚠️ MODERATE'; riskClass = 'warn';   }
+
+    $('w-temp').textContent     = `${icon} ${tempF}°F`;
+    $('w-feels').textContent    = `${feelsF}°F`;
+    $('w-solar').textContent    = `${solar} hrs`;
+    $('w-humidity').textContent = `${c.relative_humidity_2m}%`;
+    $('w-risk').textContent     = riskLabel;
+    $('w-risk').className       = `c-val ${riskClass}`;
+  } catch { $('w-temp').textContent = '⚠️ Offline'; }
+}
+
+// ── KPIs ─────────────────────────────────────
+async function loadKPIs() {
+  const past90 = daysAgo(90);
+  const [plantRes, scanRes] = await Promise.all([
+    sb.from('garden_library').select('id, is_native, is_host_plant, maturity_days, recovery_days, planted_date'),
+    sb.from('plant_health_scans').select('id, status, scan_date').gte('scan_date', past90),
+  ]);
+
+  const plants = plantRes.data || [];
+  const scans  = scanRes.data  || [];
+
+  // Plants
+  $('kpi-plants').textContent   = plants.length;
+  $('kpi-plants-d').textContent = `${plants.length} species in library`;
+
+  // Avg maturity (FIX BUG-05: includes recovery_days)
+  const mats = plants.map(p => {
+    if (!p.planted_date || !p.maturity_days) return null;
+    const grown = Math.max(0,(Date.now()-new Date(p.planted_date))/86400000);
+    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
+    return Math.min(100, Math.round((grown/eff)*100));
+  }).filter(m => m !== null);
+  const avg = mats.length ? Math.round(mats.reduce((a,b)=>a+b,0)/mats.length) : 0;
+  $('kpi-maturity').textContent = `${avg}%`;
+  $('kpi-maturity-d').textContent = `Garden-wide average`;
+
+  // Incidents
+  const active = scans.filter(s=>s.status!=='resolved').length;
+  $('kpi-incidents').textContent = scans.length;
+  $('kpi-incidents-d').textContent = `${active} active · ${scans.length-active} resolved`;
+  $('kpi-incidents-d').className   = `kpi-delta ${active>0?'down':'up'}`;
+
+  // Pollinator IQ
+  const native = plants.filter(p=>p.is_native).length;
+  const host   = plants.filter(p=>p.is_host_plant).length;
+  const iq = plants.length ? Math.min(100,Math.round(((native*1.5+host)/plants.length)*50)) : 0;
+  $('kpi-iq').textContent   = iq;
+  $('kpi-iq-d').textContent = `${native} native · ${host} host`;
+}
+
+// ── Spotlight cards (FIX BUG-02: live data) ──
+async function loadSpotlights() {
+  const { data: plants } = await sb.from('garden_library')
+    .select('common_name, emoji, maturity_days, recovery_days, planted_date');
+
+  const ps = plants || [];
+
+  // Top performer = highest maturity %
+  const withMat = ps.map(p => {
+    const grown = !p.planted_date ? 0 : Math.max(0,(Date.now()-new Date(p.planted_date))/86400000);
+    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
+    return { ...p, pct: Math.min(100,Math.round((grown/eff)*100)) };
+  }).sort((a,b)=>b.pct-a.pct);
+
+  if (withMat.length > 0) {
+    const top = withMat[0];
+    $('sp-top-name').textContent = top.common_name || 'Unknown';
+    $('sp-top-sub').textContent  = `${top.pct}% Maturity`;
+    $('sp-top-icon').textContent = top.emoji || '🌱';
+  } else {
+    $('sp-top-name').textContent = 'No plants yet';
+    $('sp-top-sub').textContent  = 'Add plants to see spotlight';
+  }
+
+  // Most penalized = highest recovery_days
+  const penalized = [...ps].sort((a,b)=>(b.recovery_days||0)-(a.recovery_days||0));
+  if (penalized.length > 0 && (penalized[0].recovery_days||0) > 0) {
+    const p = penalized[0];
+    $('sp-penalty-name').textContent = p.common_name || 'Unknown';
+    $('sp-penalty-sub').textContent  = `+${p.recovery_days}d recovery penalty`;
+    $('sp-penalty-icon').textContent = p.emoji || '⚠️';
+  } else {
+    $('sp-penalty-name').textContent = 'None';
+    $('sp-penalty-sub').textContent  = 'No recovery penalties logged';
+    $('sp-penalty-icon').textContent = '✅';
+  }
+
+  // Longest to harvest = highest effective maturity days remaining
+  const remaining = ps.map(p => {
+    const grown = !p.planted_date ? 0 : Math.max(0,(Date.now()-new Date(p.planted_date))/86400000);
+    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
+    return { ...p, daysLeft: Math.max(0, Math.round(eff - grown)) };
+  }).sort((a,b)=>b.daysLeft-a.daysLeft);
+
+  if (remaining.length > 0) {
+    const r = remaining[0];
+    $('sp-longest-name').textContent = r.common_name || 'Unknown';
+    $('sp-longest-sub').textContent  = `${r.daysLeft}d until harvest`;
+    $('sp-longest-icon').textContent = r.emoji || '📅';
+  }
+}
+
+// ── Disease × Temperature chart (FIX BUG-02) ─
+async function loadDiseaseChart() {
+  const past30 = daysAgo(30);
+  const [scanRes, wxRes] = await Promise.all([
+    sb.from('plant_health_scans').select('scan_date').gte('scan_date', past30).order('scan_date'),
+    sb.from('weather_logs').select('log_date,temp_high_f,temp_low_f').gte('log_date', past30).order('log_date'),
+  ]);
+  done('disease');
+
+  const scanMap = {}, wxMap = {};
+  (scanRes.data||[]).forEach(s => { scanMap[s.scan_date] = (scanMap[s.scan_date]||0)+1; });
+  (wxRes.data||[]).forEach(w  => { wxMap[w.log_date] = ((w.temp_high_f||0)+(w.temp_low_f||0))/2; });
+
+  const labels=[], counts=[], temps=[];
+  for (let i=29;i>=0;i--) {
+    const d = daysAgo(i);
+    labels.push(d.slice(5));
+    counts.push(scanMap[d]||0);
+    temps.push(wxMap[d]||null);
+  }
+
+  mkChart('chart-disease', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { type:'bar',  label:'Incidents',    data:counts, backgroundColor:'rgba(240,82,82,0.5)',  borderColor:'#f05252', borderWidth:1, yAxisID:'y'  },
+        { type:'line', label:'Avg Temp (°F)', data:temps,  borderColor:'#f5a623', backgroundColor:'rgba(245,166,35,0.08)', tension:0.4, pointRadius:2, yAxisID:'y1', spanGaps:true },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x:  { grid:{color:'#1a2e1c'}, ticks:{maxTicksLimit:10, maxRotation:0} },
+        y:  { position:'left',  grid:{color:'#1a2e1c'}, title:{display:true,text:'Incidents',color:'#f05252'}, min:0, ticks:{stepSize:1} },
+        y1: { position:'right', grid:{drawOnChartArea:false}, title:{display:true,text:'°F',color:'#f5a623'} },
+      },
+      // FIX BUG-05: legend labels match dataset labels
+      plugins:{ legend:{ display:true, labels:{boxWidth:10, color:'#4d7050'} } },
+    },
+  });
+
+  // Correlation insight
+  const hotIncidents = counts.filter((_,i) => (temps[i]||0)>75 && counts[i]>0).length;
+  const insightEl = $('insight-disease');
+  insightEl.style.display = 'block';
+  if (hotIncidents >= 3) {
+    insightEl.className = 'insight-box warn';
+    insightEl.textContent = `⚠️ ${hotIncidents} days show disease incidents at temperatures above 75°F. Fungal pathogens and heat stress are likely cofactors. Consider prophylactic treatment during high-heat windows.`;
+  } else if ((scanRes.data||[]).length === 0) {
+    insightEl.className = 'insight-box info';
+    insightEl.textContent = `✅ No health incidents in the past 30 days. Weather logs will populate as data is recorded.`;
+  } else {
+    insightEl.className = 'insight-box';
+    insightEl.textContent = `📊 ${(scanRes.data||[]).length} incidents over 30 days. No strong temperature correlation detected. Continue monitoring.`;
+  }
+}
+
+// ── Severity donut ─────────────────────────────
+async function loadSeverityChart() {
+  const { data } = await sb.from('plant_health_scans').select('severity');
+  done('severity');
+  const c = {low:0,medium:0,high:0,critical:0};
+  (data||[]).forEach(s=>{ if(s.severity in c) c[s.severity]++; });
+  mkChart('chart-severity',{
+    type:'doughnut',
+    data:{ labels:['Low','Medium','High','Critical'], datasets:[{ data:[c.low,c.medium,c.high,c.critical], backgroundColor:['#1a6b34','#f5a623','#f05252','#991b1b'], borderWidth:1, borderColor:'#0b140d' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{boxWidth:10,padding:10} } } },
+  });
+}
+
+// ── Scan table ─────────────────────────────────
+async function loadScanTable() {
+  const { data } = await sb.from('plant_health_scans')
+    .select('scan_date,plant_name,issue_type,severity,status,recovery_days_added')
+    .order('scan_date',{ascending:false}).limit(20);
+  done('table');
+  const scans = data||[];
+  if (!scans.length) {
+    $('scan-table-wrap').innerHTML = '<div class="empty-state">No scan records yet. Add plant health scans in the Clinic.</div>';
+    return;
+  }
+  $('scan-table-wrap').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Plant</th><th>Issue</th><th>Severity</th><th>Status</th><th>Penalty</th></tr></thead>
+      <tbody>${scans.map(s=>`
+        <tr>
+          <td>${s.scan_date||'—'}</td>
+          <td>${s.plant_name||'—'}</td>
+          <td>${s.issue_type||'—'}</td>
+          <td><span class="sev-tag sev-${s.severity||'low'}">${(s.severity||'low').toUpperCase()}</span></td>
+          <td style="color:${s.status==='resolved'?'var(--green)':'var(--amber)'}">${s.status==='resolved'?'RESOLVED':'ACTIVE'}</td>
+          <td style="color:var(--red)">${s.recovery_days_added?`+${s.recovery_days_added}d`:'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── Pest bars (FIX BUG-02: live from scans, FIX BUG-04 no markdown) ─
+async function loadPestBars() {
+  const { data } = await sb.from('plant_health_scans').select('issue_type');
+  const counts = {};
+  (data||[]).forEach(s => {
+    if (!s.issue_type) return;
+    counts[s.issue_type] = (counts[s.issue_type]||0)+1;
+  });
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const max    = sorted[0]?.[1] || 1;
+
+  if (!sorted.length) {
+    $('pest-bars').innerHTML = '<div class="empty-state" style="padding:0.75rem">No issue types recorded yet.</div>';
+    return;
+  }
+
+  $('pest-bars').innerHTML = sorted.map(([name, count]) => `
+    <div class="pest-row">
+      <span class="pest-name">${name}</span>
+      <div class="pest-bar-track">
+        <div class="pest-bar-fill" style="width:${Math.round((count/max)*100)}%"></div>
+      </div>
+      <span class="pest-pct">${count}x</span>
+    </div>`).join('');
+}
+
+// ── Maturity chart (FIX BUG-02, BUG-05) ──────
+async function loadMaturityChart() {
+  const { data } = await sb.from('garden_library')
+    .select('common_name,planted_date,maturity_days,recovery_days').order('common_name');
+  done('maturity');
+
+  const ps = (data||[]).filter(p=>p.planted_date&&p.maturity_days).slice(0,18);
+  const labels = ps.map(p=>(p.common_name||'?').slice(0,16));
+  const base   = ps.map(p=>{ const g=Math.max(0,(Date.now()-new Date(p.planted_date))/86400000); return Math.min(100,Math.round((g/p.maturity_days)*100)); });
+  const eff    = ps.map(p=>{ const g=Math.max(0,(Date.now()-new Date(p.planted_date))/86400000); const e=(p.maturity_days||60)+(p.recovery_days||0); return Math.min(100,Math.round((g/e)*100)); });
+
+  if (!ps.length) { done('maturity'); $('chart-maturity').closest('.chart-wrap').innerHTML='<div class="empty-state">Add plants with a planted date to see maturity progress.</div>'; return; }
+
+  mkChart('chart-maturity',{
+    type:'bar',
+    data:{ labels, datasets:[
+      // FIX BUG-05: labels correctly describe what they show
+      { label:'Effective (with penalty)', data:eff,  backgroundColor:'rgba(61,220,110,0.6)', borderColor:'#3ddc6e', borderWidth:1 },
+      { label:'Base (no penalty)',        data:base, backgroundColor:'rgba(61,220,110,0.15)',borderColor:'#1a6b34', borderWidth:1 },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      scales:{ x:{min:0,max:100,grid:{color:'#1a2e1c'},ticks:{callback:v=>v+'%'}}, y:{grid:{display:false},ticks:{font:{size:9}}} },
+      plugins:{ legend:{ labels:{boxWidth:10} } },
+    },
+  });
+}
+
+// ── Penalty chart ─────────────────────────────
+async function loadPenaltyChart() {
+  const { data } = await sb.from('garden_library')
+    .select('common_name,recovery_days').gt('recovery_days',0).order('recovery_days',{ascending:false}).limit(12);
+  done('penalty');
+  const ps = data||[];
+  if (!ps.length) { $('chart-penalty').closest('.chart-wrap').innerHTML='<div class="empty-state" style="height:200px;display:flex;align-items:center;justify-content:center;">No recovery penalties logged yet.</div>'; return; }
+  mkChart('chart-penalty',{
+    type:'bar',
+    data:{ labels:ps.map(p=>(p.common_name||'?').slice(0,14)), datasets:[{ label:'Penalty Days', data:ps.map(p=>p.recovery_days), backgroundColor:'rgba(240,82,82,0.6)', borderColor:'#f05252', borderWidth:1 }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      scales:{ x:{grid:{color:'#1a2e1c'},title:{display:true,text:'Days',color:'#4d7050'}}, y:{grid:{display:false},ticks:{font:{size:9}}} },
+      plugins:{ legend:{display:false} },
+    },
+  });
+}
+
+// ── Monarch chart ─────────────────────────────
+async function loadMonarchChart() {
+  const { data } = await sb.from('garden_library').select('is_native,is_host_plant,created_at').order('created_at');
+  done('monarch');
+  const months = {};
+  (data||[]).forEach(p=>{ const m=(p.created_at||today()).slice(0,7); if(!months[m])months[m]={native:0,host:0,other:0}; if(p.is_native)months[m].native++; else if(p.is_host_plant)months[m].host++; else months[m].other++; });
+  const labels = Object.keys(months).sort();
+  if (!labels.length) { $('chart-monarch').closest('.chart-wrap').innerHTML='<div class="empty-state">Add plants to see trends.</div>'; return; }
+  let cn=0,ch=0,co=0; const cN=[],cH=[],cO=[];
+  labels.forEach(l=>{ cn+=months[l].native;cN.push(cn); ch+=months[l].host;cH.push(ch); co+=months[l].other;cO.push(co); });
+  mkChart('chart-monarch',{
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Native',   data:cN, borderColor:'#3ddc6e', backgroundColor:'rgba(61,220,110,0.08)', fill:true, tension:0.4, pointRadius:3 },
+      { label:'Host',     data:cH, borderColor:'#5ba4f5', backgroundColor:'rgba(91,164,245,0.08)', fill:true, tension:0.4, pointRadius:3 },
+      { label:'Other',    data:cO, borderColor:'#4d7050', backgroundColor:'rgba(77,112,80,0.05)',  fill:true, tension:0.4, pointRadius:3 },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{grid:{color:'#1a2e1c'}}, y:{grid:{color:'#1a2e1c'},min:0} }, plugins:{legend:{labels:{boxWidth:10}}} },
+  });
+}
+
+// ── Pie chart ─────────────────────────────────
+async function loadPieChart() {
+  const { data } = await sb.from('garden_library').select('is_native,is_host_plant');
+  done('pie');
+  const ps = data||[];
+  const nOnly = ps.filter(p=>p.is_native&&!p.is_host_plant).length;
+  const hOnly = ps.filter(p=>!p.is_native&&p.is_host_plant).length;
+  const both  = ps.filter(p=>p.is_native&&p.is_host_plant).length;
+  const other = ps.length-nOnly-hOnly-both;
+
+  mkChart('chart-pie',{
+    type:'doughnut',
+    data:{ labels:['Native Only','Host Only','Native+Host','Other'], datasets:[{ data:[nOnly,hOnly,both,other], backgroundColor:['#3ddc6e','#5ba4f5','#a8f5bc','#1a2e1c'], borderWidth:1, borderColor:'#0b140d' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}} },
+  });
+
+  const total = ps.length||1;
+  const iq = Math.min(100,Math.round(((nOnly+both)*1.5+hOnly)/total*50));
+  const el = $('iq-callout');
+  el.style.display='block';
+  el.className = `insight-box${iq<40?' warn':''}`;
+  // FIX BUG-04: No markdown — using proper HTML
+  el.innerHTML = `<strong>POLLINATOR IQ: ${iq}/100</strong><br>${nOnly+both} native · ${hOnly+both} host · ${other} other<br>${iq>=70?'🌟 Excellent — your garden is a pollinator haven.':iq>=40?'🌱 Good start. More native and host species will boost your IQ.':'⚠️ Low IQ. Prioritize native plantings to support pollinators.'}`;
+}
+
+// ── Activity chart ────────────────────────────
+async function loadActivityChart() {
+  const past90 = daysAgo(90);
+  const { data } = await sb.from('garden_logs').select('log_date,activity_type').gte('log_date',past90).order('log_date');
+  done('activity');
+  const map = {};
+  (data||[]).forEach(l=>{ map[l.log_date]=map[l.log_date]||{}; const t=l.activity_type||'other'; map[l.log_date][t]=(map[l.log_date][t]||0)+1; });
+  const labels=[],water=[],fert=[],prune=[],obs=[];
+  for(let i=89;i>=0;i--){ const d=daysAgo(i); labels.push(i%7===0?d.slice(5):''); const day=map[d]||{}; water.push(day.watering||day.water||0); fert.push(day.fertilizing||day.fertilize||0); prune.push(day.pruning||day.prune||0); obs.push(day.observation||day.note||0); }
+  mkChart('chart-activity',{
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'Watering',    data:water, backgroundColor:'#5ba4f5', stack:'a'},
+      {label:'Fertilizing', data:fert,  backgroundColor:'#3ddc6e', stack:'a'},
+      {label:'Pruning',     data:prune, backgroundColor:'#f5a623', stack:'a'},
+      {label:'Observation', data:obs,   backgroundColor:'#a8f5bc', stack:'a'},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{grid:{display:false},stacked:true}, y:{grid:{color:'#1a2e1c'},stacked:true,min:0} }, plugins:{legend:{labels:{boxWidth:10}}}, barPercentage:0.9, categoryPercentage:1.0 },
+  });
+}
+
+// ── Strategic consultant (FIX BUG-04: proper HTML, no fake AI label) ─
+async function buildConsultant() {
+  const [plantRes, scanRes, logRes] = await Promise.all([
+    sb.from('garden_library').select('common_name,emoji,maturity_days,recovery_days,planted_date,is_native,is_host_plant'),
+    sb.from('plant_health_scans').select('plant_name,issue_type,severity,status').neq('status','resolved'),
+    sb.from('garden_logs').select('activity_type,log_date').order('log_date',{ascending:false}).limit(30),
+  ]);
+
+  const plants   = plantRes.data || [];
+  const scans    = scanRes.data  || [];
+  const logs     = logRes.data   || [];
+
+  const insights = [];
+
+  // Active health issues
+  if (scans.length > 0) {
+    const byPlant = {};
+    scans.forEach(s=>{ byPlant[s.plant_name||'Unknown']=(byPlant[s.plant_name||'Unknown']||0)+1; });
+    const top = Object.entries(byPlant).sort((a,b)=>b[1]-a[1])[0];
+    insights.push(`<strong>${top[0]}</strong> has ${top[1]} active health issue${top[1]>1?'s':''} — prioritize Clinic review.`);
+  }
+
+  // Highest penalty
+  const penalized = plants.filter(p=>(p.recovery_days||0)>0).sort((a,b)=>(b.recovery_days||0)-(a.recovery_days||0));
+  if (penalized.length > 0) {
+    insights.push(`<strong>${penalized[0].common_name}</strong> has accumulated <strong>${penalized[0].recovery_days} recovery penalty days</strong>, pushing its effective harvest window out.`);
+  }
+
+  // Native ratio
+  const nativeCount = plants.filter(p=>p.is_native||p.is_host_plant).length;
+  const nativeRatio = plants.length ? Math.round((nativeCount/plants.length)*100) : 0;
+  if (nativeRatio < 30) {
+    insights.push(`Only <strong>${nativeRatio}%</strong> of your library is native or host species. Adding more native plantings will meaningfully improve your Pollinator IQ.`);
+  } else if (nativeRatio >= 60) {
+    insights.push(`<strong>${nativeRatio}%</strong> native and host species — strong eco-balance. Your garden is providing significant pollinator habitat.`);
+  }
+
+  // Upcoming harvests
+  const soon = plants.filter(p=>{
+    if (!p.planted_date||!p.maturity_days) return false;
+    const grown = (Date.now()-new Date(p.planted_date))/86400000;
+    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
+    const left  = eff - grown;
+    return left >= 0 && left <= 14;
+  });
+  if (soon.length > 0) {
+    insights.push(`<strong>${soon.map(p=>p.common_name).join(', ')}</strong> ${soon.length===1?'is':'are'} approaching harvest within the next 14 days.`);
+  }
+
+  // Watering cadence
+  const waterDays = new Set(logs.filter(l=>l.activity_type==='watering').map(l=>l.log_date)).size;
+  if (waterDays < 3) {
+    insights.push(`Only <strong>${waterDays} watering sessions</strong> recorded in the last 30 logs. Consider increasing frequency during active growth periods.`);
+  }
+
+  if (insights.length === 0) {
+    insights.push('Your garden data looks healthy. Continue logging activities in the Clinic and Garden Logs to receive personalized recommendations here.');
+  }
+
+  // FIX BUG-04: render as proper HTML (no markdown)
+  $('consultant-text').innerHTML = insights.map(i=>`<p style="margin-bottom:0.5rem;">→ ${i}</p>`).join('');
+}
+
+// ── Export Report (FIX BUG-03: implemented) ──
+function exportReport() {
+  const rows = [['Metric','Value']];
+
+  // Collect live values from KPI cards
+  [
+    ['Plants Tracked',     $('kpi-plants')?.textContent],
+    ['Avg Maturity',       $('kpi-maturity')?.textContent],
+    ['Health Incidents',   $('kpi-incidents')?.textContent],
+    ['Pollinator IQ',      $('kpi-iq')?.textContent],
+    ['Top Performer',      $('sp-top-name')?.textContent + ' — ' + $('sp-top-sub')?.textContent],
+    ['Most Penalized',     $('sp-penalty-name')?.textContent + ' — ' + $('sp-penalty-sub')?.textContent],
+    ['Strategic Notes',    $('consultant-text')?.innerText?.replace(/\n/g,' ')],
+  ].forEach(row => rows.push(row));
+
+  const csv = rows.map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `gardenhub-insights-${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
 </body>
 </html>
