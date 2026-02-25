@@ -1,269 +1,1318 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Spatial Studio v10.5 (Full Feature)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; color: white; }
-        
-        /* Grid System */
-        #viewport { 
-            background-color: #0f172a; position: relative; width: 1000px; height: 1000px;
-            display: grid; grid-template-columns: repeat(20, 50px); grid-template-rows: repeat(20, 50px);
-            gap: 2px; padding: 10px; border: 2px solid rgba(255,255,255,0.05);
-        }
-        .grid-cell { position: relative; width: 50px; height: 50px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease; cursor: crosshair; }
-        .grid-cell:hover { background: rgba(255,255,255,0.08); }
-        
-        /* Pathogen & Soil Layers */
-        .tag-frost { background: rgba(99, 102, 241, 0.4) !important; border-color: #6366f1 !important; }
-        .tag-wet { background: rgba(6, 182, 212, 0.4) !important; border-color: #06b6d4 !important; }
-        .tag-pest { background: rgba(239, 68, 68, 0.4) !important; border-color: #ef4444 !important; }
-        .tag-yield { background: rgba(234, 179, 8, 0.4) !important; border-color: #eab308 !important; }
-        
-        .pathogen-high { background: rgba(239, 68, 68, 0.5) !important; animation: pulse-red 2s infinite; border: 1px solid #ef4444; }
-        .vulnerability-warning { border: 2px dashed rgba(239, 68, 68, 0.6) !important; }
-        .soil-depleted { background: rgba(146, 64, 14, 0.4) !important; border: 1px solid #92400e; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GardenHub OS | Spatial Studio v10.6</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet"/>
 
-        @keyframes pulse-red { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+<style>
+/* ── Design Tokens ────────────────────────────── */
+:root {
+  --bg:         #0b110d;
+  --surface:    #111a13;
+  --surface2:   #172019;
+  --border:     #1d2e20;
+  --border2:    #243628;
+  --green:      #3ddc6e;
+  --green-dim:  #1a6b34;
+  --green-pale: #a8f0b8;
+  --amber:      #f5a623;
+  --red:        #f05252;
+  --blue:       #5ba4f5;
+  --soil:       #8b5c2a;
+  --mono:       'DM Mono', monospace;
+  --serif:      'Fraunces', serif;
+  --sidebar-w:  320px;
+  --bottom-h:   90px;
+}
 
-        /* Objects */
-        .bed-obj { position: absolute; cursor: move; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; text-transform: uppercase; border-radius: 8px; z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .type-raised { background: #92400e; border: 2px solid #78350f; color: #fef3c7; }
-        .type-wall { background: #334155; border: 2px solid #475569; color: #f1f5f9; }
-        .plant-obj { position: absolute; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 50%; z-index: 60; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .stage-bloom { box-shadow: 0 0 15px #ec4899; border: 2px solid #ec4899; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .glass-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
-        .active-btn { background: #3b82f6 !important; color: white !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-    </style>
+body {
+  background: var(--bg);
+  font-family: var(--mono);
+  color: #c8dfc8;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+/* ── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
+
+/* ── Sidebar ────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 200;
+  position: relative;
+}
+
+.sidebar-logo {
+  padding: 1.1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo .eyebrow {
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--green-dim);
+  text-transform: uppercase;
+}
+.sidebar-logo .title {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e8f5e8;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.sidebar-section {
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.1rem;
+}
+.section-label {
+  font-size: 0.52rem;
+  letter-spacing: 0.22em;
+  color: var(--green-dim);
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+/* ── Panel / Card ───────────────────────────── */
+.panel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+}
+.panel:last-child { margin-bottom: 0; }
+
+/* ── KV row ─────────────────────────────────── */
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 0.2rem 0; font-size: 0.62rem; }
+.kv-label { color: #5a7a60; }
+.kv-val   { color: #c8dfc8; font-weight: 500; }
+.kv-val.good   { color: var(--green); }
+.kv-val.warn   { color: var(--amber); }
+.kv-val.danger { color: var(--red); }
+
+/* ── Year toggle ────────────────────────────── */
+.year-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+.year-btn {
+  flex: 1; padding: 0.3rem 0;
+  font-family: var(--mono); font-size: 0.6rem; font-weight: 500;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: #5a7a60; cursor: pointer; border-radius: 3px;
+  transition: all 0.15s;
+}
+.year-btn.active { background: var(--amber); border-color: var(--amber); color: var(--bg); }
+
+/* ── Layer Toggles ──────────────────────────── */
+.layer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 3px; margin-bottom: 0.35rem; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.layer-row:hover { border-color: var(--border2); }
+.layer-name { font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: #8aab8a; }
+
+.toggle-pill {
+  width: 28px; height: 14px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 7px; position: relative; transition: background 0.2s;
+}
+.toggle-pill::after {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 8px; height: 8px;
+  background: #3a5040; border-radius: 50%;
+  transition: all 0.2s;
+}
+.layer-row.on .toggle-pill { background: var(--green-dim); border-color: var(--green); }
+.layer-row.on .toggle-pill::after { left: 16px; background: var(--green); }
+
+/* ── Inventory Items ────────────────────────── */
+.inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.inv-item {
+  padding: 0.55rem 0.5rem;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 4px; cursor: grab; font-size: 0.6rem;
+  display: flex; align-items: center; gap: 0.4rem;
+  transition: all 0.15s; user-select: none; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.inv-item:hover { border-color: var(--green-dim); color: var(--green-pale); }
+.inv-item:active { cursor: grabbing; opacity: 0.7; }
+.inv-item .badge {
+  font-size: 0.45rem; padding: 0.05rem 0.3rem;
+  border-radius: 2px; font-weight: 500; letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+.badge-native { background: rgba(61,220,110,0.15); color: var(--green); border: 1px solid var(--green-dim); }
+.badge-host   { background: rgba(91,164,245,0.15); color: var(--blue);  border: 1px solid #2a5580; }
+.badge-loading { color: var(--green-dim); font-size: 0.6rem; padding: 0.5rem; text-align: center; width: 100%; }
+
+/* ── Tactical Buttons ───────────────────────── */
+.tactic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.tactic-btn {
+  padding: 0.55rem 0.25rem;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 3px; font-family: var(--mono); font-size: 0.58rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: #8aab8a; cursor: pointer; text-align: center;
+  transition: all 0.15s;
+}
+.tactic-btn:hover { border-color: var(--green-dim); }
+.tactic-btn.active-frost  { background: rgba(99,102,241,0.25); border-color: #6366f1; color: #a5b4fc; }
+.tactic-btn.active-wet    { background: rgba(6,182,212,0.2);   border-color: #06b6d4; color: #67e8f9; }
+.tactic-btn.active-pest   { background: rgba(240,82,82,0.2);   border-color: var(--red); color: #fca5a5; }
+.tactic-btn.active-yield  { background: rgba(245,166,35,0.2);  border-color: var(--amber); color: #fcd34d; }
+
+/* ── Alert Panel ────────────────────────────── */
+#alert-panel {
+  margin: 0.75rem 1.1rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(240,82,82,0.08);
+  border: 1px solid rgba(240,82,82,0.4);
+  border-radius: 4px;
+  font-size: 0.62rem; line-height: 1.5;
+  color: #fca5a5;
+  display: none;
+}
+#alert-panel.companion { background: rgba(245,166,35,0.08); border-color: rgba(245,166,35,0.4); color: #fcd34d; }
+#alert-panel.info      { background: rgba(61,220,110,0.06); border-color: rgba(61,220,110,0.3); color: var(--green-pale); }
+
+/* ── Trash bin ──────────────────────────────── */
+#trash-bin {
+  margin: 0 1.1rem 0.9rem;
+  padding: 0.6rem;
+  border: 1.5px dashed rgba(240,82,82,0.25);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: rgba(240,82,82,0.4);
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+#trash-bin.drag-over {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(240,82,82,0.08);
+}
+
+/* ── Main / Viewport Area ───────────────────── */
+#main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+#canvas-scroll {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 2rem;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(30,60,35,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(20,40,25,0.12) 0%, transparent 55%),
+    var(--bg);
+}
+
+/* ── Grid Viewport ──────────────────────────── */
+#viewport {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  /* 24 cols × 48px = 1152px, 18 rows × 48px = 864px */
+  width:  1152px;
+  height: 864px;
+}
+
+/* ── Grid Cells ─────────────────────────────── */
+.grid-cell {
+  position: absolute;
+  width: 48px; height: 48px;
+  border-right: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.12s;
+  cursor: crosshair;
+}
+.grid-cell:hover { background: rgba(61,220,110,0.06) !important; }
+
+/* tactical tags */
+.tag-frost { background: rgba(99,102,241,0.3) !important; border-color: #6366f1 !important; }
+.tag-wet   { background: rgba(6,182,212,0.3)  !important; border-color: #06b6d4 !important; }
+.tag-pest  { background: rgba(240,82,82,0.3)  !important; border-color: var(--red) !important; }
+.tag-yield { background: rgba(245,166,35,0.3) !important; border-color: var(--amber) !important; }
+
+/* overlay layers */
+.pathogen-high   { background: rgba(240,82,82,0.45)  !important; animation: pulse-r 2s infinite; }
+.pathogen-med    { background: rgba(245,166,35,0.3)  !important; }
+.vuln-warning    { box-shadow: inset 0 0 0 1px rgba(240,82,82,0.5) !important; }
+.soil-depleted   { background: rgba(139,92,42,0.35)  !important; }
+.sun-full        { background: rgba(245,166,35,0.22) !important; }
+.sun-partial     { background: rgba(245,166,35,0.10) !important; }
+.sun-shade       { background: rgba(30,60,80,0.35)   !important; }
+.rotation-warn   { box-shadow: inset 0 0 0 2px rgba(240,82,82,0.6) !important; }
+.companion-ok    { box-shadow: inset 0 0 0 1px rgba(61,220,110,0.5) !important; }
+.companion-bad   { box-shadow: inset 0 0 0 2px rgba(240,82,82,0.7) !important; }
+
+@keyframes pulse-r { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
+
+/* ── Placed Objects ─────────────────────────── */
+/* Beds */
+.bed-obj {
+  position: absolute;
+  border-radius: 4px;
+  cursor: move;
+  z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.5rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  user-select: none;
+}
+.bed-raised    { background: rgba(100,60,20,0.75); border: 2px solid #78450f; color: #f5deb3; }
+.bed-container { background: rgba(30,60,80,0.75);  border: 2px solid #2a5f7a; color: #b3d9f5; }
+.bed-wall      { background: rgba(50,60,70,0.8);   border: 2px solid #4a5568; color: #e2e8f0; }
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 12px; height: 12px;
+  cursor: se-resize;
+  background: rgba(255,255,255,0.15);
+  border-top-left-radius: 3px;
+}
+
+/* Plants */
+.plant-obj {
+  position: absolute;
+  z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  user-select: none;
+}
+.plant-obj:hover .spread-ring { opacity: 1 !important; }
+.plant-obj.stage-bloom {
+  box-shadow: 0 0 14px rgba(236,72,153,0.7);
+  border: 1.5px solid #ec4899;
+}
+.plant-obj.companion-conflict { border: 2px solid var(--red); box-shadow: 0 0 10px rgba(240,82,82,0.5); }
+.plant-obj.native-marker  { border: 1.5px solid var(--green-dim); }
+.plant-obj.host-marker    { border: 1.5px solid var(--blue); }
+
+/* Spread ring */
+.spread-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(61,220,110,0.35);
+  pointer-events: none;
+  opacity: 0.5;
+  transition: opacity 0.2s, border-color 0.2s;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.spread-ring.conflict { border-color: rgba(240,82,82,0.55) !important; }
+
+/* Tooltip */
+.plant-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.58rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  display: none;
+  color: var(--green-pale);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+.plant-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--border2);
+}
+.plant-obj:hover .plant-tooltip { display: block; }
+
+/* ── Season Scrubber bar ────────────────────── */
+#scrubber-bar {
+  height: var(--bottom-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 0.9rem 2rem;
+  display: flex; align-items: center; gap: 1.5rem;
+  flex-shrink: 0;
+  z-index: 100;
+}
+#scrubber-bar label { font-size: 0.55rem; letter-spacing: 0.2em; color: var(--green-dim); text-transform: uppercase; white-space: nowrap; }
+#time-scrubber {
+  flex: 1; height: 3px;
+  -webkit-appearance: none;
+  background: var(--border2);
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+}
+#time-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(61,220,110,0.5);
+}
+#pulse-date {
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: #e8f5e8;
+  min-width: 70px;
+  letter-spacing: -0.02em;
+}
+#season-badge {
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  color: var(--amber);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Save indicator ─────────────────────────── */
+#save-indicator {
+  position: fixed; top: 0.75rem; right: 1rem;
+  font-size: 0.55rem; letter-spacing: 0.15em;
+  color: var(--green-dim); text-transform: uppercase;
+  opacity: 0; transition: opacity 0.3s;
+  z-index: 999;
+}
+#save-indicator.show { opacity: 1; }
+
+/* ── Auth Overlay ───────────────────────────── */
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(11,17,13,0.97);
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-overlay.hidden { display: none; }
+.auth-box {
+  border: 1px solid var(--green);
+  background: var(--surface);
+  padding: 2.25rem;
+  width: 340px;
+  position: relative;
+}
+.auth-box::before {
+  content: 'SPATIAL STUDIO // AUTH';
+  font-size: 0.52rem; color: var(--green-dim);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  position: absolute; top: -0.6rem; left: 1rem;
+  background: var(--surface); padding: 0 0.4rem;
+}
+.auth-title { font-family: var(--serif); font-size: 1.6rem; color: var(--green); font-weight: 700; margin-bottom: 1.25rem; }
+.auth-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: #c8dfc8; padding: 0.55rem 0.7rem;
+  font-family: var(--mono); font-size: 0.72rem;
+  margin-bottom: 0.6rem; outline: none; transition: border-color 0.2s;
+}
+.auth-input:focus { border-color: var(--green); }
+.auth-btn {
+  width: 100%; background: var(--green); color: var(--bg);
+  font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.12em; padding: 0.65rem; border: none; cursor: pointer;
+  text-transform: uppercase; margin-bottom: 0.45rem; transition: opacity 0.2s;
+}
+.auth-btn:hover { opacity: 0.85; }
+.auth-btn.ghost {
+  background: transparent; border: 1px solid var(--border);
+  color: #5a7a60;
+}
+#auth-err { font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-bottom: 0.4rem; }
+
+/* ── Context menu ───────────────────────────── */
+#ctx-menu {
+  position: fixed; z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 0.3rem 0;
+  min-width: 140px;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+.ctx-item {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.62rem;
+  cursor: pointer;
+  color: #8aab8a;
+  transition: background 0.1s;
+}
+.ctx-item:hover { background: var(--surface2); color: var(--green-pale); }
+.ctx-item.danger { color: var(--red); }
+.ctx-item.danger:hover { background: rgba(240,82,82,0.1); }
+.ctx-sep { height: 1px; background: var(--border); margin: 0.25rem 0; }
+</style>
 </head>
-<body class="flex h-screen">
 
-    <aside class="w-[360px] bg-slate-900/90 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col gap-5 overflow-y-auto z-[100]">
-        <div>
-            <h2 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Temporal IQ v10.5</h2>
-            <p class="text-2xl font-black text-white uppercase tracking-tighter leading-none">Spatial Studio</p>
-        </div>
+<body>
 
-        <div class="glass-panel p-4">
-            <h3 class="text-[9px] font-bold text-slate-400 uppercase mb-3">Crop Rotation & Soil</h3>
-            <div class="flex gap-2 mb-3">
-                <button id="rot-2026" onclick="setRotationYear(2026)" class="flex-1 py-1 bg-amber-600 text-white rounded-lg text-[10px] font-black border border-amber-600/30">2026</button>
-                <button id="rot-2027" onclick="setRotationYear(2027)" class="flex-1 py-1 bg-white/5 text-slate-500 rounded-lg text-[10px] font-black border border-white/5">2027</button>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-[10px] font-bold text-slate-300">NITROGEN HEALTH</span>
-                <span id="nitrogen-stat" class="text-[10px] font-black text-green-400 uppercase tracking-widest">Optimal</span>
-            </div>
-        </div>
+<!-- ═══════════════ AUTH OVERLAY ═══════════════ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-title">Spatial Studio</div>
+    <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
+    <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
+    <div id="auth-err"></div>
+    <button class="auth-btn" id="btn-login">Initialize Session</button>
+    <button class="auth-btn ghost" id="btn-reg">Register</button>
+  </div>
+</div>
 
-        <div id="active-alert-panel" class="hidden glass-panel p-4 border-l-4 border-red-500 bg-red-500/10">
-            <h3 class="text-[9px] font-black text-red-400 uppercase mb-1">Tactical Alert</h3>
-            <p id="alert-text" class="text-[10px] font-bold text-white"></p>
-        </div>
+<!-- ═══════════════ SIDEBAR ═══════════════════ -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="eyebrow">GardenHub OS // v10.6</div>
+    <div class="title">Spatial<br/>Studio</div>
+  </div>
 
-        <div class="glass-panel p-4 border-l-4 border-emerald-500">
-            <h3 class="text-[9px] font-bold text-emerald-400 uppercase mb-2">Memory Insights</h3>
-            <div id="insights-list" class="space-y-2 text-[10px]"></div>
-        </div>
+  <!-- Crop Rotation -->
+  <div class="sidebar-section">
+    <div class="section-label">Crop Rotation & Soil</div>
+    <div class="year-toggle">
+      <button class="year-btn active" id="rot-2026" onclick="setYear(2026)">2026</button>
+      <button class="year-btn"        id="rot-2027" onclick="setYear(2027)">2027</button>
+      <button class="year-btn"        id="rot-2028" onclick="setYear(2028)">2028</button>
+    </div>
+    <div class="panel">
+      <div class="kv"><span class="kv-label">Nitrogen Health</span><span class="kv-val" id="kv-nitrogen">Optimal</span></div>
+      <div class="kv"><span class="kv-label">Rotation Conflicts</span><span class="kv-val" id="kv-rotation">0</span></div>
+      <div class="kv"><span class="kv-label">Soil Score</span><span class="kv-val" id="kv-soil">100%</span></div>
+    </div>
+  </div>
 
-        <div class="glass-panel p-4">
-            <h3 class="text-[9px] font-bold text-slate-400 uppercase mb-3">Map Vision Layers</h3>
-            <div class="space-y-2">
-                <label class="flex items-center justify-between cursor-pointer p-2 bg-white/5 rounded-lg border border-white/5 hover:border-white/20 transition">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase">Pathogen Heatmap</span>
-                    <input type="checkbox" id="heatmap-toggle" onchange="toggleHeatmap(this.checked)" class="w-4 h-4 accent-red-500">
-                </label>
-                <label class="flex items-center justify-between cursor-pointer p-2 bg-white/5 rounded-lg border border-white/5 hover:border-white/20 transition">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase">Soil Nutrient Map</span>
-                    <input type="checkbox" id="soil-toggle" onchange="toggleSoilMap(this.checked)" class="w-4 h-4 accent-emerald-500">
-                </label>
-            </div>
-        </div>
+  <!-- Companion Alerts -->
+  <div id="alert-panel"></div>
 
-        <div class="glass-panel p-4">
-            <h3 class="text-[9px] font-bold text-slate-400 uppercase mb-3">Inventory</h3>
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold" draggable="true" ondragstart="startBedDrag(event, 'raised', 150, 100)">🟫 Raised Bed</div>
-                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold" draggable="true" ondragstart="startBedDrag(event, 'wall', 200, 20)">🧱 Heat-Wall</div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold" draggable="true" ondragstart="startPlantDrag(event, 'Tomato', '🍅', 24, 75, 140)">🍅 Tomato</div>
-                <div class="p-3 bg-white/5 border border-white/10 rounded-xl cursor-grab text-[10px] font-bold" draggable="true" ondragstart="startPlantDrag(event, 'Zinnia', '🌸', 12, 60, 130)">🌸 Zinnia</div>
-            </div>
-        </div>
+  <!-- Memory Insights -->
+  <div class="sidebar-section">
+    <div class="section-label">Memory Insights</div>
+    <div class="panel">
+      <div class="kv"><span class="kv-label">Live Plants</span><span class="kv-val" id="kv-plants">0</span></div>
+      <div class="kv"><span class="kv-label">Structures</span><span class="kv-val" id="kv-beds">0</span></div>
+      <div class="kv"><span class="kv-label">Pest Risk</span><span class="kv-val" id="kv-pest">Low</span></div>
+      <div class="kv"><span class="kv-label">Pollinators</span><span class="kv-val" id="kv-pollinators">0 native</span></div>
+    </div>
+  </div>
 
-        <div class="mt-auto border-t border-white/10 pt-4">
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="setTacticalMode('frost')" id="btn-frost" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase">❄️ Frost</button>
-                <button onclick="setTacticalMode('wet')" id="btn-wet" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase">💧 Wet</button>
-                <button onclick="setTacticalMode('pest')" id="btn-pest" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase text-red-400">🐛 Pest</button>
-                <button onclick="setTacticalMode('yield')" id="btn-yield" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase text-yellow-400">💰 Yield</button>
-            </div>
-            <div id="trash-bin" ondragover="event.preventDefault()" ondrop="deleteItem(event)" class="mt-4 py-3 border-2 border-dashed border-red-900/30 rounded-xl text-[8px] font-bold text-red-500/50 text-center uppercase">🗑️ Drop to Delete</div>
-        </div>
-    </aside>
+  <!-- Map Layers -->
+  <div class="sidebar-section">
+    <div class="section-label">Map Vision Layers</div>
+    <div class="layer-row" id="layer-pathogen" onclick="toggleLayer('pathogen')">
+      <span class="layer-name">🔴 Pathogen Heatmap</span>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="layer-row" id="layer-soil" onclick="toggleLayer('soil')">
+      <span class="layer-name">🟤 Soil Nutrient Map</span>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="layer-row" id="layer-sun" onclick="toggleLayer('sun')">
+      <span class="layer-name">☀️ Sun/Shade Overlay</span>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="layer-row" id="layer-spread" onclick="toggleLayer('spread')">
+      <span class="layer-name">🌿 Spread Rings</span>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="layer-row" id="layer-companion" onclick="toggleLayer('companion')">
+      <span class="layer-name">🤝 Companion Alerts</span>
+      <div class="toggle-pill"></div>
+    </div>
+  </div>
 
-    <main class="flex-grow overflow-auto bg-slate-950 p-20 flex items-center justify-center relative">
-        <div id="viewport" ondragover="event.preventDefault()" ondrop="handleDrop(event)"></div>
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[700px] bg-slate-900/90 border border-white/10 p-6 rounded-3xl backdrop-blur-xl z-[200]">
-            <input type="range" min="60" max="300" step="1" value="165" id="time-scrubber" oninput="renderAll()" class="w-full accent-pink-500 bg-slate-700 h-2 rounded-lg appearance-none cursor-pointer">
-            <p class="text-center text-[9px] font-bold text-slate-400 mt-3 uppercase tracking-[0.3em]">Season Pulse — <span id="pulse-date" class="text-white">Jun 15</span></p>
-        </div>
-    </main>
+  <!-- Inventory -->
+  <div class="sidebar-section" style="flex:1">
+    <div class="section-label">Structures</div>
+    <div class="inv-grid" style="margin-bottom:0.75rem">
+      <div class="inv-item" draggable="true" ondragstart="dragBed(event,'raised',144,96)">🟫 Raised Bed</div>
+      <div class="inv-item" draggable="true" ondragstart="dragBed(event,'container',96,96)">🪴 Container</div>
+      <div class="inv-item" draggable="true" ondragstart="dragBed(event,'wall',192,24)">🧱 Heat-Wall</div>
+    </div>
+    <div class="section-label">Plant Library</div>
+    <div class="inv-grid" id="plant-inventory">
+      <div class="badge-loading">Loading library…</div>
+    </div>
+  </div>
+
+  <!-- Tactical Tags -->
+  <div class="sidebar-section">
+    <div class="section-label">Tactical Tags</div>
+    <div class="tactic-grid">
+      <button class="tactic-btn" id="btn-frost" onclick="setTactic('frost')">❄️ Frost</button>
+      <button class="tactic-btn" id="btn-wet"   onclick="setTactic('wet')">💧 Wet</button>
+      <button class="tactic-btn" id="btn-pest"  onclick="setTactic('pest')">🐛 Pest</button>
+      <button class="tactic-btn" id="btn-yield" onclick="setTactic('yield')">💰 Yield</button>
+    </div>
+  </div>
+
+  <!-- Trash -->
+  <div id="trash-bin"
+       ondragover="event.preventDefault(); this.classList.add('drag-over')"
+       ondragleave="this.classList.remove('drag-over')"
+       ondrop="onTrashDrop(event)">
+    🗑 Drop to Delete
+  </div>
+</aside>
+
+<!-- ═══════════════ MAIN ════════════════════ -->
+<div id="main-area">
+  <div id="canvas-scroll">
+    <div id="viewport"
+         ondragover="event.preventDefault()"
+         ondrop="onViewportDrop(event)">
+      <!-- grid cells injected by JS -->
+    </div>
+  </div>
+
+  <!-- Season scrubber -->
+  <div id="scrubber-bar">
+    <label>Season Pulse</label>
+    <span id="pulse-date">Mar 1</span>
+    <input type="range" id="time-scrubber" min="60" max="300" step="1" value="60" oninput="onScrub()"/>
+    <span id="season-badge">Early Spring</span>
+  </div>
+</div>
+
+<!-- ═══════════════ CONTEXT MENU ══════════════ -->
+<div id="ctx-menu">
+  <div class="ctx-item" id="ctx-info">📋 Plant Info</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctx-clone">⊕ Duplicate</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" id="ctx-delete">✕ Remove</div>
+</div>
+
+<!-- ═══════════════ SAVE INDICATOR ══════════ -->
+<div id="save-indicator">✓ Saved</div>
 
 <script>
-    const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
-    const SUPABASE_KEY = 'YOUR_KEY_HERE'; 
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ══════════════════════════════════════════════
+//  GardenHub OS — Spatial Studio v10.6
+// ══════════════════════════════════════════════
 
-    let bedData = [], plantData = [], healthScans = [], activeTacticalTool = null;
-    let heatmapActive = false, soilMapActive = false, rotationYear = 2026;
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window._supabase = sb;
 
-    function createGrid() {
-        const vp = document.getElementById('viewport');
-        for (let i = 0; i < 400; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.id = `cell-${i}`;
-            cell.onclick = () => activeTacticalTool ? applyTactical(i) : showProximityAlert(i);
-            vp.appendChild(cell);
-        }
+// ── Grid constants ────────────────────────────
+const COLS = 24, ROWS = 18, CELL = 48;
+const VP_W = COLS * CELL, VP_H = ROWS * CELL; // 1152 × 864
+
+// ── State ─────────────────────────────────────
+let bedData     = [];   // { id, type, x, y, w, h }
+let plantData   = [];   // { id, libId, name, emoji, family, spread, dtm, bloomStart, x, y, isNative, isHost }
+let healthScans = [];   // from Supabase
+let cellTags    = {};   // cellId → Set of tag strings
+let activeTactic   = null;
+let rotationYear   = 2026;
+let layers = { pathogen: false, soil: false, sun: false, spread: true, companion: true };
+let ctxTarget = null;   // currently right-clicked plant/bed id
+let isDirty   = false;
+let saveTimer  = null;
+let userId    = null;
+let simDay    = 60;
+
+// ── Plant families for rotation logic ─────────
+const FAMILY_CONFLICTS = {
+  Solanaceae: ['Solanaceae'],
+  Brassicaceae: ['Brassicaceae'],
+  Cucurbitaceae: ['Cucurbitaceae'],
+  Apiaceae: ['Apiaceae'],
+};
+// which family depletes nitrogen (heavy feeders)
+const HEAVY_FEEDERS = new Set(['Solanaceae', 'Cucurbitaceae', 'Brassicaceae']);
+// which fix nitrogen (legumes)
+const N_FIXERS      = new Set(['Fabaceae']);
+
+// ── Companion planting matrix ──────────────────
+// good[A] = [B, C] → A benefits from B and C nearby
+const COMPANIONS_GOOD = {
+  Tomato:  ['Basil','Marigold','Zinnia','Carrot','Parsley'],
+  Basil:   ['Tomato','Pepper'],
+  Marigold:['Tomato','Pepper','Eggplant','Squash'],
+  Zinnia:  ['Tomato'],
+  Carrot:  ['Tomato','Lettuce','Onion'],
+  Squash:  ['Corn','Bean','Marigold'],
+  Bean:    ['Squash','Corn','Carrot'],
+  Corn:    ['Bean','Squash'],
+  Lettuce: ['Carrot','Strawberry','Radish'],
+};
+const COMPANIONS_BAD = {
+  Tomato:  ['Fennel','Kohlrabi','Brassica'],
+  Basil:   ['Sage'],
+  Bean:    ['Onion','Fennel'],
+  Onion:   ['Bean','Pea'],
+  Fennel:  ['Tomato','Bean','Pepper'],
+};
+
+// ── Sun/shade map: simulate solar by season ───
+// Each cell gets a sun score 0–2 based on position + season
+// 0 = shade, 1 = partial, 2 = full sun
+// Fairfield CT: south-facing (high row index) = more sun
+function getSunScore(col, row, dayOfYear) {
+  // Seasonal modifier: solar angle lower in spring/fall
+  const seasonMod = Math.sin(Math.PI * (dayOfYear - 60) / 240); // 0 at day 60, peaks ~day 180
+  // Row bias: bottom rows get more direct sun (south exposure)
+  const rowBias = row / ROWS;
+  const raw = (rowBias * 0.7 + seasonMod * 0.3);
+  if (raw < 0.3) return 0;
+  if (raw < 0.6) return 1;
+  return 2;
+}
+
+// ── Grid creation ─────────────────────────────
+function createGrid() {
+  const vp = document.getElementById('viewport');
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const i = row * COLS + col;
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      cell.id = `cell-${i}`;
+      cell.style.cssText = `left:${col*CELL}px;top:${row*CELL}px;`;
+      cell.dataset.col = col;
+      cell.dataset.row = row;
+      cell.onclick  = () => onCellClick(i);
+      cell.onmouseenter = () => onCellHover(i);
+      vp.appendChild(cell);
     }
+  }
+}
 
-    function getNeighboringIds(cellId, totalCols = 20) {
-        const id = parseInt(cellId);
-        const neighbors = [];
-        const offsets = [-21, -20, -19, -1, 1, 19, 20, 21];
-        offsets.forEach(o => {
-            const nId = id + o;
-            if (nId >= 0 && nId < 400) neighbors.push(nId);
+// ── Fixed neighbor lookup (no row wrap) ──────
+function getNeighbors(cellId, radius = 1) {
+  const id  = parseInt(cellId);
+  const row = Math.floor(id / COLS);
+  const col = id % COLS;
+  const result = [];
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = row + dr, nc = col + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+      result.push(nr * COLS + nc);
+    }
+  }
+  return result;
+}
+
+// ── Cell position helpers ─────────────────────
+function cellFromXY(x, y) {
+  const col = Math.min(COLS - 1, Math.max(0, Math.floor(x / CELL)));
+  const row = Math.min(ROWS - 1, Math.max(0, Math.floor(y / CELL)));
+  return row * COLS + col;
+}
+function cellCenter(cellId) {
+  const col = cellId % COLS, row = Math.floor(cellId / COLS);
+  return { x: col * CELL + CELL/2, y: row * CELL + CELL/2 };
+}
+function plantsNearCell(cellId, radiusPx = 80) {
+  const { x, y } = cellCenter(cellId);
+  return plantData.filter(p => Math.hypot(p.x - x, p.y - y) < radiusPx);
+}
+
+// ── Layer rendering ───────────────────────────
+function clearLayerClasses() {
+  const classes = ['pathogen-high','pathogen-med','vuln-warning','soil-depleted','sun-full','sun-partial','sun-shade','rotation-warn'];
+  document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove(...classes));
+}
+
+function renderLayers() {
+  clearLayerClasses();
+
+  // Pathogen heatmap
+  if (layers.pathogen) {
+    healthScans.forEach(scan => {
+      const cid = scan.cell_id ?? (scan.spatial_id ?? null);
+      if (cid === null) return;
+      const el = document.getElementById(`cell-${cid}`);
+      if (!el) return;
+      if ((scan.severity_level || scan.severity || 0) >= 8) {
+        el.classList.add('pathogen-high');
+        getNeighbors(cid, 1).forEach(n => document.getElementById(`cell-${n}`)?.classList.add('vuln-warning'));
+      } else {
+        el.classList.add('pathogen-med');
+      }
+    });
+  }
+
+  // Soil / rotation
+  if (layers.soil || rotationYear > 2026) {
+    // Mark cells under heavy feeders as depleted
+    plantData.forEach(p => {
+      if (!HEAVY_FEEDERS.has(p.family)) return;
+      const cid = cellFromXY(p.x, p.y);
+      document.getElementById(`cell-${cid}`)?.classList.add('soil-depleted');
+      // For 2027+ show rotation conflict ring if same family as prior year
+      if (rotationYear > 2026) {
+        getNeighbors(cid, 2).forEach(n => {
+          const el = document.getElementById(`cell-${n}`);
+          if (el) el.classList.add('rotation-warn');
         });
-        return neighbors;
+      }
+    });
+  }
+
+  // Sun/shade overlay
+  if (layers.sun) {
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const i = row * COLS + col;
+        const score = getSunScore(col, row, simDay);
+        const el = document.getElementById(`cell-${i}`);
+        if (!el) continue;
+        if (score === 2) el.classList.add('sun-full');
+        else if (score === 1) el.classList.add('sun-partial');
+        else el.classList.add('sun-shade');
+      }
+    }
+  }
+
+  // Tactical tags (always on top)
+  Object.entries(cellTags).forEach(([cid, tags]) => {
+    const el = document.getElementById(`cell-${cid}`);
+    if (!el) return;
+    tags.forEach(t => el.classList.add(`tag-${t}`));
+  });
+}
+
+// ── Companion conflict detection ──────────────
+function getConflictsForPlant(plant) {
+  const bad = COMPANIONS_BAD[plant.name] || [];
+  const good = COMPANIONS_GOOD[plant.name] || [];
+  // Find plants within 2 cell radius
+  const nearby = plantData.filter(p => p.id !== plant.id && Math.hypot(p.x - plant.x, p.y - plant.y) < CELL * 2.5);
+  const conflicts = nearby.filter(p => bad.some(b => p.name.includes(b) || b.includes(p.name)));
+  const benefits  = nearby.filter(p => good.some(g => p.name.includes(g) || g.includes(p.name)));
+  return { conflicts, benefits };
+}
+
+// ── Render all placed objects ─────────────────
+function renderObjects() {
+  document.querySelectorAll('.bed-obj, .plant-obj').forEach(el => el.remove());
+  const vp = document.getElementById('viewport');
+
+  // Beds
+  bedData.forEach(bed => {
+    const el = document.createElement('div');
+    el.className = `bed-obj bed-${bed.type}`;
+    el.id = `bed-${bed.id}`;
+    // Clamp position
+    const cx = Math.max(0, Math.min(VP_W - bed.w, bed.x));
+    const cy = Math.max(0, Math.min(VP_H - bed.h, bed.y));
+    bed.x = cx; bed.y = cy;
+    el.style.cssText = `left:${cx}px;top:${cy}px;width:${bed.w}px;height:${bed.h}px;`;
+    el.textContent = bed.type;
+    el.draggable = true;
+    el.ondragstart = e => { e.stopPropagation(); dragExisting(e, 'bed', bed.id); };
+    el.oncontextmenu = e => { e.preventDefault(); openCtx(e, 'bed', bed.id); };
+
+    // Resize handle
+    const rh = document.createElement('div');
+    rh.className = 'resize-handle';
+    rh.onmousedown = e => startResize(e, bed);
+    el.appendChild(rh);
+    vp.appendChild(el);
+  });
+
+  // Plants
+  plantData.forEach(plant => {
+    const age = simDay - 120;
+    const growth = Math.max(0, Math.min(1, age / Math.max(1, plant.dtm)));
+    const blooming = simDay >= plant.bloomStart && simDay <= plant.bloomStart + 40;
+    const { conflicts, benefits } = layers.companion ? getConflictsForPlant(plant) : { conflicts:[], benefits:[] };
+    const hasConflict = conflicts.length > 0;
+
+    // Clamp position
+    plant.x = Math.max(CELL/2, Math.min(VP_W - CELL/2, plant.x));
+    plant.y = Math.max(CELL/2, Math.min(VP_H - CELL/2, plant.y));
+
+    const el = document.createElement('div');
+    el.className = `plant-obj${blooming ? ' stage-bloom' : ''}${hasConflict && layers.companion ? ' companion-conflict' : ''}${plant.isNative ? ' native-marker' : plant.isHost ? ' host-marker' : ''}`;
+    el.id = `plant-${plant.id}`;
+
+    const scale = age < -5 ? 0 : (0.25 + growth * 0.75);
+    const sz = Math.round(36 * scale);
+    el.style.cssText = `left:${plant.x - sz/2}px;top:${plant.y - sz/2}px;width:${sz}px;height:${sz}px;font-size:${Math.round(22*scale)}px;opacity:${age < -5 ? 0 : 1}`;
+
+    el.textContent = plant.emoji || '🌱';
+    el.draggable = true;
+    el.ondragstart = e => { e.stopPropagation(); dragExisting(e, 'plant', plant.id); };
+    el.oncontextmenu = e => { e.preventDefault(); openCtx(e, 'plant', plant.id); };
+
+    // Spread ring
+    if (layers.spread && plant.spread > 0) {
+      const ring = document.createElement('div');
+      const px = (plant.spread / 12) * CELL; // inches → px (1 CELL = 1 ft)
+      ring.className = `spread-ring${hasConflict && layers.companion ? ' conflict' : ''}`;
+      ring.style.cssText = `width:${px}px;height:${px}px;`;
+      el.appendChild(ring);
     }
 
-    async function toggleHeatmap(active) {
-        heatmapActive = active;
-        if (active) {
-            const { data } = await _supabase.from('plant_health_scans').select('*').eq('is_resolved', false);
-            healthScans = data || [];
-        }
-        renderAll();
+    // Tooltip
+    const tip = document.createElement('div');
+    tip.className = 'plant-tooltip';
+    const maturity = age <= 0 ? 'Not planted yet' : age >= plant.dtm ? '✓ Mature' : `${Math.round((age/plant.dtm)*100)}% grown`;
+    const compLine = hasConflict ? `⚠️ Conflict: ${conflicts.map(c=>c.name).join(', ')}` :
+                     benefits.length ? `✓ Good: ${benefits.map(b=>b.name).join(', ')}` : '';
+    tip.innerHTML = `<b>${plant.name}</b><br/>${maturity}${plant.isNative ? ' · NATIVE':plant.isHost?' · HOST':''}${compLine ? '<br/>'+compLine : ''}`;
+    el.appendChild(tip);
+
+    vp.appendChild(el);
+  });
+}
+
+// ── Full render ───────────────────────────────
+function renderAll() {
+  renderLayers();
+  renderObjects();
+  updateInsights();
+}
+
+// ── Insights panel ────────────────────────────
+function updateInsights() {
+  const heavyFeeders = plantData.filter(p => HEAVY_FEEDERS.has(p.family)).length;
+  const nFixers      = plantData.filter(p => N_FIXERS.has(p.family)).length;
+  let nitrogen = Math.max(0, 100 - (heavyFeeders * 10) + (nFixers * 5));
+  const rotationConflicts = rotationYear > 2026 ? plantData.filter(p => HEAVY_FEEDERS.has(p.family)).length : 0;
+
+  const nEl = document.getElementById('kv-nitrogen');
+  nEl.textContent = nitrogen >= 75 ? 'Optimal' : nitrogen >= 40 ? 'Moderate' : 'Depleted';
+  nEl.className   = `kv-val ${nitrogen >= 75 ? 'good' : nitrogen >= 40 ? 'warn' : 'danger'}`;
+
+  document.getElementById('kv-rotation').textContent = rotationConflicts;
+  document.getElementById('kv-rotation').className   = `kv-val ${rotationConflicts > 0 ? 'danger' : 'good'}`;
+  document.getElementById('kv-soil').textContent     = `${Math.min(100,nitrogen+5)}%`;
+  document.getElementById('kv-plants').textContent   = plantData.length;
+  document.getElementById('kv-beds').textContent     = bedData.length;
+  document.getElementById('kv-pollinators').textContent = `${plantData.filter(p=>p.isNative||p.isHost).length} native/host`;
+
+  const pestRisk = healthScans.length > 0 ? 'High' : plantData.filter(p=>p.name==='Tomato').length > 3 ? 'Medium' : 'Low';
+  const pestEl = document.getElementById('kv-pest');
+  pestEl.textContent = pestRisk;
+  pestEl.className   = `kv-val ${pestRisk==='High'?'danger':pestRisk==='Medium'?'warn':'good'}`;
+
+  // Companion alerts panel
+  const allConflicts = [];
+  if (layers.companion) {
+    plantData.forEach(p => {
+      const { conflicts } = getConflictsForPlant(p);
+      conflicts.forEach(c => allConflicts.push(`${p.name} ↔ ${c.name}`));
+    });
+  }
+  const alertEl = document.getElementById('alert-panel');
+  if (allConflicts.length > 0) {
+    const unique = [...new Set(allConflicts.map(a => a.split(' ↔ ').sort().join(' ↔ ')))];
+    alertEl.style.display = 'block';
+    alertEl.className = 'companion';
+    alertEl.innerHTML = `<b>⚠️ Companion Conflicts</b><br/>${unique.join('<br/>')}`;
+  } else if (rotationConflicts > 0) {
+    alertEl.style.display = 'block';
+    alertEl.className = '';
+    alertEl.innerHTML = `<b>🔄 Rotation Alert</b><br/>${rotationConflicts} plant(s) may conflict with ${rotationYear} soil history.`;
+  } else {
+    alertEl.style.display = 'none';
+  }
+}
+
+// ── Season scrubber ───────────────────────────
+function onScrub() {
+  simDay = parseInt(document.getElementById('time-scrubber').value);
+  const date = new Date(2026, 0, simDay);
+  document.getElementById('pulse-date').textContent =
+    date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const seasons = [[60,'Early Spring'],[120,'Spring'],[152,'Late Spring'],[182,'Summer'],[244,'Late Summer'],[274,'Fall'],[305,'Late Fall'],[335,'Winter']];
+  const s = seasons.slice().reverse().find(([d]) => simDay >= d);
+  document.getElementById('season-badge').textContent = s ? s[1] : 'Winter';
+  renderAll();
+}
+
+// ── Drag helpers ──────────────────────────────
+let _drag = {};
+
+function dragBed(e, type, w, h) {
+  _drag = { kind:'bed', isNew:true, type, w, h };
+  e.dataTransfer.effectAllowed = 'copy';
+}
+function dragPlant(e, plant) {
+  _drag = { kind:'plant', isNew:true, plant };
+  e.dataTransfer.effectAllowed = 'copy';
+}
+function dragExisting(e, kind, id) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  _drag = { kind, isNew:false, id, offX: e.clientX - rect.left, offY: e.clientY - rect.top };
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onViewportDrop(e) {
+  e.preventDefault();
+  const vp = document.getElementById('viewport');
+  const rect = vp.getBoundingClientRect();
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
+
+  if (_drag.kind === 'bed') {
+    if (_drag.isNew) {
+      const x = Math.max(0, Math.min(VP_W - _drag.w, rawX - _drag.w/2));
+      const y = Math.max(0, Math.min(VP_H - _drag.h, rawY - _drag.h/2));
+      bedData.push({ id: uid(), type: _drag.type, x, y, w: _drag.w, h: _drag.h });
+    } else {
+      const bed = bedData.find(b => b.id === _drag.id);
+      if (bed) {
+        bed.x = Math.max(0, Math.min(VP_W - bed.w, rawX - (_drag.offX||bed.w/2)));
+        bed.y = Math.max(0, Math.min(VP_H - bed.h, rawY - (_drag.offY||bed.h/2)));
+      }
     }
-
-    function toggleSoilMap(active) { soilMapActive = active; renderAll(); }
-
-    function setRotationYear(year) {
-        rotationYear = year;
-        document.getElementById('rot-2026').className = year === 2026 ? 'flex-1 py-1 bg-amber-600 text-white rounded-lg text-[10px] font-black' : 'flex-1 py-1 bg-white/5 text-slate-500 rounded-lg text-[10px] font-black';
-        document.getElementById('rot-2027').className = year === 2027 ? 'flex-1 py-1 bg-amber-600 text-white rounded-lg text-[10px] font-black' : 'flex-1 py-1 bg-white/5 text-slate-500 rounded-lg text-[10px] font-black';
-        renderAll();
+  } else if (_drag.kind === 'plant') {
+    if (_drag.isNew) {
+      const p = _drag.plant;
+      const x = Math.max(CELL/2, Math.min(VP_W - CELL/2, rawX));
+      const y = Math.max(CELL/2, Math.min(VP_H - CELL/2, rawY));
+      plantData.push({ id: uid(), libId: p.libId, name: p.name, emoji: p.emoji,
+        family: p.family, spread: p.spread, dtm: p.dtm, bloomStart: p.bloomStart,
+        isNative: p.isNative, isHost: p.isHost, x, y });
+    } else {
+      const plant = plantData.find(p => p.id === _drag.id);
+      if (plant) {
+        plant.x = Math.max(CELL/2, Math.min(VP_W - CELL/2, rawX - (_drag.offX||0)));
+        plant.y = Math.max(CELL/2, Math.min(VP_H - CELL/2, rawY - (_drag.offY||0)));
+      }
     }
+  }
+  scheduleSave();
+  renderAll();
+}
 
-    function renderSpecialLayers() {
-        document.querySelectorAll('.grid-cell').forEach(c => {
-            c.classList.remove('pathogen-high', 'vulnerability-warning', 'soil-depleted');
-        });
+// ── Trash drop ────────────────────────────────
+function onTrashDrop(e) {
+  e.preventDefault();
+  document.getElementById('trash-bin').classList.remove('drag-over');
+  if (!_drag.id) return;
+  if (_drag.kind === 'bed')   bedData   = bedData.filter(b => b.id !== _drag.id);
+  if (_drag.kind === 'plant') plantData = plantData.filter(p => p.id !== _drag.id);
+  scheduleSave();
+  renderAll();
+}
 
-        if (heatmapActive) {
-            healthScans.forEach(scan => {
-                const cell = document.getElementById(`cell-${scan.spatial_id}`);
-                if (cell) {
-                    if (scan.severity_level >= 8) cell.classList.add('pathogen-high');
-                    getNeighboringIds(scan.spatial_id).forEach(nId => {
-                        document.getElementById(`cell-${nId}`)?.classList.add('vulnerability-warning');
-                    });
-                }
-            });
-        }
+// ── Cell click (tactical tags) ─────────────────
+function onCellClick(cellId) {
+  if (!activeTactic) return;
+  if (!cellTags[cellId]) cellTags[cellId] = new Set();
+  if (cellTags[cellId].has(activeTactic)) cellTags[cellId].delete(activeTactic);
+  else cellTags[cellId].add(activeTactic);
+  renderAll();
+}
 
-        if (soilMapActive || rotationYear === 2027) {
-            plantData.forEach(p => {
-                const cellId = Math.floor(p.y / 50) * 20 + Math.floor(p.x / 50);
-                if (p.name === 'Tomato') document.getElementById(`cell-${cellId}`)?.classList.add('soil-depleted');
-            });
-        }
-    }
+// Hover — show nearby companion info
+function onCellHover(cellId) {
+  if (!layers.companion) return;
+  const nearby = plantsNearCell(cellId, CELL * 2);
+  // subtle highlight handled by CSS :hover
+}
 
-    function updateInsights() {
-        const heavyFeeders = plantData.filter(p => p.name === 'Tomato').length;
-        const nitrogen = Math.max(0, 100 - (heavyFeeders * 12));
-        const nStat = document.getElementById('nitrogen-stat');
-        
-        nStat.innerText = nitrogen < 50 ? 'Depleted' : 'Optimal';
-        nStat.className = `text-[10px] font-black uppercase tracking-widest ${nitrogen < 50 ? 'text-red-500' : 'text-green-400'}`;
+// ── Tactical mode ─────────────────────────────
+function setTactic(t) {
+  activeTactic = activeTactic === t ? null : t;
+  document.querySelectorAll('.tactic-btn').forEach(b => {
+    b.className = 'tactic-btn';
+    const id = b.id.replace('btn-','');
+    if (id === activeTactic) b.classList.add(`active-${id}`);
+  });
+}
 
-        document.getElementById('insights-list').innerHTML = `
-            <div class="flex justify-between"><span>Live Plants:</span><span class="font-bold text-white">${plantData.length}</span></div>
-            <div class="flex justify-between"><span>Soil Nitrogen:</span><span class="font-bold text-white">${nitrogen}%</span></div>
-            <div class="flex justify-between"><span>Pest Risk:</span><span class="font-bold ${healthScans.length > 0 ? 'text-red-400' : 'text-slate-500'}">${healthScans.length > 0 ? 'High' : 'Low'}</span></div>
-        `;
-    }
+// ── Year / rotation ───────────────────────────
+function setYear(y) {
+  rotationYear = y;
+  ['rot-2026','rot-2027','rot-2028'].forEach(id => {
+    const yr = parseInt(id.split('-')[1]);
+    document.getElementById(id).className = `year-btn${yr === y ? ' active' : ''}`;
+  });
+  renderAll();
+}
 
-    // Standard Drag/Drop/Render
-    function startBedDrag(e, type, w, h) { e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("type", type); e.dataTransfer.setData("w", w); e.dataTransfer.setData("h", h); e.dataTransfer.setData("isNew", "true"); }
-    function startPlantDrag(e, name, icon, spread, dtm, bloomStart) { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("name", name); e.dataTransfer.setData("icon", icon); e.dataTransfer.setData("dtm", dtm); e.dataTransfer.setData("bloomStart", bloomStart); e.dataTransfer.setData("isNew", "true"); }
+// ── Layer toggles ─────────────────────────────
+function toggleLayer(name) {
+  layers[name] = !layers[name];
+  const row = document.getElementById(`layer-${name}`);
+  if (layers[name]) row.classList.add('on');
+  else              row.classList.remove('on');
+  renderAll();
+}
 
-    function handleDrop(e) {
-        const rect = document.getElementById('viewport').getBoundingClientRect();
-        const x = e.clientX - rect.left, y = e.clientY - rect.top;
-        const itemType = e.dataTransfer.getData("itemType");
-        if (itemType === "bed") {
-            if (e.dataTransfer.getData("isNew") === "true") {
-                const w = parseInt(e.dataTransfer.getData("w")), h = parseInt(e.dataTransfer.getData("h"));
-                bedData.push({ id: Date.now(), type: e.dataTransfer.getData("type"), x: x-(w/2), y: y-(h/2), w, h });
-            } else {
-                const bed = bedData.find(b => b.id == e.dataTransfer.getData("id"));
-                if (bed) { bed.x = x-(bed.w/2); bed.y = y-(bed.h/2); }
-            }
-        } else if (itemType === "plant") {
-            if (e.dataTransfer.getData("isNew") === "true") {
-                plantData.push({ id: Date.now(), name: e.dataTransfer.getData("name"), icon: e.dataTransfer.getData("icon"), dtm: parseInt(e.dataTransfer.getData("dtm")), bloomStart: parseInt(e.dataTransfer.getData("bloomStart")), x, y });
-            } else {
-                const plant = plantData.find(p => p.id == e.dataTransfer.getData("id"));
-                if (plant) { plant.x = x; plant.y = y; }
-            }
-        }
-        renderAll();
-    }
+// Initialize default-on layers visually
+function syncLayerUI() {
+  Object.entries(layers).forEach(([name, on]) => {
+    const row = document.getElementById(`layer-${name}`);
+    if (on)  row?.classList.add('on');
+    else     row?.classList.remove('on');
+  });
+}
 
-    function renderAll() {
-        document.querySelectorAll('.bed-obj, .plant-obj').forEach(el => el.remove());
-        const simDay = parseInt(document.getElementById('time-scrubber').value);
-        const date = new Date(2026, 0); date.setDate(simDay);
-        document.getElementById('pulse-date').innerText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+// ── Bed resize ────────────────────────────────
+function startResize(e, bed) {
+  e.stopPropagation();
+  e.preventDefault();
+  const startX = e.clientX, startY = e.clientY;
+  const startW = bed.w, startH = bed.h;
 
-        renderSpecialLayers();
-        bedData.forEach(bed => {
-            const el = document.createElement('div'); el.className = `bed-obj type-${bed.type}`;
-            el.style.cssText = `left:${bed.x}px;top:${bed.y}px;width:${bed.w}px;height:${bed.h}px;`;
-            el.innerText = bed.type; el.draggable = true;
-            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "bed"); e.dataTransfer.setData("id", bed.id); e.dataTransfer.setData("isNew", "false"); };
-            document.getElementById('viewport').appendChild(el);
-        });
-        plantData.forEach(p => {
-            const age = simDay - 120;
-            const growth = Math.max(0, Math.min(1, age / p.dtm));
-            const blooming = simDay >= p.bloomStart && simDay <= (p.bloomStart + 40);
-            const el = document.createElement('div'); el.className = `plant-obj ${blooming ? 'stage-bloom' : ''}`;
-            el.style.cssText = `left:${p.x-20}px;top:${p.y-20}px; transform: scale(${0.3 + (growth * 0.7)}); opacity: ${age < -5 ? 0 : 1}`;
-            el.innerText = p.icon; el.draggable = true;
-            el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", p.id); e.dataTransfer.setData("isNew", "false"); };
-            document.getElementById('viewport').appendChild(el);
-        });
-        updateInsights();
-    }
+  function onMove(ev) {
+    bed.w = Math.max(48, Math.min(VP_W - bed.x, startW + ev.clientX - startX));
+    bed.h = Math.max(24, Math.min(VP_H - bed.y, startH + ev.clientY - startY));
+    // Live update just the element for perf
+    const el = document.getElementById(`bed-${bed.id}`);
+    if (el) { el.style.width = bed.w + 'px'; el.style.height = bed.h + 'px'; }
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    scheduleSave();
+    renderAll();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
 
-    function setTacticalMode(m) { activeTacticalTool = (activeTacticalTool === m) ? null : m; document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.remove('active-btn')); if (activeTacticalTool) document.getElementById(`btn-${m}`).classList.add('active-btn'); }
-    function applyTactical(id) { if (activeTacticalTool) { document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); updateInsights(); } }
-    function deleteItem(e) { const id = e.dataTransfer.getData("id"); bedData = bedData.filter(b => b.id != id); plantData = plantData.filter(p => p.id != id); renderAll(); }
+// ── Context menu ──────────────────────────────
+function openCtx(e, kind, id) {
+  ctxTarget = { kind, id };
+  const menu = document.getElementById('ctx-menu');
+  menu.style.display = 'block';
+  // Keep in viewport
+  const mx = Math.min(e.clientX, window.innerWidth - 160);
+  const my = Math.min(e.clientY, window.innerHeight - 120);
+  menu.style.left = mx + 'px';
+  menu.style.top  = my + 'px';
+}
+document.addEventListener('click', () => { document.getElementById('ctx-menu').style.display = 'none'; });
 
-    window.onload = () => { createGrid(); renderAll(); };
+document.getElementById('ctx-delete').onclick = () => {
+  if (!ctxTarget) return;
+  if (ctxTarget.kind === 'bed')   bedData   = bedData.filter(b => b.id !== ctxTarget.id);
+  if (ctxTarget.kind === 'plant') plantData = plantData.filter(p => p.id !== ctxTarget.id);
+  scheduleSave(); renderAll();
+};
+document.getElementById('ctx-clone').onclick = () => {
+  if (!ctxTarget) return;
+  if (ctxTarget.kind === 'plant') {
+    const orig = plantData.find(p => p.id === ctxTarget.id);
+    if (orig) { plantData.push({ ...orig, id: uid(), x: orig.x + CELL, y: orig.y + CELL }); }
+  }
+  if (ctxTarget.kind === 'bed') {
+    const orig = bedData.find(b => b.id === ctxTarget.id);
+    if (orig) { bedData.push({ ...orig, id: uid(), x: orig.x + 20, y: orig.y + 20 }); }
+  }
+  scheduleSave(); renderAll();
+};
+document.getElementById('ctx-info').onclick = () => {
+  if (!ctxTarget || ctxTarget.kind !== 'plant') return;
+  const p = plantData.find(pl => pl.id === ctxTarget.id);
+  if (!p) return;
+  const age = simDay - 120;
+  const mat = age <= 0 ? 'Not yet growing' : age >= p.dtm ? 'Fully mature' : `${Math.round((age/p.dtm)*100)}%`;
+  showAlert(`${p.emoji} ${p.name} — ${mat} · ${p.isNative?'Native ':''}${p.isHost?'Host ':''} · Family: ${p.family||'Unknown'}`, 'info');
+};
+
+// ── Alert helper ──────────────────────────────
+function showAlert(msg, type='') {
+  const el = document.getElementById('alert-panel');
+  el.style.display = 'block';
+  el.className = type;
+  el.innerHTML = msg;
+  setTimeout(() => { if (el.innerHTML === msg) el.style.display = 'none'; }, 4000);
+}
+
+// ── Persistence (Supabase) ───────────────────
+function scheduleSave() {
+  isDirty = true;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveState, 1200);
+}
+
+async function saveState() {
+  if (!userId) return;
+  const state = {
+    user_id:    userId,
+    bed_data:   JSON.stringify(bedData),
+    plant_data: JSON.stringify(plantData),
+    cell_tags:  JSON.stringify(Object.fromEntries(Object.entries(cellTags).map(([k,v])=>[k,[...v]]))),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('map_state').upsert(state, { onConflict: 'user_id' });
+  if (!error) {
+    const ind = document.getElementById('save-indicator');
+    ind.classList.add('show');
+    setTimeout(() => ind.classList.remove('show'), 1500);
+  }
+  isDirty = false;
+}
+
+async function loadState() {
+  if (!userId) return;
+  const { data } = await sb.from('map_state').select('*').eq('user_id', userId).single();
+  if (!data) return;
+  try {
+    bedData   = JSON.parse(data.bed_data   || '[]');
+    plantData = JSON.parse(data.plant_data || '[]');
+    const rawTags = JSON.parse(data.cell_tags || '{}');
+    cellTags = Object.fromEntries(Object.entries(rawTags).map(([k,v])=>[k, new Set(v)]));
+  } catch(e) { console.warn('[MapSync] State parse error:', e); }
+  renderAll();
+}
+
+// ── Load health scans ─────────────────────────
+async function loadHealthScans() {
+  const { data } = await sb.from('plant_health_scans')
+    .select('*')
+    .neq('status','resolved')
+    .order('scan_date', { ascending: false });
+  healthScans = data || [];
+}
+
+// ── Load plant inventory from garden_library ──
+async function loadInventory() {
+  const { data, error } = await sb.from('garden_library')
+    .select('id, common_name, emoji, plant_family, spread_in, maturity_days, bloom_start_day, is_native, is_host_plant')
+    .order('common_name');
+
+  const grid = document.getElementById('plant-inventory');
+
+  if (error || !data || data.length === 0) {
+    // Fallback hardcoded plants if library is empty or table has different schema
+    const fallback = [
+      { id:'t1', common_name:'Tomato',   emoji:'🍅', plant_family:'Solanaceae',  spread_in:24, maturity_days:75, bloom_start_day:130, is_native:false, is_host_plant:false },
+      { id:'z1', common_name:'Zinnia',   emoji:'🌸', plant_family:'Asteraceae',  spread_in:12, maturity_days:60, bloom_start_day:130, is_native:false, is_host_plant:true  },
+      { id:'m1', common_name:'Marigold', emoji:'🌼', plant_family:'Asteraceae',  spread_in:12, maturity_days:50, bloom_start_day:120, is_native:false, is_host_plant:true  },
+      { id:'b1', common_name:'Bean',     emoji:'🫘', plant_family:'Fabaceae',    spread_in:8,  maturity_days:55, bloom_start_day:140, is_native:false, is_host_plant:false },
+      { id:'c1', common_name:'Carrot',   emoji:'🥕', plant_family:'Apiaceae',    spread_in:4,  maturity_days:70, bloom_start_day:999, is_native:false, is_host_plant:false },
+      { id:'s1', common_name:'Squash',   emoji:'🥒', plant_family:'Cucurbitaceae',spread_in:36,maturity_days:60, bloom_start_day:135, is_native:false, is_host_plant:false },
+      { id:'p1', common_name:'Purple Coneflower', emoji:'🌺', plant_family:'Asteraceae', spread_in:18, maturity_days:365, bloom_start_day:170, is_native:true, is_host_plant:true },
+      { id:'o1', common_name:'Milkweed', emoji:'🌿', plant_family:'Apocynaceae', spread_in:24, maturity_days:365, bloom_start_day:160, is_native:true, is_host_plant:true },
+    ];
+    renderInventory(grid, fallback);
+    return;
+  }
+
+  renderInventory(grid, data);
+}
+
+function renderInventory(grid, plants) {
+  grid.innerHTML = plants.map(p => {
+    const badges = [];
+    if (p.is_native)     badges.push('<span class="badge badge-native">N</span>');
+    if (p.is_host_plant) badges.push('<span class="badge badge-host">H</span>');
+    const plant = {
+      libId: p.id, name: p.common_name, emoji: p.emoji || '🌱',
+      family: p.plant_family || 'Unknown', spread: p.spread_in || 12,
+      dtm: p.maturity_days || 60, bloomStart: p.bloom_start_day || 150,
+      isNative: p.is_native, isHost: p.is_host_plant,
+    };
+    return `<div class="inv-item" draggable="true"
+      ondragstart="dragPlant(event, ${JSON.stringify(JSON.stringify(plant)).replace(/"/g,'&quot;')})">
+      ${p.emoji||'🌱'} ${p.common_name} ${badges.join('')}
+    </div>`;
+  }).join('');
+
+  // Re-attach proper drag handlers
+  grid.querySelectorAll('.inv-item').forEach((el, i) => {
+    const p = plants[i];
+    const plant = {
+      libId: p.id, name: p.common_name, emoji: p.emoji || '🌱',
+      family: p.plant_family || 'Unknown', spread: p.spread_in || 12,
+      dtm: p.maturity_days || 60, bloomStart: p.bloom_start_day || 150,
+      isNative: p.is_native, isHost: p.is_host_plant,
+    };
+    el.ondragstart = e => { dragPlant(e, plant); };
+  });
+}
+
+// ── Auth ──────────────────────────────────────
+document.getElementById('btn-login').onclick = async () => {
+  const email = document.getElementById('a-email').value.trim();
+  const pass  = document.getElementById('a-pass').value;
+  document.getElementById('auth-err').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { document.getElementById('auth-err').textContent = error.message; return; }
+  afterAuth();
+};
+document.getElementById('btn-reg').onclick = async () => {
+  const email = document.getElementById('a-email').value.trim();
+  const pass  = document.getElementById('a-pass').value;
+  const { error } = await sb.auth.signUp({ email, password: pass });
+  if (error) { document.getElementById('auth-err').textContent = error.message; }
+  else { document.getElementById('auth-err').style.color='var(--green)'; document.getElementById('auth-err').textContent = 'Check your email to confirm.'; }
+};
+
+async function afterAuth() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  userId = user.id;
+  document.getElementById('auth-overlay').classList.add('hidden');
+  await Promise.all([loadState(), loadHealthScans(), loadInventory()]);
+  renderAll();
+}
+
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) afterAuth();
+}
+
+// ── Utility ───────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+// ── Boot ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  createGrid();
+  syncLayerUI();
+  onScrub();
+  checkSession();
+});
 </script>
 </body>
 </html>
