@@ -159,6 +159,7 @@
 <script>
     const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
     const SUPABASE_KEY = 'YOUR_KEY_HERE'; 
+    const KINDWISE_API_KEY = '6VU06odZz9AuwjToMwjWIThqChG6JoIskYqXmBzPJxg5lDczhs';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let targetDate = new Date();
@@ -178,12 +179,61 @@
         }
     }
 
+    // AI DIAGNOSTIC ENGINE
+    async function diagnoseObservation(scanId, publicImageUrl) {
+        const statusEl = document.getElementById('scan-status');
+        try {
+            const response = await fetch('https://plant.id/api/v3/identification', {
+                method: 'POST',
+                headers: { 'Api-Key': KINDWISE_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    images: [publicImageUrl],
+                    latitude: 41.76, longitude: -72.67,
+                    health: "all", similar_images: true
+                })
+            });
+
+            const result = await response.json();
+            const suggestion = result.classification.suggestions[0];
+            const health = result.health_assessment;
+            const disease = (health.diseases && health.diseases.length > 0) ? health.diseases[0] : null;
+
+            const updateData = {
+                detected_species: suggestion.name,
+                confidence_score: suggestion.probability,
+                is_healthy: health.is_healthy,
+                health_probability: health.is_healthy_probability,
+                issue_category: health.is_healthy ? 'Healthy' : (disease?.name || 'Issue Detected'),
+                severity_level: health.is_healthy ? 1 : 8,
+                ai_remediation_advice: disease?.disease_details?.description || "Stable.",
+                treatment_steps: disease?.disease_details?.treatment?.biological || ["Maintain standard care."]
+            };
+
+            await _supabase.from('plant_health_scans').update(updateData).eq('id', scanId);
+            
+            const { data: { user } } = await _supabase.auth.getUser();
+            await _supabase.from('garden_logs').insert([{
+                message: `AI identified ${updateData.detected_species}: ${updateData.issue_category}`,
+                category: 'health',
+                user_id: user.id
+            }]);
+
+            if(statusEl) {
+                statusEl.innerText = "Diagnosis Complete.";
+                setTimeout(() => { statusEl.classList.add('hidden'); renderDashboard(); }, 2000);
+            }
+        } catch (err) {
+            console.error(err);
+            if(statusEl) statusEl.innerText = "AI Analysis Failed.";
+        }
+    }
+
     async function initiateContextualCapture(event) {
         const file = event.target.files[0];
         if (!file) return;
         const statusEl = document.getElementById('scan-status');
         statusEl.classList.remove('hidden');
-        statusEl.innerText = "Syncing Spatial + Climate...";
+        statusEl.innerText = "Uploading & Analyzing...";
 
         try {
             const { data: { user } } = await _supabase.auth.getUser();
@@ -192,18 +242,25 @@
             const fileName = `${user.id}/${Date.now()}-${file.name}`;
             
             await _supabase.storage.from('plant-scans').upload(fileName, file);
-            await _supabase.from('plant_health_scans').insert([{
+            
+            const { data: scanRow } = await _supabase.from('plant_health_scans').insert([{
                 user_id: user.id,
                 spatial_id: activeSpatialContext?.id || null,
                 temp_at_scan: wData.current.temperature_2m,
                 humidity_at_scan: wData.current.relative_humidity_2m,
                 image_url: fileName,
                 scan_type: 'id'
-            }]);
+            }]).select().single();
 
-            statusEl.innerText = "Saved. Processing Diagnosis...";
-            setTimeout(() => { statusEl.classList.add('hidden'); renderDashboard(); }, 2000);
-        } catch (e) { statusEl.innerText = "Capture Error."; }
+            const { data: { publicUrl } } = _supabase.storage.from('plant-scans').getPublicUrl(fileName);
+            
+            // Kick off AI processing
+            await diagnoseObservation(scanRow.id, publicUrl);
+
+        } catch (e) { 
+            console.error(e);
+            statusEl.innerText = "Capture Error."; 
+        }
     }
 
     async function renderDashboard() {
@@ -211,8 +268,6 @@
         
         try {
             const { data: { user } } = await _supabase.auth.getUser();
-            
-            // Fetch everything for a true Memory Sync
             const [plantsRes, summaryRes, logsRes] = await Promise.all([
                 _supabase.from('garden_library').select('*'),
                 _supabase.from('garden_summary').select('*').single(),
@@ -223,16 +278,14 @@
             const summary = summaryRes.data;
             const logs = logsRes.data || [];
 
-            // 1. Clinic Alert Dot
             if (summary?.critical_issues_count > 0) document.getElementById('clinic-alert-dot').classList.remove('hidden');
+            else document.getElementById('clinic-alert-dot').classList.add('hidden');
 
-            // 2. Pollinator & Native IQ
             const totalPollinator = plants.reduce((acc, p) => acc + (p.pollinator_value || 0), 0);
             const nativeCount = plants.filter(p => p.is_native).length;
             document.getElementById('pollinator-score').innerText = totalPollinator;
             document.getElementById('native-stat').innerText = `${nativeCount} Native Species`;
 
-            // 3. Water Pulse (Canopy Formula)
             const totalWaterGallons = plants.reduce((acc, p) => {
                 const canopySqFt = (Math.PI * Math.pow((p.mature_spread_inches || 12) / 2, 2)) / 144;
                 return acc + (canopySqFt * 0.623);
@@ -240,34 +293,28 @@
             document.getElementById('water-estimate').innerText = `${totalWaterGallons} gal/wk`;
             document.getElementById('water-bar').style.width = `${Math.min(100, totalWaterGallons * 5)}%`;
 
-            // 4. Tactical Briefing & System Logs
             const feed = document.getElementById('task-feed');
             let feedHTML = '';
-            
-            // Environmental Predictions
             if (targetDate.getMonth() >= 5) {
                 feedHTML += `<div class="stat-card priority-memory"><p class="text-[9px] font-black text-purple-600 uppercase">Memory prediction</p><p class="text-sm font-bold">Aphid Window Active</p></div>`;
             }
 
-            // Recent Logs
             logs.forEach(log => {
                 feedHTML += `
                     <div class="text-[11px] p-3 border-b border-slate-100 flex justify-between items-center">
                         <span class="text-slate-400 font-bold uppercase">${log.category}</span>
-                        <span class="text-slate-700">${log.message}</span>
-                        <span class="text-[9px] text-slate-300">${new Date(log.timestamp).toLocaleDateString()}</span>
+                        <span class="text-slate-700 font-medium">${log.message}</span>
+                        <span class="text-[9px] text-slate-300 font-bold">${new Date(log.timestamp).toLocaleDateString()}</span>
                     </div>`;
             });
             feed.innerHTML = feedHTML || `<p class="text-xs text-slate-400 italic text-center">No recent activity.</p>`;
 
-            // 5. Harvest Forecast
             document.getElementById('harvest-forecast').innerHTML = plants.map(p => {
                 const maturity = calculateMaturity(p.date_planted, p.days_to_mature, targetDate);
                 const color = maturity >= 100 ? 'status-harvest' : 'bg-emerald-500';
-                return `<div class="mb-4"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>${p.name}</span><span>${maturity}%</span></div><div class="progress-bg"><div class="progress-fill ${color}" style="width: ${maturity}%"></div></div></div>`;
+                return `<div class="mb-4"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>${p.name}</span><span>${maturity}%</span></div><div class="progress-bg h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="progress-fill ${color}" style="width: ${maturity}%"></div></div></div>`;
             }).join('');
 
-            // 6. Biological Pulse Circle
             const avgMaturity = plants.length ? Math.floor(plants.reduce((acc, p) => acc + calculateMaturity(p.date_planted, p.days_to_mature, targetDate), 0) / plants.length) : 0;
             document.getElementById('health-pct').innerText = `${avgMaturity}%`;
             document.getElementById('health-ring').style.strokeDashoffset = 100 - avgMaturity;
@@ -286,11 +333,9 @@
         const name = document.getElementById('p-name').value;
         const days = document.getElementById('p-days').value;
         if(!name || !days) return;
-        
         const { data: { user } } = await _supabase.auth.getUser();
         await _supabase.from('garden_library').insert([{ name, days_to_mature: days, user_id: user.id }]);
         await _supabase.from('garden_logs').insert([{ message: `Planted ${name}`, category: 'planting', user_id: user.id }]);
-        
         closeModal();
         renderDashboard();
     }
