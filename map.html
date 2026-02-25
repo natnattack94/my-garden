@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Spatial Studio v10.0</title>
+    <title>GardenHub OS | Spatial Studio v10.5 (Full Feature)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -18,7 +18,7 @@
         .grid-cell { width: 50px; height: 50px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease; }
         .grid-cell:hover { background: rgba(255,255,255,0.08); }
         
-        /* Tactical & Memory Layers */
+        /* Tactical & Memory Layers (Preserved + New) */
         .tag-frost { background: rgba(99, 102, 241, 0.4) !important; border-color: #6366f1 !important; }
         .tag-wet { background: rgba(6, 182, 212, 0.4) !important; border-color: #06b6d4 !important; }
         .tag-pest { background: rgba(239, 68, 68, 0.4) !important; border-color: #ef4444 !important; }
@@ -43,9 +43,6 @@
         /* UI Components */
         .glass-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
         .active-btn { background: #3b82f6 !important; color: white !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-        .active-btn-pest { background: #ef4444 !important; color: white !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
-        .active-btn-yield { background: #eab308 !important; color: white !important; box-shadow: 0 0 15px rgba(234, 179, 8, 0.5); }
-        
         .timeline-track { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; position: relative; }
         .timeline-fill { height: 100%; background: #3b82f6; border-radius: 2px; }
         
@@ -58,7 +55,7 @@
     <aside class="w-[360px] bg-slate-900/90 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col gap-5 overflow-y-auto z-[100]">
         <div class="flex justify-between items-start">
             <div>
-                <h2 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Memory Engine v10.5</h2>
+                <h2 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Temporal IQ v10.5</h2>
                 <p class="text-2xl font-black text-white uppercase tracking-tighter leading-none">Spatial Studio</p>
             </div>
             <div class="text-right">
@@ -70,7 +67,7 @@
         <div class="glass-panel p-4 border-l-4 border-emerald-500">
             <h3 class="text-[9px] font-bold text-emerald-400 uppercase mb-2">Memory Insights</h3>
             <div id="insights-list" class="space-y-2 text-[10px]">
-                <p class="text-slate-400 italic">Add plants to begin tracking historical performance.</p>
+                <p class="text-slate-400 italic">Tracking real-time performance...</p>
             </div>
         </div>
 
@@ -80,6 +77,18 @@
                 <span class="text-[8px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase">Hartford Live</span>
             </div>
             <div id="growth-feed" class="space-y-3 max-h-48 overflow-y-auto pr-2"></div>
+        </div>
+
+        <div class="glass-panel p-4">
+            <h3 class="text-[9px] font-bold text-slate-400 uppercase mb-3">Crop Rotation & Soil</h3>
+            <div class="flex gap-2 mb-3">
+                <button class="flex-1 py-1 bg-amber-600/20 text-amber-500 rounded-lg text-[10px] font-black border border-amber-600/30">2026</button>
+                <button class="flex-1 py-1 bg-white/5 text-slate-500 rounded-lg text-[10px] font-black border border-white/5">2027</button>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold text-slate-300">NITROGEN HEALTH</span>
+                <span class="text-[10px] font-black text-green-400 uppercase tracking-widest">Optimal</span>
+            </div>
         </div>
 
         <div>
@@ -96,14 +105,19 @@
 
         <div class="mt-auto border-t border-white/10 pt-4 space-y-4">
             <div>
-                <h3 class="text-[9px] font-bold text-amber-500 uppercase mb-2 tracking-widest">Observations & Tactical</h3>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <button onclick="setTacticalMode('frost')" id="btn-frost" class="py-2 bg-slate-800 border border-white/10 rounded-lg text-[8px] font-black uppercase hover:border-indigo-500 transition">❄️ Frost</button>
-                    <button onclick="setTacticalMode('wet')" id="btn-wet" class="py-2 bg-slate-800 border border-white/10 rounded-lg text-[8px] font-black uppercase hover:border-cyan-500 transition">💧 Wet</button>
+                <h3 class="text-[9px] font-bold text-amber-500 uppercase mb-2 tracking-widest">Heliophysics</h3>
+                <div class="flex gap-1 mb-4">
+                    <button class="flex-1 py-1.5 bg-white/5 text-[9px] font-black rounded-md uppercase">Spring</button>
+                    <button class="flex-1 py-1.5 bg-amber-600 text-white text-[9px] font-black rounded-md uppercase shadow-lg shadow-amber-600/20">Summer</button>
+                    <button class="flex-1 py-1.5 bg-white/5 text-[9px] font-black rounded-md uppercase">Fall</button>
                 </div>
+                
+                <p class="text-[9px] font-bold text-slate-500 uppercase mb-2 tracking-widest">Observation Paint</p>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="setTacticalMode('pest')" id="btn-pest" class="py-2 bg-slate-800 border border-white/10 rounded-lg text-[8px] font-black uppercase hover:border-red-500 transition text-red-400">🐛 Pest Spot</button>
-                    <button onclick="setTacticalMode('yield')" id="btn-yield" class="py-2 bg-slate-800 border border-white/10 rounded-lg text-[8px] font-black uppercase hover:border-yellow-500 transition text-yellow-400">💰 High Yield</button>
+                    <button onclick="setTacticalMode('frost')" id="btn-frost" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:border-indigo-500 transition">❄️ Frost</button>
+                    <button onclick="setTacticalMode('wet')" id="btn-wet" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:border-cyan-500 transition">💧 Wet</button>
+                    <button onclick="setTacticalMode('pest')" id="btn-pest" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:border-red-500 transition text-red-400">🐛 Pest</button>
+                    <button onclick="setTacticalMode('yield')" id="btn-yield" class="py-2.5 bg-slate-800 border border-white/10 rounded-xl text-[9px] font-black uppercase hover:border-yellow-500 transition text-yellow-400">💰 Yield</button>
                 </div>
             </div>
 
@@ -165,12 +179,11 @@
             }
         } else if (itemType === "plant") {
             if (isNew) {
-                // INITIALIZE MEMORY LEDGER
                 plantData.push({ 
                     id: Date.now(), name: e.dataTransfer.getData("name"), 
                     icon: e.dataTransfer.getData("icon"), dtm: parseInt(e.dataTransfer.getData("dtm")),
                     bloomStart: parseInt(e.dataTransfer.getData("bloomStart")), x, y,
-                    memory: { yield: 0, health: 100, pest_encounters: 0, self_seeded: false } 
+                    memory: { yield: 0, health: 100, pest_encounters: 0 } 
                 });
             } else {
                 const id = parseInt(e.dataTransfer.getData("id")), plant = plantData.find(p => p.id === id);
@@ -182,36 +195,30 @@
 
     function setTacticalMode(m) { 
         activeTacticalTool = (activeTacticalTool === m) ? null : m; 
-        // Reset classes
-        ['frost', 'wet', 'pest', 'yield'].forEach(t => {
-            const btn = document.getElementById(`btn-${t}`);
-            btn.className = btn.className.replace(/active-btn\S*/g, '');
-            if(activeTacticalTool === t) {
-                const suffix = (t === 'pest') ? '-pest' : (t === 'yield') ? '-yield' : '';
-                btn.classList.add(`active-btn${suffix}`);
-            }
-        });
+        document.getElementById('btn-frost').classList.toggle('active-btn', activeTacticalTool === 'frost');
+        document.getElementById('btn-wet').classList.toggle('active-btn', activeTacticalTool === 'wet');
+        document.getElementById('btn-pest').classList.toggle('active-btn', activeTacticalTool === 'pest');
+        document.getElementById('btn-yield').classList.toggle('active-btn', activeTacticalTool === 'yield');
     }
 
     function applyTactical(id) { 
         if (activeTacticalTool) {
             document.getElementById(`cell-${id}`).classList.toggle(`tag-${activeTacticalTool}`); 
-            updateInsightsFromMap();
+            updateInsights();
         }
     }
 
-    function updateInsightsFromMap() {
+    function updateInsights() {
         const insightDiv = document.getElementById('insights-list');
-        const pestCells = document.querySelectorAll('.tag-pest').length;
-        const yieldCells = document.querySelectorAll('.tag-yield').length;
+        const pCount = plantData.length;
+        const pests = document.querySelectorAll('.tag-pest').length;
+        const yields = document.querySelectorAll('.tag-yield').length;
         
-        if (pestCells > 0 || yieldCells > 0 || plantData.length > 0) {
-            insightDiv.innerHTML = `
-                <div class="flex justify-between"><span>Active Plants:</span><span class="font-bold">${plantData.length}</span></div>
-                <div class="flex justify-between ${pestCells > 0 ? 'text-red-400' : ''}"><span>Pest Pressure:</span><span>${pestCells > 0 ? 'Elevated' : 'Low'}</span></div>
-                <div class="flex justify-between ${yieldCells > 0 ? 'text-yellow-400' : ''}"><span>Yield Hotspots:</span><span>${yieldCells} Cells</span></div>
-            `;
-        }
+        insightDiv.innerHTML = `
+            <div class="flex justify-between"><span>Live Instances:</span><span class="font-bold text-white">${pCount}</span></div>
+            <div class="flex justify-between ${pests > 0 ? 'text-red-400' : 'text-slate-500'}"><span>Pest Risk:</span><span>${pests > 0 ? 'High' : 'None'}</span></div>
+            <div class="flex justify-between ${yields > 0 ? 'text-yellow-400' : 'text-slate-500'}"><span>Efficiency:</span><span>+${yields * 2}%</span></div>
+        `;
     }
 
     function renderAll() {
@@ -241,7 +248,6 @@
             el.className = `plant-obj ${isBlooming ? 'stage-bloom' : ''}`;
             el.style.cssText = `left:${p.x-20}px;top:${p.y-20}px; transform: scale(${0.3 + (growthScale * 0.7)}); opacity: ${age < -5 ? 0 : 1}`;
             el.innerText = p.icon; el.draggable = true;
-            el.title = `${p.name} - Memory Logged`; // Instance-level tooltip
             el.ondragstart = (e) => { e.dataTransfer.setData("itemType", "plant"); e.dataTransfer.setData("id", p.id); e.dataTransfer.setData("isNew", "false"); };
             document.getElementById('viewport').appendChild(el);
 
@@ -255,7 +261,7 @@
                     <div class="timeline-track"><div class="timeline-fill" style="width:${progress}%; background:${isBlooming ? '#ec4899' : '#3b82f6'}"></div></div>
                 </div>`;
         });
-        updateInsightsFromMap();
+        updateInsights();
     }
 
     function deleteItem(e) { 
