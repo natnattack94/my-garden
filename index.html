@@ -33,6 +33,10 @@
         <nav class="flex flex-wrap gap-2">
             <a href="map.html" class="bg-white hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 shadow-sm text-slate-600">🗺️ Map View</a>
             <a href="insights.html" class="bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200 shadow-sm text-blue-700">🧠 Memory Engine</a>
+            <a href="clinic.html" class="relative bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl text-xs font-bold border border-red-200 shadow-sm text-red-700">
+                🏥 Plant Clinic
+                <span id="clinic-alert-dot" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full hidden"></span>
+            </a>
             <button onclick="handleLogout()" class="bg-slate-100 hover:bg-red-50 hover:text-red-500 px-4 py-2 rounded-xl text-xs font-bold text-slate-400">🚪 Logout</button>
         </nav>
     </header>
@@ -152,14 +156,12 @@
 
 <script>
     const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
-    const SUPABASE_KEY = 'YOUR_KEY_HERE'; // Replace with key
+    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY_HERE'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Global State for Memory Engine
-    let targetDate = new Date(); // Temporal Scrubber value
+    let targetDate = new Date();
     let activeSpatialContext = JSON.parse(localStorage.getItem('garden_spatial_context')) || null;
 
-    // Initialization
     function init() {
         document.getElementById('temporal-scrubber').valueAsDate = targetDate;
         updateContextUI();
@@ -184,21 +186,13 @@
 
         try {
             const { data: { user } } = await _supabase.auth.getUser();
-            
-            // 1. Fetch Local Weather (Hartford)
             const weatherRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.76&longitude=-72.67&current=temperature_2m,relative_humidity_2m');
             const wData = await weatherRes.json();
 
-            // 2. Upload Binary to Supabase Storage
             const fileName = `${user.id}/${Date.now()}-${file.name}`;
-            const { data: uploadData, error: uploadError } = await _supabase.storage
-                .from('plant-scans')
-                .upload(fileName, file);
+            await _supabase.storage.from('plant-scans').upload(fileName, file);
 
-            if (uploadError) throw uploadError;
-
-            // 3. Log to Diagnostic Table
-            const { error: logError } = await _supabase.from('plant_health_scans').insert([{
+            await _supabase.from('plant_health_scans').insert([{
                 user_id: user.id,
                 spatial_id: activeSpatialContext?.id || null,
                 temp_at_scan: wData.current.temperature_2m,
@@ -207,18 +201,12 @@
                 scan_type: 'id'
             }]);
 
-            statusEl.innerText = "Observation Saved to Memory.";
+            statusEl.innerText = "Observation Saved. Check Clinic.";
             setTimeout(() => statusEl.classList.add('hidden'), 2000);
             
         } catch (e) {
-            console.error("Capture Error:", e);
-            statusEl.innerText = "Error: Memory Log Failed.";
+            statusEl.innerText = "Capture Error.";
         }
-    }
-
-    function updateTemporalPulse(val) {
-        targetDate = new Date(val);
-        renderDashboard(); // Re-calculate maturity and risk for the new date
     }
 
     async function renderDashboard() {
@@ -227,37 +215,27 @@
         try {
             const { data: { user } } = await _supabase.auth.getUser();
             const { data: plants } = await _supabase.from('garden_library').select('*');
-            if(!plants) return;
+            const { data: summary } = await _supabase.from('garden_summary').select('*').single();
 
-            // Briefing Logic
-            const feed = document.getElementById('task-feed');
-            let alerts = '';
-            
-            // Memory Prediction: Aphid Window
-            if (targetDate.getMonth() >= 5) { // Typical June start for pest windows
-                 alerts += `
-                    <div class="stat-card priority-memory">
-                        <p class="text-[9px] font-black text-purple-600 uppercase tracking-widest">Memory prediction</p>
-                        <p class="text-sm font-bold">Aphid Window Active</p>
-                        <p class="text-[10px] text-slate-500 italic">2024-2025 logs show high activity for this period.</p>
-                    </div>`;
+            // ALERT DOT LOGIC
+            if (summary && summary.critical_issues_count > 0) {
+                document.getElementById('clinic-alert-dot').classList.remove('hidden');
             }
 
-            feed.innerHTML = alerts || `<p class="text-xs text-slate-400 italic text-center">No critical alerts for this period.</p>`;
+            const feed = document.getElementById('task-feed');
+            let alerts = '';
+            if (targetDate.getMonth() >= 5) {
+                 alerts += `<div class="stat-card priority-memory"><p class="text-[9px] font-black text-purple-600 uppercase tracking-widest">Memory prediction</p><p class="text-sm font-bold">Aphid Window Active</p></div>`;
+            }
+            feed.innerHTML = alerts || `<p class="text-xs text-slate-400 italic text-center">No critical alerts.</p>`;
 
-            // Maturity logic using targetDate instead of current Date
-            document.getElementById('harvest-forecast').innerHTML = plants.map(p => {
+            document.getElementById('harvest-forecast').innerHTML = plants?.map(p => {
                 const maturity = calculateMaturity(p.date_planted, p.days_to_mature, targetDate);
                 const color = maturity >= 100 ? 'status-harvest' : 'bg-emerald-500';
-                return `
-                    <div class="mb-4">
-                        <div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>${p.name}</span><span>${maturity}%</span></div>
-                        <div class="progress-bg"><div class="progress-fill ${color}" style="width: ${maturity}%"></div></div>
-                    </div>`;
-            }).join('');
+                return `<div class="mb-4"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>${p.name}</span><span>${maturity}%</span></div><div class="progress-bg"><div class="progress-fill ${color}" style="width: ${maturity}%"></div></div></div>`;
+            }).join('') || '';
 
-            // Pulse Sync
-            const avgMaturity = plants.length ? Math.floor(plants.reduce((acc, p) => acc + calculateMaturity(p.date_planted, p.days_to_mature, targetDate), 0) / plants.length) : 0;
+            const avgMaturity = plants?.length ? Math.floor(plants.reduce((acc, p) => acc + calculateMaturity(p.date_planted, p.days_to_mature, targetDate), 0) / plants.length) : 0;
             document.getElementById('health-pct').innerText = `${avgMaturity}%`;
             document.getElementById('health-ring').style.strokeDashoffset = 100 - avgMaturity;
             document.getElementById('health-label').innerText = avgMaturity > 90 ? 'Harvest Ready' : 'Active Growth';
@@ -271,7 +249,7 @@
         return Math.min(100, Math.max(0, Math.floor((diff / days) * 100)));
     }
 
-    // Modal & Auth Logic (Unchanged from original structure)
+    function updateTemporalPulse(val) { targetDate = new Date(val); renderDashboard(); }
     function openModal() { document.getElementById('add-modal').classList.remove('hidden'); }
     function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
     
@@ -282,13 +260,6 @@
     });
 
     async function handleLogout() { await _supabase.auth.signOut(); location.reload(); }
-    async function handleSignIn() {
-        const { error } = await _supabase.auth.signInWithPassword({
-            email: document.getElementById('auth-email').value,
-            password: document.getElementById('auth-password').value
-        });
-        if (error) document.getElementById('auth-error').innerText = error.message;
-    }
 </script>
 </body>
 </html>
