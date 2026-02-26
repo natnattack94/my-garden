@@ -278,6 +278,68 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 .export-btn:hover { opacity: 0.8; }
 
 .empty-state { text-align: center; padding: 2.5rem; font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
+
+/* ── Resilience Score ────────────────────── */
+.resilience-factor {
+  display: flex; align-items: center; gap: 0.65rem;
+}
+.rf-label {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); width: 130px; flex-shrink: 0;
+}
+.rf-track {
+  flex: 1; height: 5px; background: var(--surface3); overflow: hidden;
+}
+.rf-fill {
+  height: 100%; transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.rf-val {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--text);
+  width: 30px; text-align: right; flex-shrink: 0;
+}
+
+/* ── Feedback Loop cards ─────────────────── */
+.fb-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 0.85rem 1rem; margin-bottom: 0.6rem;
+  animation: slideIn 0.25s ease both;
+}
+@keyframes slideIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
+.fb-plant  { font-family: var(--serif); font-size: 0.95rem; font-style: italic; color: var(--text); }
+.fb-issue  { font-family: var(--mono);  font-size: 0.55rem; color: var(--muted); letter-spacing:0.08em; margin-top:0.15rem; }
+.fb-steps  { margin-top: 0.65rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.fb-step {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.72rem; color: var(--muted); padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(26,46,28,0.5); cursor: default;
+}
+.fb-step:last-child { border-bottom: none; }
+.fb-step-check {
+  width: 14px; height: 14px; border: 1px solid var(--border2);
+  flex-shrink: 0; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: all 0.15s; background: var(--surface);
+}
+.fb-step-check:hover { border-color: var(--green); }
+.fb-step-check.done  { background: var(--green); border-color: var(--green); color: var(--bg); font-size: 0.6rem; }
+.fb-step-check.done::after { content: '✓'; }
+.fb-step.completed { color: var(--green-dim); text-decoration: line-through; }
+.fb-resolve-btn {
+  margin-top: 0.75rem; width: 100%; font-family: var(--mono);
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.45rem; background: transparent; border: 1px solid var(--green-dim);
+  color: var(--green-dim); cursor: pointer; transition: all 0.15s;
+}
+.fb-resolve-btn:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+.fb-resolve-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.fb-resolved-badge {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
+  color: var(--green); border: 1px solid var(--green-dim); padding: 0.3rem 0.65rem;
+  margin-top: 0.6rem; display: inline-block;
+}
+.fb-penalty-note {
+  font-family: var(--mono); font-size: 0.52rem; color: var(--muted); margin-top: 0.4rem;
+}
+
 </style>
 </head>
 <body>
@@ -418,6 +480,58 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
     </div>
   </div>
 
+
+  <!-- ═══ RESILIENCE SCORE ═══ -->
+  <div class="sec-head"><h2>// Resilience Score — Garden Health Index</h2></div>
+  <div class="chart-panel" id="resilience-panel" style="padding:1.5rem;">
+    <div style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
+
+      <!-- Score gauge -->
+      <div style="flex-shrink:0;text-align:center;position:relative;width:160px;">
+        <canvas id="chart-resilience" width="160" height="160"></canvas>
+        <div id="resilience-score-val" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--serif);font-size:2.4rem;font-style:italic;color:var(--green);line-height:1;">--</div>
+        <div style="font-family:var(--mono);font-size:0.48rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-top:0.4rem;">RESILIENCE SCORE</div>
+      </div>
+
+      <!-- Score breakdown -->
+      <div style="flex:1;min-width:220px;">
+        <div style="font-family:var(--serif);font-size:1.3rem;font-style:italic;color:var(--text);margin-bottom:0.75rem;" id="resilience-label">Computing…</div>
+        <div id="resilience-factors" style="display:flex;flex-direction:column;gap:0.55rem;"></div>
+      </div>
+
+      <!-- Score history sparkline -->
+      <div style="flex-shrink:0;width:200px;">
+        <div class="cp-eye" style="margin-bottom:0.5rem;">Score Trend // Last 7 Snapshots</div>
+        <div class="chart-wrap" style="height:80px;"><canvas id="chart-resilience-trend"></canvas></div>
+        <div id="resilience-trend-note" style="font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:0.4rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FEEDBACK LOOP + YIELD SIGNATURE ═══ -->
+  <div class="sec-head"><h2>// Feedback Loop — Remediation Engine</h2></div>
+  <div class="chart-2col">
+
+    <!-- Active scans with remediation steps -->
+    <div class="chart-panel" style="padding:1.25rem;">
+      <div class="cp-eye">Clinic // Active Issues</div>
+      <div class="cp-title">Mark Remediation Success → Adjusts Yield Signature</div>
+      <div id="feedback-loop-wrap" style="margin-top:0.75rem;">
+        <div class="empty-state">Loading active health issues…</div>
+      </div>
+    </div>
+
+    <!-- Yield Signature chart -->
+    <div class="chart-panel">
+      <div class="cp-eye">Feedback Loop // Yield Signature</div>
+      <div class="cp-title">Harvest Forecast — Base vs Effective (with Penalties)</div>
+      <div class="lb" id="lb-yield"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-yield"></canvas></div>
+      <div class="insight-box" id="insight-yield" style="display:none;margin-top:0.75rem;"></div>
+    </div>
+
+  </div>
+
   <!-- Maturity + Penalty charts -->
   <div class="sec-head"><h2>// Biological Pulse — Maturity & Feedback Loop</h2></div>
   <div class="chart-2col">
@@ -547,6 +661,9 @@ async function boot() {
   await Promise.all([
     loadKPIs(),
     loadSpotlights(),
+    loadResilienceScore(),
+    loadFeedbackLoop(),
+    loadYieldSignature(),
     loadDiseaseChart(),
     loadSeverityChart(),
     loadScanTable(),
@@ -981,6 +1098,435 @@ async function buildConsultant() {
   // FIX BUG-04: render as proper HTML (no markdown)
   $('consultant-text').innerHTML = insights.map(i=>`<p style="margin-bottom:0.5rem;">→ ${i}</p>`).join('');
 }
+
+
+// ══════════════════════════════════════════════
+//  RESILIENCE SCORE ENGINE
+//  Score 0-100 from 4 weighted factors:
+//  - Health factor:   30pts  (incident rate last 90d)
+//  - Recovery factor: 25pts  (penalty burden)
+//  - Ecosystem factor:25pts  (native/host ratio)
+//  - Activity factor: 20pts  (logging consistency)
+// ══════════════════════════════════════════════
+
+let _resilienceHistory = []; // in-session snapshots for sparkline
+
+async function loadResilienceScore() {
+  const past90 = daysAgo(90);
+
+  const [plantRes, scanRes, logRes] = await Promise.all([
+    sb.from('garden_library').select('id,is_native,is_host_plant,recovery_days,maturity_days,planted_date,common_name'),
+    sb.from('plant_health_scans').select('scan_date,severity,status').gte('scan_date', past90),
+    sb.from('garden_logs').select('log_date').gte('log_date', past90),
+  ]);
+
+  const plants = plantRes.data || [];
+  const scans  = scanRes.data  || [];
+  const logs   = logRes.data   || [];
+
+  if (!plants.length) {
+    $('resilience-score-val').textContent = '—';
+    $('resilience-label').textContent = 'Add plants to your library to compute a Resilience Score.';
+    return;
+  }
+
+  // ── Factor 1: Health (30pts) ──
+  // Fewer active high/critical incidents = better
+  const activeHigh = scans.filter(s => s.status !== 'resolved' && ['high','critical'].includes(s.severity)).length;
+  const healthRaw  = Math.max(0, 1 - (activeHigh / Math.max(plants.length, 1)));
+  const healthPts  = Math.round(healthRaw * 30);
+
+  // ── Factor 2: Recovery burden (25pts) ──
+  // Lower average penalty ratio = better
+  const avgPenaltyRatio = plants.reduce((acc, p) => {
+    if (!p.maturity_days) return acc;
+    return acc + ((p.recovery_days||0) / p.maturity_days);
+  }, 0) / plants.length;
+  const recoveryRaw = Math.max(0, 1 - Math.min(1, avgPenaltyRatio * 3));
+  const recoveryPts = Math.round(recoveryRaw * 25);
+
+  // ── Factor 3: Ecosystem (25pts) ──
+  const ecoCount = plants.filter(p => p.is_native || p.is_host_plant).length;
+  const ecoRatio = ecoCount / plants.length;
+  const ecoPts   = Math.round(Math.min(1, ecoRatio * 1.5) * 25);
+
+  // ── Factor 4: Activity consistency (20pts) ──
+  // Unique log days in past 90d vs expected (every 3 days = 30 sessions)
+  const uniqueDays   = new Set(logs.map(l => l.log_date)).size;
+  const activityRaw  = Math.min(1, uniqueDays / 30);
+  const activityPts  = Math.round(activityRaw * 20);
+
+  const total = healthPts + recoveryPts + ecoPts + activityPts;
+
+  // ── Render score ──
+  $('resilience-score-val').textContent = total;
+
+  const label = total >= 85 ? 'Thriving Ecosystem'
+    : total >= 70 ? 'Healthy Garden'
+    : total >= 50 ? 'Developing Resilience'
+    : total >= 30 ? 'Needs Attention'
+    : 'Under Stress';
+  const labelColor = total >= 70 ? 'var(--green)' : total >= 50 ? 'var(--amber)' : 'var(--red)';
+  $('resilience-label').textContent = label;
+  $('resilience-label').style.color = labelColor;
+  $('resilience-score-val').style.color = labelColor;
+
+  // ── Factor bars ──
+  const factors = [
+    { label:'Health',      pts:healthPts,   max:30, color:'#3ddc6e' },
+    { label:'Recovery',    pts:recoveryPts, max:25, color:'#f5a623' },
+    { label:'Ecosystem',   pts:ecoPts,      max:25, color:'#5ba4f5' },
+    { label:'Consistency', pts:activityPts, max:20, color:'#a78bfa' },
+  ];
+  $('resilience-factors').innerHTML = factors.map(f => `
+    <div class="resilience-factor">
+      <div class="rf-label">${f.label}</div>
+      <div class="rf-track"><div class="rf-fill" style="width:${Math.round((f.pts/f.max)*100)}%;background:${f.color};"></div></div>
+      <div class="rf-val">${f.pts}/${f.max}</div>
+    </div>`).join('');
+
+  // ── Gauge chart (doughnut arc) ──
+  const gaugeColor = total >= 70 ? '#3ddc6e' : total >= 50 ? '#f5a623' : '#f05252';
+  if (charts['chart-resilience']) { charts['chart-resilience'].destroy(); delete charts['chart-resilience']; }
+  mkChart('chart-resilience', {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [total, 100 - total],
+        backgroundColor: [gaugeColor, 'rgba(26,46,28,0.3)'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: false, cutout: '72%',
+      rotation: -90, circumference: 180,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      animation: { duration: 1200, easing: 'easeOutQuart' },
+    }
+  });
+
+  // ── Sparkline (store in session) ──
+  _resilienceHistory.push(total);
+  if (_resilienceHistory.length > 7) _resilienceHistory.shift();
+  buildResilienceTrend();
+}
+
+function buildResilienceTrend() {
+  const h = _resilienceHistory;
+  if (h.length < 2) {
+    $('resilience-trend-note').textContent = 'Reload to build trend history.';
+    return;
+  }
+  const delta = h[h.length-1] - h[0];
+  $('resilience-trend-note').textContent = delta > 0 ? `↑ +${delta} pts trend` : delta < 0 ? `↓ ${delta} pts trend` : '→ Stable';
+  $('resilience-trend-note').style.color = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--muted)';
+
+  if (charts['chart-resilience-trend']) { charts['chart-resilience-trend'].destroy(); delete charts['chart-resilience-trend']; }
+  mkChart('chart-resilience-trend', {
+    type: 'line',
+    data: {
+      labels: h.map((_,i) => i+1),
+      datasets: [{ data: h, borderColor: '#3ddc6e', backgroundColor: 'rgba(61,220,110,0.1)', tension: 0.4, pointRadius: 3, borderWidth: 1.5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  YIELD SIGNATURE CHART
+//  Forward projection of harvest dates for all
+//  plants with planted_date + maturity_days.
+//  Shows two curves: base (no penalty) vs
+//  effective (with accumulated recovery_days).
+//  X-axis = future dates, Y-axis = % of plants
+//  that will be ready by that date.
+// ══════════════════════════════════════════════
+
+async function loadYieldSignature() {
+  const { data, error } = await sb.from('garden_library')
+    .select('common_name,planted_date,maturity_days,recovery_days')
+    .not('planted_date', 'is', null)
+    .not('maturity_days', 'is', null);
+
+  done('yield');
+
+  const plants = (data||[]).filter(p => p.planted_date && p.maturity_days);
+
+  if (!plants.length) {
+    $('chart-yield').closest('.chart-wrap').innerHTML =
+      '<div class="empty-state">Add plants with a planted date to see Yield Signature.</div>';
+    return;
+  }
+
+  // Build cumulative harvest curves over next 365 days
+  const today    = new Date();
+  const horizon  = 180; // show 180-day window
+  const labels   = [];
+  const baseData = [];
+  const effData  = [];
+
+  for (let d = 0; d <= horizon; d += 3) {
+    const futureDate = new Date(today.getTime() + d * 86400000);
+    labels.push(futureDate.toLocaleDateString('en-US', { month:'short', day:'numeric' }));
+
+    let baseReady = 0, effReady = 0;
+    plants.forEach(p => {
+      const planted  = new Date(p.planted_date + 'T12:00:00');
+      const baseDays = p.maturity_days;
+      const effDays  = p.maturity_days + (p.recovery_days || 0);
+      const baseHarvest = new Date(planted.getTime() + baseDays * 86400000);
+      const effHarvest  = new Date(planted.getTime() + effDays  * 86400000);
+      if (baseHarvest <= futureDate) baseReady++;
+      if (effHarvest  <= futureDate) effReady++;
+    });
+
+    baseData.push(Math.round((baseReady / plants.length) * 100));
+    effData.push(Math.round((effReady  / plants.length) * 100));
+  }
+
+  // Downsample labels for readability
+  const step = Math.ceil(labels.length / 8);
+  const sparseLabels = labels.map((l, i) => i % step === 0 ? l : '');
+
+  mkChart('chart-yield', {
+    type: 'line',
+    data: {
+      labels: sparseLabels,
+      datasets: [
+        {
+          label: 'Base (no penalty)',
+          data: baseData,
+          borderColor: '#3ddc6e',
+          backgroundColor: 'rgba(61,220,110,0.08)',
+          tension: 0.5, pointRadius: 0, borderWidth: 2,
+        },
+        {
+          label: 'Effective (with penalties)',
+          data: effData,
+          borderColor: '#f05252',
+          backgroundColor: 'rgba(240,82,82,0.06)',
+          tension: 0.5, pointRadius: 0, borderWidth: 2,
+          borderDash: [4, 3],
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { grid: { color: '#1a2e1c' }, ticks: { maxRotation: 0 } },
+        y: {
+          grid: { color: '#1a2e1c' },
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%' },
+          title: { display: true, text: '% Plants Ready', color: '#4d7050' },
+        }
+      },
+      plugins: { legend: { display: true, labels: { boxWidth: 10, color: '#4d7050' } } },
+      animation: { duration: 1000, easing: 'easeOutQuart' },
+    }
+  });
+
+  // Insight: calculate how much penalty is shifting the 50% mark
+  const base50  = baseData.findIndex(v => v >= 50);
+  const eff50   = effData.findIndex(v => v >= 50);
+  const shiftDays = base50 >= 0 && eff50 >= 0 ? (eff50 - base50) * 3 : null;
+  const totalPenalty = plants.reduce((acc, p) => acc + (p.recovery_days || 0), 0);
+
+  const insightEl = $('insight-yield');
+  insightEl.style.display = 'block';
+  if (shiftDays !== null && shiftDays > 0) {
+    insightEl.className = 'insight-box warn';
+    insightEl.textContent = `⚠️ Recovery penalties are pushing your 50%-harvest milestone out by ~${shiftDays} days. Total accumulated penalty: ${totalPenalty}d across ${plants.length} plants. Resolving active Clinic issues will slow further accumulation.`;
+  } else if (totalPenalty === 0) {
+    insightEl.className = 'insight-box';
+    insightEl.textContent = `✅ No recovery penalties accumulated. Base and effective yield curves are identical — your garden is operating at full efficiency.`;
+  } else {
+    insightEl.className = 'insight-box';
+    insightEl.textContent = `📊 ${totalPenalty}d total penalty across ${plants.length} plants. Harvest curves are slightly offset but within normal range.`;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  FEEDBACK LOOP — REMEDIATION ENGINE
+//  Loads active health scans with remediation
+//  steps. Checking a step marks progress.
+//  "Mark Resolved" button:
+//    1. Updates scan status → 'resolved'
+//    2. Adds recovery_days_added to plant's
+//       recovery_days in garden_library
+//    3. Re-renders maturity + yield charts
+//    4. Re-computes Resilience Score
+// ══════════════════════════════════════════════
+
+const REMEDIATION_STEPS = {
+  'Pest':        ['Remove affected foliage', 'Apply neem oil spray', 'Install sticky traps', 'Monitor weekly for 3 weeks'],
+  'Fungal':      ['Improve air circulation', 'Apply copper fungicide', 'Remove infected tissue', 'Avoid overhead watering'],
+  'Bacterial':   ['Remove infected plant material', 'Sterilize tools between plants', 'Apply copper-based bactericide', 'Improve drainage'],
+  'Viral':       ['Remove and destroy infected plants', 'Control aphid vectors', 'Disinfect tools', 'Plant resistant varieties next season'],
+  'Nutrient':    ['Soil test to confirm deficiency', 'Apply targeted amendment', 'Check soil pH', 'Foliar feed if acute'],
+  'Drought':     ['Deep water immediately', 'Add 2" mulch layer', 'Reduce sun exposure temporarily', 'Monitor soil moisture daily'],
+  'Overwatering':['Allow soil to dry between waterings', 'Improve drainage', 'Check for root rot', 'Reduce watering frequency'],
+  'Frost':       ['Remove damaged tissue after thaw', 'Apply floating row cover', 'Water soil before next frost', 'Mulch root zone'],
+  'Mechanical':  ['Stake or support damaged stems', 'Prune clean at node', 'Apply wound sealant if needed', 'Monitor for secondary infection'],
+  'Default':     ['Document symptoms with photo', 'Isolate plant if possible', 'Monitor for 48 hours', 'Consult Clinic for diagnosis'],
+};
+
+// Track which steps are checked per scan (in-memory, keyed by scan row id)
+const _stepState = {};
+
+async function loadFeedbackLoop() {
+  const { data, error } = await sb.from('plant_health_scans')
+    .select('id,plant_name,issue_type,severity,status,recovery_days_added,scan_date,plant_id')
+    .neq('status', 'resolved')
+    .order('scan_date', { ascending: false })
+    .limit(10);
+
+  const scans = data || [];
+
+  if (!scans.length) {
+    $('feedback-loop-wrap').innerHTML = `
+      <div class="empty-state" style="padding:1.5rem;text-align:center;">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem;">✅</div>
+        <div>No active health issues. Your garden is clear.</div>
+        <div style="margin-top:0.4rem;font-size:0.65rem;color:var(--muted);">New issues logged in the Clinic will appear here.</div>
+      </div>`;
+    return;
+  }
+
+  $('feedback-loop-wrap').innerHTML = scans.map((s, si) => {
+    const steps = REMEDIATION_STEPS[s.issue_type] || REMEDIATION_STEPS['Default'];
+    if (!_stepState[s.id]) _stepState[s.id] = new Array(steps.length).fill(false);
+
+    const stepsHtml = steps.map((step, i) => `
+      <div class="fb-step" id="fbstep-${s.id}-${i}">
+        <div class="fb-step-check" id="fbcheck-${s.id}-${i}"
+          onclick="toggleStep('${s.id}', ${i}, ${steps.length})"
+          title="Mark complete"></div>
+        <span>${step}</span>
+      </div>`).join('');
+
+    const sevColor = { low:'var(--green-dim)', medium:'var(--amber)', high:'#f05252', critical:'#991b1b' }[s.severity] || 'var(--muted)';
+
+    return `
+      <div class="fb-card" id="fbcard-${s.id}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+          <div>
+            <div class="fb-plant">${s.plant_name || 'Unknown Plant'}</div>
+            <div class="fb-issue">
+              <span style="color:${sevColor};text-transform:uppercase;">${s.severity||'?'}</span>
+              <span style="margin:0 0.3rem;">·</span>${s.issue_type||'Unknown issue'}
+              <span style="margin:0 0.3rem;">·</span>${s.scan_date||''}
+            </div>
+          </div>
+          <div style="font-family:var(--mono);font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;text-align:right;flex-shrink:0;">
+            SCAN #${si+1}
+          </div>
+        </div>
+        <div class="fb-steps">${stepsHtml}</div>
+        <button class="fb-resolve-btn" id="fbbtn-${s.id}"
+          onclick="resolveFromFeedback('${s.id}', '${s.plant_id||''}', this)">
+          Mark Remediation Successful → Apply Recovery Penalty
+        </button>
+        <div class="fb-penalty-note">Resolving will add <strong>5 recovery days</strong> to this plant's maturity window and update the Yield Signature.</div>
+      </div>`;
+  }).join('');
+}
+
+function toggleStep(scanId, stepIdx, totalSteps) {
+  _stepState[scanId][stepIdx] = !_stepState[scanId][stepIdx];
+  const check = $(`fbcheck-${scanId}-${stepIdx}`);
+  const row   = $(`fbstep-${scanId}-${stepIdx}`);
+  check.classList.toggle('done',   _stepState[scanId][stepIdx]);
+  row.classList.toggle('completed', _stepState[scanId][stepIdx]);
+
+  // Enable resolve button only when all steps checked
+  const allDone = _stepState[scanId].every(Boolean);
+  const btn = $(`fbbtn-${scanId}`);
+  if (btn) {
+    btn.disabled = !allDone;
+    btn.style.borderColor = allDone ? 'var(--green)' : '';
+    btn.style.color       = allDone ? 'var(--green)'  : '';
+  }
+}
+
+async function resolveFromFeedback(scanId, plantId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Applying…';
+
+  const PENALTY = 5; // recovery days per resolved scan
+
+  try {
+    // 1. Mark scan resolved
+    const { error: scanErr } = await sb.from('plant_health_scans')
+      .update({ status: 'resolved', recovery_days_added: PENALTY })
+      .eq('id', scanId);
+    if (scanErr) throw scanErr;
+
+    // 2. Add penalty days to the plant's recovery_days
+    if (plantId) {
+      const { data: plantData } = await sb.from('garden_library')
+        .select('recovery_days').eq('id', plantId).single();
+
+      const currentPenalty = plantData?.recovery_days || 0;
+      const { error: libErr } = await sb.from('garden_library')
+        .update({ recovery_days: currentPenalty + PENALTY })
+        .eq('id', plantId);
+      if (libErr) throw libErr;
+    }
+
+    // 3. Show success state on card
+    const card = $(`fbcard-${scanId}`);
+    if (card) {
+      card.style.opacity = '0.6';
+      card.style.pointerEvents = 'none';
+      const badge = document.createElement('div');
+      badge.className = 'fb-resolved-badge';
+      badge.textContent = `✓ Resolved — +${PENALTY}d recovery penalty applied`;
+      card.appendChild(badge);
+      btn.remove();
+    }
+
+    // 4. Refresh affected charts live (no full reload)
+    toast(`✓ Remediation logged. +${PENALTY}d recovery penalty applied to plant.`);
+    await Promise.all([
+      loadMaturityChart(),
+      loadPenaltyChart(),
+      loadYieldSignature(),
+      loadResilienceScore(),
+    ]);
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Mark Remediation Successful → Apply Recovery Penalty';
+    toast('Error: ' + e.message, true);
+    console.error('[FeedbackLoop] resolve error:', e);
+  }
+}
+
+// ── Toast ──────────────────────────────────────
+function toast(msg, isErr = false) {
+  let el = $('toast-msg');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast-msg';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:800;padding:0.65rem 1rem;font-family:var(--mono);font-size:0.62rem;letter-spacing:0.08em;border:1px solid;opacity:0;transform:translateY(6px);transition:opacity 0.2s,transform 0.2s;pointer-events:none;max-width:320px;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background   = isErr ? '#1a0808' : 'var(--surface2)';
+  el.style.color        = isErr ? 'var(--red)' : 'var(--green)';
+  el.style.borderColor  = isErr ? 'var(--red)' : 'var(--border2)';
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity='0'; el.style.transform='translateY(6px)'; }, 3000);
+}
+
 
 // ── Export Report (FIX BUG-03: implemented) ──
 function exportReport() {
