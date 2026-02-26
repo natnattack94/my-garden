@@ -6,6 +6,7 @@
 <title>GardenHub OS | Mission Control v10.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="weather-engine.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
@@ -469,6 +470,7 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
       <a href="achievements.html" class="nav-link">🏅 Medals</a>
       <a href="journal.html"      class="nav-link">📖 Journal</a>
       <a href="snapshot.html"    class="nav-link">📸 Snapshot</a>
+      <a href="weather.html"     class="nav-link">🌦 Weather</a>
       <button onclick="handleLogout()" class="nav-link danger">🚪 Logout</button>
     </nav>
   </header>
@@ -659,66 +661,50 @@ sb.auth.onAuthStateChange((event, session) => {
 })();
 
 // ══════════════════════════════════════════════
-//  WEATHER ENGINE  (FIX BUG-01)
-//  Uses Open-Meteo — free, no API key needed
+//  WEATHER — delegates to shared WeatherEngine
+//  which also detects frost/heat/rain events and
+//  writes them to weather_events with scan links.
 // ══════════════════════════════════════════════
 async function fetchWeather() {
-  const url = 'https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635' +
-    '&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relative_humidity_2m' +
-    '&daily=sunshine_duration,temperature_2m_max,temperature_2m_min,precipitation_sum' +
-    '&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York&forecast_days=1';
-
-  const WMO = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',80:'🌦',95:'⛈'};
+  const btn = document.getElementById('weather-refresh-btn');
+  btn.classList.add('loading');
+  btn.textContent = '…';
 
   try {
-    const btn = document.getElementById('weather-refresh-btn');
-    btn.classList.add('loading');
-    btn.textContent = '…';
+    const wx = await WeatherEngine.run(sb);
 
-    const res  = await fetch(url);
-    const data = await res.json();
-    const cur  = data.current;
-    const day  = data.daily;
+    const riskMap = {
+      FROST:    { label:'❄️ FROST',    cls:'danger' },
+      HEAT:     { label:'🔥 HEAT',     cls:'danger' },
+      MODERATE: { label:'⚠️ MODERATE', cls:'warn'   },
+      LOW:      { label:'✅ LOW',       cls:'good'   },
+    };
+    const { label: riskLabel, cls: riskClass } = riskMap[wx.risk] || riskMap.LOW;
 
-    const tempF  = Math.round(cur.temperature_2m);
-    const icon   = WMO[cur.weathercode] || '🌡';
-    const solar  = ((day.sunshine_duration?.[0] || 0) / 3600).toFixed(1);
-
-    let riskLabel = '✅ LOW', riskClass = 'good';
-    if (tempF <= 36)       { riskLabel = '❄️ FROST';    riskClass = 'danger'; }
-    else if (tempF >= 90)  { riskLabel = '🔥 HEAT';     riskClass = 'danger'; }
-    else if (tempF < 50)   { riskLabel = '⚠️ MODERATE'; riskClass = 'warn';   }
-
-    document.getElementById('w-temp').textContent  = `${icon} ${tempF}°F`;
-    document.getElementById('w-solar').textContent = `${solar} hrs`;
+    document.getElementById('w-temp').textContent  = `${wx.icon} ${wx.tempF}°F`;
+    document.getElementById('w-solar').textContent = `${wx.solarHours} hrs`;
     document.getElementById('w-risk').textContent  = riskLabel;
     document.getElementById('w-risk').className    = `climate-val ${riskClass}`;
     document.getElementById('weather-updated').textContent =
       new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
 
-    btn.classList.remove('loading');
-    btn.textContent = '↻ Refresh';
-
-    // Persist to weather_logs
-    const today = new Date().toISOString().slice(0,10);
-    await sb.from('weather_logs').upsert({
-      log_date:       today,
-      temp_high_f:    Math.round(day.temperature_2m_max?.[0] || tempF),
-      temp_low_f:     Math.round(day.temperature_2m_min?.[0] || tempF),
-      temp_current_f: tempF,
-      humidity_pct:   cur.relative_humidity_2m,
-      wind_mph:       Math.round(cur.windspeed_10m),
-      solar_hours:    parseFloat(solar),
-      risk_level:     riskLabel,
-      weather_code:   cur.weathercode,
-      precipitation_in: day.precipitation_sum?.[0] || 0,
-    }, { onConflict: 'log_date' });
-
+    // Show event badge if any events fired today
+    const todayEvents = (wx.events||[]).filter(e => e.event_date === WeatherEngine.today());
+    if (todayEvents.length) {
+      const existing = document.getElementById('wx-event-badge');
+      const badge = existing || document.createElement('span');
+      badge.id = 'wx-event-badge';
+      badge.textContent = ` · ${todayEvents.length} event${todayEvents.length>1?'s':''} logged`;
+      badge.style.cssText = 'font-size:0.65rem;color:#f5a623;margin-left:4px;';
+      if (!existing) document.getElementById('weather-updated').after(badge);
+    }
   } catch(e) {
-    document.getElementById('w-temp').textContent  = '⚠️ Offline';
-    document.getElementById('weather-refresh-btn').textContent = '↻ Refresh';
-    document.getElementById('weather-refresh-btn').classList.remove('loading');
+    document.getElementById('w-temp').textContent = '⚠️ Offline';
+    console.warn('[Weather] engine error:', e.message);
   }
+
+  btn.classList.remove('loading');
+  btn.textContent = '↻ Refresh';
 }
 
 function refreshWeather() { fetchWeather(); }
