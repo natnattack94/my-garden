@@ -3,1559 +3,1048 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GardenHub OS | Garden Intelligence</title>
+<title>GardenHub OS | Mission Control v10.6</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="weather-engine.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
 <style>
-/* ── Tokens ──────────────────────────────── */
+/* ── Tokens ──────────────────────────────────── */
 :root {
-  --bg:        #020a04;
-  --surface:   #0b140d;
-  --surface2:  #111c13;
-  --surface3:  #172119;
-  --border:    #1a2e1c;
-  --border2:   #243628;
-  --green:     #3ddc6e;
-  --green-dim: #1a6b34;
-  --green-pale:#a8f5bc;
-  --amber:     #f5a623;
-  --red:       #f05252;
-  --blue:      #5ba4f5;
-  --purple:    #a78bfa;
-  --text:      #c8e0ca;
-  --muted:     #4d7050;
+  --bg:        #f5f7f2;
+  --surface:   #ffffff;
+  --surface2:  #f0f4ee;
+  --border:    #e2e8df;
+  --border2:   #d0dace;
+  --text:      #1e2b1e;
+  --muted:     #7a9278;
+  --green:     #2d7a4f;
+  --green-lt:  #e8f5ee;
+  --green-vv:  #22c55e;
+  --amber:     #b45309;
+  --amber-lt:  #fef3c7;
+  --red:       #dc2626;
+  --red-lt:    #fef2f2;
+  --blue:      #1d4ed8;
+  --blue-lt:   #eff6ff;
+  --pink:      #be185d;
+  --pink-lt:   #fdf2f8;
   --mono:      'DM Mono', monospace;
-  --serif:     'Fraunces', serif;
+  --serif:     'Instrument Serif', serif;
   --sans:      'DM Sans', sans-serif;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
-  color: var(--text);
   font-family: var(--sans);
+  color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* scanline */
-body::after {
+/* subtle dot grid background */
+body::before {
   content: '';
   position: fixed; inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,60,0.008) 3px, rgba(0,255,60,0.008) 4px);
-  pointer-events: none; z-index: 9999;
+  background-image: radial-gradient(circle, #c8d9c4 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
+.page-wrap { position: relative; z-index: 1; max-width: 1380px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
 
-/* ── Auth Overlay ─────────────────────────── */
+/* ── Auth Overlay ────────────────────────────── */
 #auth-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(2,10,4,0.97);
+  background: rgba(30,43,30,0.92);
+  backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center;
 }
 #auth-overlay.hidden { display: none; }
-.auth-box {
-  border: 1px solid var(--green);
+
+.auth-card {
   background: var(--surface);
-  padding: 2.5rem; width: 360px; position: relative;
+  border: 1px solid var(--border);
+  padding: 2.5rem;
+  width: 360px;
+  position: relative;
 }
-.auth-box::before {
-  content: 'GARDENHUB OS // GARDEN INTELLIGENCE';
-  font-family: var(--mono); font-size: 0.52rem; color: var(--green-dim);
-  letter-spacing: 0.2em; text-transform: uppercase;
-  position: absolute; top: -0.6rem; left: 1rem;
-  background: var(--surface); padding: 0 0.4rem;
+.auth-logo {
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  color: var(--text);
+  margin-bottom: 0.25rem;
 }
-.auth-title { font-family: var(--serif); font-size: 1.7rem; color: var(--green); margin-bottom: 1.5rem; font-style: italic; }
+.auth-logo span { color: var(--green); font-style: italic; }
+.auth-sub { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.75rem; }
 .auth-input {
-  width: 100%; background: var(--bg); border: 1px solid var(--border);
-  color: var(--text); padding: 0.6rem 0.75rem;
-  font-family: var(--mono); font-size: 0.75rem;
+  width: 100%; padding: 0.75rem 0.9rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: 0.85rem;
   margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
 }
 .auth-input:focus { border-color: var(--green); }
+.auth-btns { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
 .auth-btn {
-  width: 100%; font-family: var(--mono); font-size: 0.7rem;
-  font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
-  padding: 0.65rem; border: none; cursor: pointer;
-  margin-bottom: 0.4rem; transition: opacity 0.15s;
+  flex: 1; padding: 0.75rem;
+  font-family: var(--mono); font-size: 0.65rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; border: none; transition: opacity 0.15s;
 }
-.auth-btn.primary { background: var(--green); color: var(--bg); }
-.auth-btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-.auth-btn:hover { opacity: 0.82; }
-#auth-err { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
+.auth-btn.primary { background: var(--green); color: white; }
+.auth-btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+.auth-btn:hover { opacity: 0.85; }
+#auth-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1.2rem; margin-top: 0.6rem; }
 
-/* ── Top Bar ──────────────────────────────── */
-.top-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.9rem 2rem;
+/* ── Header ──────────────────────────────────── */
+header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  position: sticky; top: 0; z-index: 100;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
 }
-.top-bar-left { display: flex; align-items: baseline; gap: 0.75rem; }
-.logo-eyebrow { font-family: var(--mono); font-size: 0.52rem; color: var(--green-dim); letter-spacing: 0.22em; text-transform: uppercase; }
-.page-title { font-family: var(--serif); font-size: 1.3rem; color: #e0f0e2; font-style: italic; }
-.page-title em { color: var(--green); }
+.logo-block .wordmark {
+  font-family: var(--serif);
+  font-size: 2rem;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.logo-block .wordmark em { color: var(--green); font-style: italic; }
+.logo-block .datestamp {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
 
-nav { display: flex; gap: 0.5rem; align-items: center; }
+nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .nav-link {
-  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em;
   text-transform: uppercase; text-decoration: none;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--border); color: var(--muted);
-  background: transparent; cursor: pointer;
-  transition: all 0.15s;
-}
-.nav-link:hover { border-color: var(--green-dim); color: var(--green-pale); }
-.nav-link.active { border-color: var(--green); color: var(--green); }
-.nav-link.danger:hover { border-color: var(--red); color: var(--red); }
-
-/* ── Climate Bar ──────────────────────────── */
-.climate-bar {
-  display: flex; align-items: stretch;
-  background: var(--surface2); border-bottom: 1px solid var(--border);
-  font-family: var(--mono); font-size: 0.7rem; overflow-x: auto;
-}
-.climate-cell {
-  padding: 0.5rem 1.25rem; border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; gap: 0.1rem; white-space: nowrap;
-}
-.c-label { color: var(--muted); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; }
-.c-val   { color: var(--green); font-weight: 500; }
-.c-val.warn   { color: var(--amber); }
-.c-val.danger { color: var(--red); }
-
-/* ── Page Shell ───────────────────────────── */
-main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
-
-/* section dividers */
-.sec-head {
-  display: flex; align-items: center; gap: 0.75rem;
-  margin: 2rem 0 1.1rem;
-}
-.sec-head h2 {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.22em; color: var(--green-dim); text-transform: uppercase;
-  white-space: nowrap;
-}
-.sec-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-/* ── Glass Card (from mockup) ─────────────── */
-.glass {
-  background: rgba(11,20,13,0.7);
-  border: 1px solid var(--border2);
-  backdrop-filter: blur(8px);
-}
-
-/* ── KPI Row ──────────────────────────────── */
-.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; }
-.kpi-card {
   background: var(--surface); border: 1px solid var(--border);
-  padding: 1.2rem 1.4rem; position: relative; overflow: hidden;
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
 }
-.kpi-card::before {
-  content: ''; position: absolute; top: 0; left: 0;
-  width: 3px; height: 100%; background: var(--green);
-}
-.kpi-card.a::before { background: var(--amber); }
-.kpi-card.r::before { background: var(--red); }
-.kpi-card.b::before { background: var(--blue); }
-.kpi-card.p::before { background: var(--purple); }
-.kpi-num {
-  font-family: var(--serif); font-size: 2.6rem; font-style: italic;
-  line-height: 1; color: #e0f0e2; margin-bottom: 0.3rem;
-}
-.kpi-label { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
-.kpi-delta { font-family: var(--mono); font-size: 0.58rem; margin-top: 0.5rem; }
-.up   { color: var(--green); }
-.down { color: var(--red); }
-.neu  { color: var(--muted); }
+.nav-link:hover { border-color: var(--green); color: var(--green); background: var(--green-lt); }
+.nav-link.active { background: var(--green); border-color: var(--green); color: white; }
+.nav-link.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-lt); }
 
-/* ── Hero row: spotlight cards + main chart ─ */
-.hero-row { display: grid; grid-template-columns: 280px 1fr; gap: 0.9rem; }
+/* ── Top Stats Row ───────────────────────────── */
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 
-/* Spotlight cards (from mockup "Top Performer" style) */
-.spotlight-col { display: flex; flex-direction: column; gap: 0.9rem; }
-.spotlight {
-  background: var(--surface); border: 1px solid var(--border2);
+/* ── Climate Engine Card ─────────────────────── */
+.climate-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
   padding: 1.1rem 1.25rem;
 }
-.spotlight.green-accent { border-left: 3px solid var(--green); }
-.spotlight.amber-accent { border-left: 3px solid var(--amber); }
-.spotlight.red-accent   { border-left: 3px solid var(--red); }
-.spotlight.blue-accent  { border-left: 3px solid var(--blue); }
-.sp-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
-.sp-name { font-family: var(--serif); font-size: 1.3rem; font-style: italic; color: #e0f0e2; line-height: 1.1; }
-.sp-sub  { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; color: var(--muted); margin-top: 0.35rem; text-transform: uppercase; }
-.sp-icon { font-size: 1.8rem; }
+.climate-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.9rem;
+}
+.card-eyebrow {
+  font-family: var(--mono); font-size: 0.55rem;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+}
+.refresh-btn {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 0.25rem 0.6rem;
+  background: var(--amber-lt); border: 1px solid #fcd34d;
+  color: var(--amber); cursor: pointer; transition: opacity 0.15s;
+}
+.refresh-btn:hover { opacity: 0.75; }
+.refresh-btn.loading { opacity: 0.5; cursor: wait; }
 
-/* ── Chart Panels ─────────────────────────── */
-.chart-panel {
+.climate-cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+.climate-cell {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 0.75rem 0.85rem;
+  text-align: center;
+}
+.climate-label { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+.climate-val   { font-family: var(--serif); font-size: 1.1rem; color: var(--text); }
+.climate-val.good   { color: var(--green); }
+.climate-val.warn   { color: var(--amber); }
+.climate-val.danger { color: var(--red); }
+
+/* ── Biological Pulse ────────────────────────── */
+.bio-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  padding: 1.1rem 1.25rem;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.bio-pct {
+  font-family: var(--serif);
+  font-size: 3rem;
+  color: var(--green);
+  line-height: 1;
+  font-style: italic;
+}
+.bio-label {
+  font-family: var(--mono); font-size: 0.55rem;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.bio-title {
+  font-family: var(--serif); font-size: 1.2rem; color: var(--text);
+}
+.pulse-dot {
+  display: inline-block; width: 6px; height: 6px;
+  background: var(--green-vv); border-radius: 50%;
+  margin-right: 0.4rem;
+  animation: pulse-anim 2s ease-in-out infinite;
+}
+@keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+/* ── Main Grid ───────────────────────────────── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 260px;
+  gap: 1rem;
+}
+
+/* ── Left Column Cards ───────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.1rem 1.25rem;
+}
+.card + .card { margin-top: 0.75rem; }
+.card-title {
+  font-family: var(--mono); font-size: 0.55rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.75rem;
+}
+.card-value {
+  font-family: var(--serif); font-size: 1.6rem; color: var(--text);
+}
+
+/* Diagnostic intake */
+.diag-card {
+  background: var(--text);
+  border: 1px solid #2a3d2a;
+  padding: 1.1rem 1.25rem;
+}
+.diag-card .card-title { color: #4a6a4a; }
+.diag-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.5rem; padding: 1.5rem;
+  border: 1.5px dashed #2a3d2a;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.diag-drop:hover, .diag-drop.dragover { border-color: var(--green-vv); }
+.diag-icon { font-size: 1.5rem; opacity: 0.4; }
+.diag-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase; color: #4a6a4a; }
+.diag-preview {
+  width: 100%; aspect-ratio: 4/3; object-fit: cover;
+  display: none; border: 1px solid #2a3d2a;
+}
+.diag-submit {
+  width: 100%; margin-top: 0.6rem;
+  background: var(--green); color: white;
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 0.55rem;
+  border: none; cursor: pointer; display: none;
+  transition: opacity 0.15s;
+}
+.diag-submit:hover { opacity: 0.85; }
+
+/* Water pulse */
+.water-card { border-left: 3px solid var(--blue); }
+.water-val  { font-family: var(--serif); font-size: 1.8rem; color: var(--blue); font-style: italic; }
+
+/* Pollinator IQ */
+.poll-card  { background: var(--text); border: 1px solid #2a3d2a; border-left: 3px solid var(--pink); }
+.poll-card .card-title { color: var(--pink); }
+.poll-iq    { font-family: var(--serif); font-size: 2.5rem; color: white; font-style: italic; line-height:1; }
+.poll-sub   { font-family: var(--mono); font-size: 0.55rem; color: #4a5a4a; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.3rem; }
+
+/* ── Center Column ───────────────────────────── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+.section-title {
+  font-family: var(--serif); font-size: 1.4rem; font-style: italic; color: var(--text);
+}
+
+.add-btn {
+  background: var(--green); color: white;
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.5rem 0.9rem; border: none; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.add-btn:hover { opacity: 0.85; }
+
+/* Log feed */
+.log-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border2);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.log-entry {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--surface2);
+  font-size: 0.75rem; color: var(--muted);
+}
+.log-entry:last-child { border-bottom: none; }
+.log-time { font-family: var(--mono); font-size: 0.55rem; color: var(--border2); white-space: nowrap; margin-top: 0.1rem; }
+.log-empty { font-family: var(--mono); font-size: 0.65rem; color: var(--border2); padding: 0.75rem 0; letter-spacing: 0.08em; }
+
+/* Plant grid */
+.plant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.plant-card {
   background: var(--surface); border: 1px solid var(--border);
-  padding: 1.25rem;
+  padding: 0.85rem 1rem;
+  transition: border-color 0.15s;
 }
-.cp-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-dim); margin-bottom: 0.2rem; }
-.cp-title { font-family: var(--serif); font-size: 1rem; font-style: italic; color: #d0e8d2; margin-bottom: 1rem; }
-.chart-wrap { position: relative; }
-
-/* two-col chart grid */
-.chart-2col { display: grid; grid-template-columns: 2fr 1fr; gap: 0.9rem; }
-.chart-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.9rem; }
-.chart-1col { display: grid; grid-template-columns: 1fr; gap: 0.9rem; }
-.span2 { grid-column: span 2; }
-
-/* ── Loading bar ──────────────────────────── */
-.lb { height: 2px; background: var(--border); margin-bottom: 1rem; overflow: hidden; }
-.lb::after {
-  content: ''; display: block; height: 100%; width: 35%;
-  background: var(--green);
-  animation: scan 1.1s ease-in-out infinite;
+.plant-card:hover { border-color: var(--green); }
+.plant-name { font-weight: 600; font-size: 0.82rem; color: var(--text); margin-bottom: 0.2rem; }
+.plant-meta { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.55rem; }
+.plant-badges { display: flex; gap: 0.3rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.badge {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 0.15rem 0.4rem;
+  border-radius: 2px; font-weight: 500;
 }
-.lb.done { display: none; }
-@keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(340%)} }
+.badge-native { background: var(--green-lt); color: var(--green); border: 1px solid #bbddc8; }
+.badge-host   { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #bfdbfe; }
+.badge-harvest{ background: var(--amber-lt); color: var(--amber); border: 1px solid #fcd34d; animation: pulse-anim 2s infinite; }
+.badge-penalty{ background: var(--red-lt);   color: var(--red);   border: 1px solid #fecaca; }
 
-/* ── Insight callout ──────────────────────── */
-.insight-box {
-  background: rgba(61,220,110,0.05); border-left: 3px solid var(--green-dim);
-  padding: 0.7rem 0.9rem; margin-top: 1rem;
-  font-family: var(--mono); font-size: 0.65rem; color: var(--green-pale); line-height: 1.6;
-}
-.insight-box.warn { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,0.05); }
-.insight-box.info { border-color: var(--blue);  color: var(--blue);  background: rgba(91,164,245,0.05); }
+/* Progress bar */
+.progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.progress-fill  { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.fill-growing  { background: var(--green-vv); }
+.fill-harvest  { background: var(--amber); animation: pulse-anim 2s infinite; }
 
-/* ── AI Consultant (from mockup, fixed) ────── */
-.consultant-band {
-  display: flex; gap: 1.5rem; align-items: flex-start;
-  background: rgba(61,220,110,0.04);
-  border: 1px solid rgba(61,220,110,0.18);
-  padding: 1.5rem;
-  margin-top: 0.9rem;
+/* ── Right Column — Temporal Pulse ───────────── */
+.temporal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1.1rem 1.25rem;
+  position: sticky; top: 1.5rem;
 }
-.consultant-icon {
-  width: 52px; height: 52px; border-radius: 50%;
-  background: var(--green-dim);
+.forecast-item {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--surface2);
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.forecast-item:last-child { border-bottom: none; }
+.forecast-name { font-weight: 600; font-size: 0.78rem; color: var(--text); }
+.forecast-date { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; }
+.forecast-status {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
+  text-transform: uppercase; align-self: flex-start;
+  padding: 0.15rem 0.4rem;
+}
+.status-ready   { color: var(--amber); border: 1px solid #fcd34d; background: var(--amber-lt); }
+.status-soon    { color: var(--green); border: 1px solid #bbddc8; background: var(--green-lt); }
+.status-growing { color: var(--muted); border: 1px solid var(--border); }
+.forecast-pct   { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); }
+
+/* ── Add Plant Modal ─────────────────────────── */
+#add-modal {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(30,43,30,0.7); backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem; flex-shrink: 0;
-  box-shadow: 0 0 20px rgba(61,220,110,0.25);
 }
-.consultant-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; color: var(--green); text-transform: uppercase; margin-bottom: 0.4rem; }
-.consultant-text { font-size: 0.82rem; color: var(--text); line-height: 1.7; }
-.consultant-text strong { color: var(--green-pale); }
-
-/* ── Scan table ───────────────────────────── */
-.data-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.65rem; }
-.data-table th { color: var(--muted); text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; }
-.data-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(26,46,28,0.5); }
-.data-table tr:last-child td { border-bottom: none; }
-.sev-tag { display: inline-block; padding: 0.1rem 0.4rem; font-size: 0.5rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
-.sev-high   { background: rgba(240,82,82,0.12);  color: var(--red); }
-.sev-medium { background: rgba(245,166,35,0.12); color: var(--amber); }
-.sev-low    { background: rgba(61,220,110,0.12); color: var(--green); }
-
-/* ── Pest bars (from mockup) ──────────────── */
-.pest-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
-.pest-row:last-child { border-bottom: none; }
-.pest-name { font-family: var(--mono); font-size: 0.62rem; color: var(--text); }
-.pest-bar-track { width: 120px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
-.pest-bar-fill  { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.8s ease; }
-.pest-pct { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); min-width: 2.5rem; text-align: right; }
-
-/* ── Export btn ───────────────────────────── */
-.export-btn {
-  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.4rem 0.85rem;
-  background: var(--green-dim); color: var(--green-pale);
-  border: 1px solid var(--green-dim); cursor: pointer; transition: opacity 0.15s;
+#add-modal.hidden { display: none; }
+.modal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 2rem; width: 400px; max-width: 90vw;
+  position: relative;
 }
-.export-btn:hover { opacity: 0.8; }
-
-.empty-state { text-align: center; padding: 2.5rem; font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
-
-/* ── Resilience Score ────────────────────── */
-.resilience-factor {
-  display: flex; align-items: center; gap: 0.65rem;
-}
-.rf-label {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted); width: 130px; flex-shrink: 0;
-}
-.rf-track {
-  flex: 1; height: 5px; background: var(--surface3); overflow: hidden;
-}
-.rf-fill {
-  height: 100%; transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
-}
-.rf-val {
-  font-family: var(--mono); font-size: 0.62rem; color: var(--text);
-  width: 30px; text-align: right; flex-shrink: 0;
-}
-
-/* ── Feedback Loop cards ─────────────────── */
-.fb-card {
+.modal-title { font-family: var(--serif); font-size: 1.4rem; font-style: italic; margin-bottom: 1.25rem; }
+.modal-input {
+  width: 100%; padding: 0.65rem 0.8rem;
   background: var(--surface2); border: 1px solid var(--border);
-  padding: 0.85rem 1rem; margin-bottom: 0.6rem;
-  animation: slideIn 0.25s ease both;
+  color: var(--text); font-family: var(--sans); font-size: 0.82rem;
+  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
 }
-@keyframes slideIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
-.fb-plant  { font-family: var(--serif); font-size: 0.95rem; font-style: italic; color: var(--text); }
-.fb-issue  { font-family: var(--mono);  font-size: 0.55rem; color: var(--muted); letter-spacing:0.08em; margin-top:0.15rem; }
-.fb-steps  { margin-top: 0.65rem; display: flex; flex-direction: column; gap: 0.35rem; }
-.fb-step {
-  display: flex; align-items: center; gap: 0.6rem;
-  font-size: 0.72rem; color: var(--muted); padding: 0.3rem 0;
-  border-bottom: 1px solid rgba(26,46,28,0.5); cursor: default;
+.modal-input:focus { border-color: var(--green); }
+.modal-check-row { display: flex; gap: 1.5rem; padding: 0.35rem 0; margin-bottom: 0.5rem; }
+.modal-check-row label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--muted); cursor: pointer; }
+.modal-btns { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.modal-btn {
+  flex: 1; padding: 0.65rem;
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
+  text-transform: uppercase; border: none; cursor: pointer; transition: opacity 0.15s;
 }
-.fb-step:last-child { border-bottom: none; }
-.fb-step-check {
-  width: 14px; height: 14px; border: 1px solid var(--border2);
-  flex-shrink: 0; cursor: pointer; display: flex; align-items: center;
-  justify-content: center; transition: all 0.15s; background: var(--surface);
-}
-.fb-step-check:hover { border-color: var(--green); }
-.fb-step-check.done  { background: var(--green); border-color: var(--green); color: var(--bg); font-size: 0.6rem; }
-.fb-step-check.done::after { content: '✓'; }
-.fb-step.completed { color: var(--green-dim); text-decoration: line-through; }
-.fb-resolve-btn {
-  margin-top: 0.75rem; width: 100%; font-family: var(--mono);
-  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 0.45rem; background: transparent; border: 1px solid var(--green-dim);
-  color: var(--green-dim); cursor: pointer; transition: all 0.15s;
-}
-.fb-resolve-btn:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
-.fb-resolve-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.fb-resolved-badge {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
-  color: var(--green); border: 1px solid var(--green-dim); padding: 0.3rem 0.65rem;
-  margin-top: 0.6rem; display: inline-block;
-}
-.fb-penalty-note {
-  font-family: var(--mono); font-size: 0.52rem; color: var(--muted); margin-top: 0.4rem;
-}
+.modal-btn.primary  { background: var(--green); color: white; }
+.modal-btn.ghost    { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+.modal-btn:hover    { opacity: 0.85; }
+.modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+#modal-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
+.modal-success { color: var(--green) !important; }
 
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 1100px) {
+  .main-grid { grid-template-columns: 1fr 1fr; }
+  .main-grid > :last-child { grid-column: span 2; }
+}
+@media (max-width: 700px) {
+  .top-row { grid-template-columns: 1fr; }
+  .climate-cells { grid-template-columns: 1fr 1fr; }
+  .main-grid { grid-template-columns: 1fr; }
+  .main-grid > :last-child { grid-column: span 1; }
+  .plant-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
+
 <body>
 
-<!-- ═══ AUTH OVERLAY ═══ -->
+<!-- ══════════ AUTH OVERLAY (shown by default) ══════════ -->
 <div id="auth-overlay">
-  <div class="auth-box">
-    <div class="auth-title">Garden Intelligence</div>
-    <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
-    <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
-    <div id="auth-err"></div>
-    <button class="auth-btn primary"    id="btn-login">Initialize Session</button>
-    <button class="auth-btn secondary"  id="btn-reg">Register</button>
+  <div class="auth-card">
+    <div class="auth-logo">GardenHub <em>OS</em></div>
+    <div class="auth-sub">Mission Control v10.6 // Fairfield, CT</div>
+    <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
+    <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password"/>
+    <div class="auth-btns">
+      <button class="auth-btn primary" id="btn-signin">Login</button>
+      <button class="auth-btn secondary" id="btn-signup">Register</button>
+    </div>
+    <div id="auth-error"></div>
   </div>
 </div>
 
-<!-- ═══ TOP BAR ═══ -->
-<div class="top-bar">
-  <div class="top-bar-left">
-    <div class="logo-eyebrow">GardenHub OS // v10.6</div>
-    <div class="page-title">Garden <em>Intelligence</em></div>
+<!-- ══════════ ADD PLANT MODAL ══════════ -->
+<div id="add-modal" class="hidden">
+  <div class="modal-card">
+    <div class="modal-title">Plant Resident 🌱</div>
+    <input class="modal-input" id="p-name" type="text" placeholder="Common name (e.g. Tomato)" />
+    <input class="modal-input" id="p-scientific" type="text" placeholder="Scientific name (optional)" />
+    <input class="modal-input" id="p-days" type="number" placeholder="Days to maturity" min="1" max="999"/>
+    <input class="modal-input" id="p-planted" type="date" />
+    <input class="modal-input" id="p-emoji" type="text" placeholder="Emoji (e.g. 🍅)" maxlength="4"/>
+    <div class="modal-check-row">
+      <label><input type="checkbox" id="p-native" /> Native species</label>
+      <label><input type="checkbox" id="p-host" /> Host plant</label>
+    </div>
+    <div id="modal-error"></div>
+    <div class="modal-btns">
+      <button class="modal-btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" id="btn-save-plant" onclick="saveNewPlant()">Record Plant</button>
+    </div>
   </div>
-  <nav>
-    <a href="index.html"    class="nav-link">Dashboard</a>
-    <a href="map.html"      class="nav-link">Map View</a>
-    <a href="clinic.html"   class="nav-link">Clinic</a>
-    <a href="library.html"      class="nav-link">Library</a>
-    <a href="calendar.html"    class="nav-link">Calendar</a>
-    <a href="achievements.html" class="nav-link">Medals</a>
-    <a href="journal.html"       class="nav-link">Journal</a>
-    <a href="snapshot.html"     class="nav-link">Snapshot</a>
-    <a href="insights.html" class="nav-link active">Insights</a>
-    <button class="export-btn" id="export-btn" onclick="exportReport()">↓ Export</button>
-    <button class="nav-link danger" id="logout-btn">Logout</button>
-  </nav>
 </div>
 
-<!-- ═══ CLIMATE BAR ═══ -->
-<div class="climate-bar">
-  <div class="climate-cell"><div class="c-label">Zone</div><div class="c-val">6b (CT)</div></div>
-  <div class="climate-cell"><div class="c-label">Live Temp</div><div class="c-val" id="w-temp">--</div></div>
-  <div class="climate-cell"><div class="c-label">Feels Like</div><div class="c-val" id="w-feels">--</div></div>
-  <div class="climate-cell"><div class="c-label">Solar Hrs</div><div class="c-val" id="w-solar">--</div></div>
-  <div class="climate-cell"><div class="c-label">Humidity</div><div class="c-val" id="w-humidity">--</div></div>
-  <div class="climate-cell" id="w-risk-cell"><div class="c-label">Risk Level</div><div class="c-val" id="w-risk">Scanning…</div></div>
-</div>
+<!-- ══════════ PAGE ══════════ -->
+<div class="page-wrap">
 
-<!-- ═══ MAIN ═══ -->
-<main>
+  <!-- Header -->
+  <header>
+    <div class="logo-block">
+      <div class="wordmark">GardenHub <em>OS</em></div>
+      <div class="datestamp" id="current-date">Loading…</div>
+    </div>
+    <nav>
+      <a href="map.html"      class="nav-link">🗺 Map View</a>
+      <a href="insights.html" class="nav-link">📊 Insights</a>
+      <a href="clinic.html"   class="nav-link">🏥 Plant Clinic</a>
+      <a href="library.html"  class="nav-link">📚 Library</a>
+      <a href="calendar.html" class="nav-link">📅 Calendar</a>
+      <a href="achievements.html" class="nav-link">🏅 Medals</a>
+      <a href="journal.html"      class="nav-link">📖 Journal</a>
+      <a href="snapshot.html"    class="nav-link">📸 Snapshot</a>
+      <a href="weather.html"     class="nav-link">🌦 Weather</a>
+      <button onclick="handleLogout()" class="nav-link danger">🚪 Logout</button>
+    </nav>
+  </header>
 
-  <!-- KPI Row -->
-  <div class="sec-head"><h2>// Season KPIs</h2></div>
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-num" id="kpi-plants">--</div>
-      <div class="kpi-label">Plants Tracked</div>
-      <div class="kpi-delta neu" id="kpi-plants-d"></div>
+  <!-- Top Row: Biological Pulse + Climate Engine -->
+  <div class="top-row">
+    <div class="bio-card">
+      <div>
+        <div class="bio-label">Biological Pulse</div>
+        <div class="bio-title">Active Growth</div>
+      </div>
+      <div class="bio-pct" id="health-pct">0%</div>
+      <div style="font-family:var(--mono);font-size:0.55rem;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;">
+        <span class="pulse-dot"></span><a href="library.html" style="color:inherit;text-decoration:none;">Memory Engine Active</a>
+      </div>
     </div>
-    <div class="kpi-card a">
-      <div class="kpi-num" id="kpi-maturity" style="color:var(--amber)">--%</div>
-      <div class="kpi-label">Avg Garden Maturity</div>
-      <div class="kpi-delta neu" id="kpi-maturity-d"></div>
-    </div>
-    <div class="kpi-card r">
-      <div class="kpi-num" id="kpi-incidents" style="color:var(--red)">--</div>
-      <div class="kpi-label">Health Incidents (90d)</div>
-      <div class="kpi-delta neu" id="kpi-incidents-d"></div>
-    </div>
-    <div class="kpi-card b">
-      <div class="kpi-num" id="kpi-iq" style="color:var(--blue)">--</div>
-      <div class="kpi-label">Pollinator IQ</div>
-      <div class="kpi-delta neu" id="kpi-iq-d"></div>
-    </div>
-  </div>
 
-  <!-- Hero Row: Spotlight cards + Disease×Temp chart -->
-  <div class="sec-head"><h2>// Spotlight & Disease Correlation</h2></div>
-  <div class="hero-row">
-
-    <!-- Spotlight sidebar -->
-    <div class="spotlight-col">
-      <div class="spotlight green-accent">
-        <div class="sp-eye">Top Performer</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div class="sp-name" id="sp-top-name">--</div>
-            <div class="sp-sub"  id="sp-top-sub">Loading…</div>
-          </div>
-          <div class="sp-icon" id="sp-top-icon">🌱</div>
+    <div class="climate-card">
+      <div class="climate-header">
+        <div class="card-eyebrow">Climate Engine V10.6 — Zone 6b (Fairfield, CT)</div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span class="card-eyebrow" id="weather-updated">--</span>
+          <button class="refresh-btn" id="weather-refresh-btn" onclick="refreshWeather()">↻ Refresh</button>
         </div>
       </div>
-      <div class="spotlight amber-accent">
-        <div class="sp-eye">Most Penalized</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div class="sp-name" id="sp-penalty-name">--</div>
-            <div class="sp-sub"  id="sp-penalty-sub">Loading…</div>
-          </div>
-          <div class="sp-icon" id="sp-penalty-icon">⚠️</div>
+      <div class="climate-cells">
+        <div class="climate-cell">
+          <div class="climate-label">Zone</div>
+          <div class="climate-val">6b (CT)</div>
         </div>
-      </div>
-      <div class="spotlight blue-accent">
-        <div class="sp-eye">Longest to Harvest</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div class="sp-name" id="sp-longest-name">--</div>
-            <div class="sp-sub"  id="sp-longest-sub">Loading…</div>
-          </div>
-          <div class="sp-icon" id="sp-longest-icon">📅</div>
+        <div class="climate-cell">
+          <div class="climate-label">Solar Hours</div>
+          <div class="climate-val" id="w-solar">--</div>
+        </div>
+        <div class="climate-cell">
+          <div class="climate-label">Live Temp</div>
+          <div class="climate-val" id="w-temp">--</div>
+        </div>
+        <div class="climate-cell">
+          <div class="climate-label">Risk</div>
+          <div class="climate-val" id="w-risk">--</div>
         </div>
       </div>
     </div>
-
-    <!-- Disease × Temp correlation chart -->
-    <div class="chart-panel">
-      <div class="cp-eye">Consultant View // 30-Day Window</div>
-      <div class="cp-title">Disease Incidents × Temperature</div>
-      <div class="lb" id="lb-disease"></div>
-      <div class="chart-wrap" style="height:260px"><canvas id="chart-disease"></canvas></div>
-      <div class="insight-box" id="insight-disease" style="display:none"></div>
-    </div>
   </div>
 
-  <!-- Scan Table + Severity Donut -->
-  <div class="chart-2col" style="margin-top:0.9rem;">
-    <div class="chart-panel">
-      <div class="cp-eye">Clinic // Recent Health Scans</div>
-      <div class="cp-title">Last 20 Incidents</div>
-      <div class="lb" id="lb-table"></div>
-      <div id="scan-table-wrap"><div class="empty-state">Loading…</div></div>
-    </div>
-    <div class="chart-panel">
-      <div class="cp-eye">Clinic // Severity Distribution</div>
-      <div class="cp-title">Scan Outcomes</div>
-      <div class="lb" id="lb-severity"></div>
-      <div class="chart-wrap" style="height:200px"><canvas id="chart-severity"></canvas></div>
+  <!-- Main Grid -->
+  <div class="main-grid">
 
-      <!-- Pest Vulnerability (from mockup, now data-driven) -->
-      <div style="margin-top:1.25rem;">
-        <div class="cp-eye" style="margin-bottom:0.75rem;">Top Issue Types</div>
-        <div id="pest-bars"><div class="empty-state" style="padding:1rem">Loading…</div></div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ═══ RESILIENCE SCORE ═══ -->
-  <div class="sec-head"><h2>// Resilience Score — Garden Health Index</h2></div>
-  <div class="chart-panel" id="resilience-panel" style="padding:1.5rem;">
-    <div style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
-
-      <!-- Score gauge -->
-      <div style="flex-shrink:0;text-align:center;position:relative;width:160px;">
-        <canvas id="chart-resilience" width="160" height="160"></canvas>
-        <div id="resilience-score-val" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--serif);font-size:2.4rem;font-style:italic;color:var(--green);line-height:1;">--</div>
-        <div style="font-family:var(--mono);font-size:0.48rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-top:0.4rem;">RESILIENCE SCORE</div>
-      </div>
-
-      <!-- Score breakdown -->
-      <div style="flex:1;min-width:220px;">
-        <div style="font-family:var(--serif);font-size:1.3rem;font-style:italic;color:var(--text);margin-bottom:0.75rem;" id="resilience-label">Computing…</div>
-        <div id="resilience-factors" style="display:flex;flex-direction:column;gap:0.55rem;"></div>
-      </div>
-
-      <!-- Score history sparkline -->
-      <div style="flex-shrink:0;width:200px;">
-        <div class="cp-eye" style="margin-bottom:0.5rem;">Score Trend // Last 7 Snapshots</div>
-        <div class="chart-wrap" style="height:80px;"><canvas id="chart-resilience-trend"></canvas></div>
-        <div id="resilience-trend-note" style="font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:0.4rem;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ FEEDBACK LOOP + YIELD SIGNATURE ═══ -->
-  <div class="sec-head"><h2>// Feedback Loop — Remediation Engine</h2></div>
-  <div class="chart-2col">
-
-    <!-- Active scans with remediation steps -->
-    <div class="chart-panel" style="padding:1.25rem;">
-      <div class="cp-eye">Clinic // Active Issues</div>
-      <div class="cp-title">Mark Remediation Success → Adjusts Yield Signature</div>
-      <div id="feedback-loop-wrap" style="margin-top:0.75rem;">
-        <div class="empty-state">Loading active health issues…</div>
-      </div>
-    </div>
-
-    <!-- Yield Signature chart -->
-    <div class="chart-panel">
-      <div class="cp-eye">Feedback Loop // Yield Signature</div>
-      <div class="cp-title">Harvest Forecast — Base vs Effective (with Penalties)</div>
-      <div class="lb" id="lb-yield"></div>
-      <div class="chart-wrap" style="height:260px"><canvas id="chart-yield"></canvas></div>
-      <div class="insight-box" id="insight-yield" style="display:none;margin-top:0.75rem;"></div>
-    </div>
-
-  </div>
-
-  <!-- Maturity + Penalty charts -->
-  <div class="sec-head"><h2>// Biological Pulse — Maturity & Feedback Loop</h2></div>
-  <div class="chart-2col">
-    <div class="chart-panel">
-      <div class="cp-eye">Growth Engine // Maturity Algorithm</div>
-      <div class="cp-title">Plant Maturity Progress (Base vs Effective)</div>
-      <div class="lb" id="lb-maturity"></div>
-      <div class="chart-wrap" style="height:260px"><canvas id="chart-maturity"></canvas></div>
-    </div>
-    <div class="chart-panel">
-      <div class="cp-eye">Feedback Loop // Penalty Accumulation</div>
-      <div class="cp-title">Recovery Days by Plant</div>
-      <div class="lb" id="lb-penalty"></div>
-      <div class="chart-wrap" style="height:260px"><canvas id="chart-penalty"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Monarch Path -->
-  <div class="sec-head"><h2>// Monarch Path — Pollinator Ecosystem</h2></div>
-  <div class="chart-2col">
-    <div class="chart-panel">
-      <div class="cp-eye">Monarch // Native vs Host Trend</div>
-      <div class="cp-title">Library Composition Over Time</div>
-      <div class="lb" id="lb-monarch"></div>
-      <div class="chart-wrap" style="height:220px"><canvas id="chart-monarch"></canvas></div>
-    </div>
-    <div class="chart-panel">
-      <div class="cp-eye">Pollinator IQ // Species Breakdown</div>
-      <div class="cp-title">Current Composition</div>
-      <div class="lb" id="lb-pie"></div>
-      <div class="chart-wrap" style="height:180px"><canvas id="chart-pie"></canvas></div>
-      <div class="insight-box" id="iq-callout" style="display:none;margin-top:0.75rem;"></div>
-    </div>
-  </div>
-
-  <!-- Activity heatmap -->
-  <div class="sec-head"><h2>// Temporal Pulse — Activity Density</h2></div>
-  <div class="chart-panel">
-    <div class="cp-eye">Garden Logs // 90-Day Activity</div>
-    <div class="cp-title">Watering, Fertilizing, Pruning & Observations</div>
-    <div class="lb" id="lb-activity"></div>
-    <div class="chart-wrap" style="height:180px"><canvas id="chart-activity"></canvas></div>
-  </div>
-
-  <!-- AI Consultant band (from mockup — now dynamically generated, label corrected) -->
-  <div class="sec-head"><h2>// Strategic Recommendations</h2></div>
-  <div class="consultant-band" id="consultant-band">
-    <div class="consultant-icon">🌿</div>
+    <!-- ── Left Column ── -->
     <div>
-      <div class="consultant-eye">Season Analysis — Auto-generated from your garden data</div>
-      <div class="consultant-text" id="consultant-text">Analyzing garden data…</div>
-    </div>
-  </div>
+      <!-- Diagnostic Intake -->
+      <div class="diag-card card" style="margin-bottom:0.75rem;">
+        <div class="card-title">Diagnostic Intake</div>
+        <div class="diag-drop" id="diag-drop" onclick="document.getElementById('diag-file').click()">
+          <div class="diag-icon">📷</div>
+          <div class="diag-label">Capture Observation</div>
+          <div style="font-family:var(--mono);font-size:0.5rem;color:#2a4a2a;letter-spacing:0.1em;">Click or drag an image</div>
+        </div>
+        <img class="diag-preview" id="diag-preview" alt="Scan preview"/>
+        <button class="diag-submit" id="diag-submit" onclick="submitDiagnostic()">→ Send to Clinic</button>
+        <input type="file" id="diag-file" accept="image/*" capture="environment" style="display:none" onchange="onDiagFile(event)"/>
+      </div>
 
-</main>
+      <!-- Water Pulse -->
+      <div class="card water-card" style="margin-bottom:0.75rem;">
+        <div class="card-title">Water Pulse</div>
+        <div class="water-val" id="water-stat">--</div>
+        <div style="font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;" id="water-sub">Last 7 days</div>
+      </div>
+
+      <!-- Pollinator IQ -->
+      <div class="poll-card card">
+        <div class="card-title">Pollinator IQ</div>
+        <div class="poll-iq" id="native-iq-count">0</div>
+        <div class="poll-sub" id="native-species-label">0 native · 0 host</div>
+      </div>
+    </div>
+
+    <!-- ── Center Column ── -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Active Growth</div>
+        <button class="add-btn" onclick="openModal()">+ Plant Resident</button>
+      </div>
+
+      <!-- Log feed -->
+      <div class="log-card">
+        <div class="card-eyebrow" style="margin-bottom:0.5rem;">Tactical Briefing & Logs</div>
+        <div id="log-feed"><div class="log-empty">No recent activity.</div></div>
+      </div>
+
+      <!-- Plant cards -->
+      <div id="seed-grid" class="plant-grid"></div>
+
+      <div id="empty-state" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;border:1px dashed var(--border);margin-top:0.5rem;">
+        No plants recorded yet. Add your first resident above.
+      </div>
+    </div>
+
+    <!-- ── Right Column: Temporal Pulse ── -->
+    <div>
+      <div class="temporal-card">
+        <div class="card-eyebrow" style="margin-bottom:1rem;">Temporal Pulse</div>
+        <div id="harvest-forecast">
+          <div class="log-empty">Loading forecast…</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+</div><!-- /page-wrap -->
 
 <script>
-// ══════════════════════════════════════════════
-//  GardenHub OS — Garden Intelligence v10.6
-//  Fixes: BUG-01 auth, BUG-02 live data,
-//  BUG-03 export, BUG-04 markdown, BUG-05 labels,
-//  BUG-06 version pin, ISSUE-01–09
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+//  GardenHub OS — Mission Control v10.6
+//  Bugs fixed: BUG-01 through BUG-06, ISSUE-01 through ISSUE-08
+// ══════════════════════════════════════════════════
 
 const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Chart.js defaults ─────────────────────────
-Chart.defaults.color          = '#4d7050';
-Chart.defaults.font.family    = "'DM Mono', monospace";
-Chart.defaults.font.size      = 10;
-Chart.defaults.borderColor    = '#1a2e1c';
-const charts = {};
+let _userId = null;
+let _diagFile = null;    // pending diagnostic image
 
-// ── Helpers ───────────────────────────────────
-const $  = id => document.getElementById(id);
-const done = id => $(`lb-${id}`)?.classList.add('done');
-const daysAgo = n => { const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); };
-const today   = () => new Date().toISOString().slice(0,10);
+// ── Date header ───────────────────────────────
+document.getElementById('current-date').textContent =
+  new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
 
-function mkChart(id, cfg) {
-  if (charts[id]) { charts[id].destroy(); }
-  const ctx = $(id);
-  if (!ctx) return;
-  charts[id] = new Chart(ctx, cfg);
-  return charts[id];
+// ══════════════════════════════════════════════
+//  AUTH  (FIX: overlay shown by default; gates
+//         on SIGNED_IN event only — BUG-06)
+// ══════════════════════════════════════════════
+document.getElementById('btn-signin').addEventListener('click', handleSignIn);
+document.getElementById('btn-signup').addEventListener('click', handleSignUp);
+
+async function handleSignIn() {
+  clearAuthError();
+  const { error } = await sb.auth.signInWithPassword({
+    email:    document.getElementById('auth-email').value.trim(),
+    password: document.getElementById('auth-password').value,
+  });
+  if (error) showAuthError(error.message);
 }
 
-// ── Auth ──────────────────────────────────────
-// FIX BUG-01: Auth is fully implemented
-$('btn-login').onclick = async () => {
-  $('auth-err').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({
-    email: $('a-email').value.trim(), password: $('a-pass').value
-  });
-  if (error) { $('auth-err').textContent = error.message; }
-};
-$('btn-reg').onclick = async () => {
-  $('auth-err').textContent = '';
+async function handleSignUp() {
+  clearAuthError();
   const { error } = await sb.auth.signUp({
-    email: $('a-email').value.trim(), password: $('a-pass').value
+    email:    document.getElementById('auth-email').value.trim(),
+    password: document.getElementById('auth-password').value,
   });
-  $('auth-err').style.color = error ? 'var(--red)' : 'var(--green)';
-  $('auth-err').textContent = error ? error.message : 'Check email to confirm.';
-};
-$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  if (error) showAuthError(error.message);
+  else       showAuthError('Check your email to confirm your account.', true);
+}
 
-// FIX BUG-01: Gate on SIGNED_IN only
+async function handleLogout() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+function showAuthError(msg, success=false) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.color = success ? 'var(--green)' : 'var(--red)';
+}
+function clearAuthError() { document.getElementById('auth-error').textContent = ''; }
+
+// FIX BUG-06: only react to SIGNED_IN, not TOKEN_REFRESHED etc.
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
-    $('auth-overlay').classList.add('hidden');
-    boot();
+    _userId = session.user.id;
+    document.getElementById('auth-overlay').classList.add('hidden');
+    init();
   } else if (event === 'SIGNED_OUT') {
-    $('auth-overlay').classList.remove('hidden');
+    document.getElementById('auth-overlay').classList.remove('hidden');
   }
 });
 
+// On hard reload, restore existing session silently
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
-  if (session) { $('auth-overlay').classList.add('hidden'); boot(); }
+  if (session) {
+    _userId = session.user.id;
+    document.getElementById('auth-overlay').classList.add('hidden');
+    init();
+  }
 })();
 
-// ── Boot ──────────────────────────────────────
-async function boot() {
-  loadWeather();
-  await Promise.all([
-    loadKPIs(),
-    loadSpotlights(),
-    loadResilienceScore(),
-    loadFeedbackLoop(),
-    loadYieldSignature(),
-    loadDiseaseChart(),
-    loadSeverityChart(),
-    loadScanTable(),
-    loadPestBars(),
-    loadMaturityChart(),
-    loadPenaltyChart(),
-    loadMonarchChart(),
-    loadPieChart(),
-    loadActivityChart(),
-  ]);
-  buildConsultant();
-}
+// ══════════════════════════════════════════════
+//  WEATHER — delegates to shared WeatherEngine
+//  which also detects frost/heat/rain events and
+//  writes them to weather_events with scan links.
+// ══════════════════════════════════════════════
+async function fetchWeather() {
+  const btn = document.getElementById('weather-refresh-btn');
+  btn.classList.add('loading');
+  btn.textContent = '…';
 
-// ── Weather (FIX BUG-01 / ISSUE-02) ──────────
-async function loadWeather() {
-  const WMO = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:'🌧',80:'🌦',95:'⛈'};
   try {
-    const r = await fetch(
-      'https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635' +
-      '&current=temperature_2m,apparent_temperature,weathercode,relative_humidity_2m' +
-      '&daily=sunshine_duration&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=1'
+    const wx = await WeatherEngine.run(sb);
+
+    const riskMap = {
+      FROST:    { label:'❄️ FROST',    cls:'danger' },
+      HEAT:     { label:'🔥 HEAT',     cls:'danger' },
+      MODERATE: { label:'⚠️ MODERATE', cls:'warn'   },
+      LOW:      { label:'✅ LOW',       cls:'good'   },
+    };
+    const { label: riskLabel, cls: riskClass } = riskMap[wx.risk] || riskMap.LOW;
+
+    document.getElementById('w-temp').textContent  = `${wx.icon} ${wx.tempF}°F`;
+    document.getElementById('w-solar').textContent = `${wx.solarHours} hrs`;
+    document.getElementById('w-risk').textContent  = riskLabel;
+    document.getElementById('w-risk').className    = `climate-val ${riskClass}`;
+    document.getElementById('weather-updated').textContent =
+      new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+
+    // Show event badge if any events fired today
+    const todayEvents = (wx.events||[]).filter(e => e.event_date === WeatherEngine.today());
+    if (todayEvents.length) {
+      const existing = document.getElementById('wx-event-badge');
+      const badge = existing || document.createElement('span');
+      badge.id = 'wx-event-badge';
+      badge.textContent = ` · ${todayEvents.length} event${todayEvents.length>1?'s':''} logged`;
+      badge.style.cssText = 'font-size:0.65rem;color:#f5a623;margin-left:4px;';
+      if (!existing) document.getElementById('weather-updated').after(badge);
+    }
+  } catch(e) {
+    document.getElementById('w-temp').textContent = '⚠️ Offline';
+    console.warn('[Weather] engine error:', e.message);
+  }
+
+  btn.classList.remove('loading');
+  btn.textContent = '↻ Refresh';
+}
+
+function refreshWeather() { fetchWeather(); }
+
+// ══════════════════════════════════════════════
+//  MATURITY CALC  (FIX BUG-05: includes recovery_days)
+// ══════════════════════════════════════════════
+function calculateMaturity(planted, maturityDays, recoveryDays = 0) {
+  if (!planted || !maturityDays) return 0;
+  const daysGrown = (Date.now() - new Date(planted).getTime()) / 86400000;
+  const effective = maturityDays + (recoveryDays || 0);
+  return Math.min(100, Math.max(0, Math.floor((daysGrown / effective) * 100)));
+}
+
+function harvestDate(planted, maturityDays, recoveryDays = 0) {
+  if (!planted || !maturityDays) return null;
+  const effective = maturityDays + (recoveryDays || 0);
+  const d = new Date(new Date(planted).getTime() + effective * 86400000);
+  return d;
+}
+
+function daysUntil(date) {
+  return Math.ceil((date.getTime() - Date.now()) / 86400000);
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+async function init() {
+  fetchWeather(); // FIX BUG-01
+  await Promise.all([
+    renderDashboard(),
+    loadLogFeed(),
+    loadWaterPulse(),
+  ]);
+}
+
+// ══════════════════════════════════════════════
+//  DASHBOARD  (FIX BUG-04, BUG-05, ISSUE-01,
+//              ISSUE-02, ISSUE-04)
+// ══════════════════════════════════════════════
+async function renderDashboard() {
+  const { data: plants, error } = await sb
+    .from('garden_library')
+    .select('id, common_name, scientific_name, emoji, maturity_days, recovery_days, planted_date, is_native, is_host_plant')
+    .order('common_name');
+
+  if (error || !plants) return;
+
+  // ── Pollinator IQ (FIX ISSUE-01: native + host) ──────
+  const nativeCount = plants.filter(p => p.is_native).length;
+  const hostCount   = plants.filter(p => p.is_host_plant).length;
+  const total       = plants.length || 1;
+  const iqScore     = Math.min(100, Math.round(((nativeCount * 1.5 + hostCount * 1.0) / total) * 50));
+  document.getElementById('native-iq-count').textContent     = iqScore;
+  document.getElementById('native-species-label').textContent = `${nativeCount} native · ${hostCount} host`;
+
+  // ── Biological Pulse ──────────────────────────────────
+  if (plants.length > 0) {
+    // FIX BUG-05: pass recovery_days to calculateMaturity
+    const avg = Math.floor(
+      plants.reduce((acc, p) => acc + calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days), 0)
+      / plants.length
     );
-    const d = await r.json();
-    const c = d.current;
-    const tempF   = Math.round(c.temperature_2m);
-    const feelsF  = Math.round(c.apparent_temperature);
-    const solar   = ((d.daily.sunshine_duration?.[0]||0)/3600).toFixed(1);
-    const icon    = WMO[c.weathercode] || '🌡';
-
-    let riskLabel = '✅ LOW', riskClass = '';
-    if (tempF <= 36)      { riskLabel = '❄️ FROST';    riskClass = 'danger'; }
-    else if (tempF >= 90) { riskLabel = '🔥 HEAT';     riskClass = 'danger'; }
-    else if (tempF < 50)  { riskLabel = '⚠️ MODERATE'; riskClass = 'warn';   }
-
-    $('w-temp').textContent     = `${icon} ${tempF}°F`;
-    $('w-feels').textContent    = `${feelsF}°F`;
-    $('w-solar').textContent    = `${solar} hrs`;
-    $('w-humidity').textContent = `${c.relative_humidity_2m}%`;
-    $('w-risk').textContent     = riskLabel;
-    $('w-risk').className       = `c-val ${riskClass}`;
-  } catch { $('w-temp').textContent = '⚠️ Offline'; }
-}
-
-// ── KPIs ─────────────────────────────────────
-async function loadKPIs() {
-  const past90 = daysAgo(90);
-  const [plantRes, scanRes] = await Promise.all([
-    sb.from('garden_library').select('id, is_native, is_host_plant, maturity_days, recovery_days, planted_date'),
-    sb.from('plant_health_scans').select('id, status, scan_date').gte('scan_date', past90),
-  ]);
-
-  const plants = plantRes.data || [];
-  const scans  = scanRes.data  || [];
-
-  // Plants
-  $('kpi-plants').textContent   = plants.length;
-  $('kpi-plants-d').textContent = `${plants.length} species in library`;
-
-  // Avg maturity (FIX BUG-05: includes recovery_days)
-  const mats = plants.map(p => {
-    if (!p.planted_date || !p.maturity_days) return null;
-    const grown = Math.max(0,(Date.now()-new Date(p.planted_date))/86400000);
-    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
-    return Math.min(100, Math.round((grown/eff)*100));
-  }).filter(m => m !== null);
-  const avg = mats.length ? Math.round(mats.reduce((a,b)=>a+b,0)/mats.length) : 0;
-  $('kpi-maturity').textContent = `${avg}%`;
-  $('kpi-maturity-d').textContent = `Garden-wide average`;
-
-  // Incidents
-  const active = scans.filter(s=>s.status!=='resolved').length;
-  $('kpi-incidents').textContent = scans.length;
-  $('kpi-incidents-d').textContent = `${active} active · ${scans.length-active} resolved`;
-  $('kpi-incidents-d').className   = `kpi-delta ${active>0?'down':'up'}`;
-
-  // Pollinator IQ
-  const native = plants.filter(p=>p.is_native).length;
-  const host   = plants.filter(p=>p.is_host_plant).length;
-  const iq = plants.length ? Math.min(100,Math.round(((native*1.5+host)/plants.length)*50)) : 0;
-  $('kpi-iq').textContent   = iq;
-  $('kpi-iq-d').textContent = `${native} native · ${host} host`;
-}
-
-// ── Spotlight cards (FIX BUG-02: live data) ──
-async function loadSpotlights() {
-  const { data: plants } = await sb.from('garden_library')
-    .select('common_name, emoji, maturity_days, recovery_days, planted_date');
-
-  const ps = plants || [];
-
-  // Top performer = highest maturity %
-  const withMat = ps.map(p => {
-    const grown = !p.planted_date ? 0 : Math.max(0,(Date.now()-new Date(p.planted_date))/86400000);
-    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
-    return { ...p, pct: Math.min(100,Math.round((grown/eff)*100)) };
-  }).sort((a,b)=>b.pct-a.pct);
-
-  if (withMat.length > 0) {
-    const top = withMat[0];
-    $('sp-top-name').textContent = top.common_name || 'Unknown';
-    $('sp-top-sub').textContent  = `${top.pct}% Maturity`;
-    $('sp-top-icon').textContent = top.emoji || '🌱';
-  } else {
-    $('sp-top-name').textContent = 'No plants yet';
-    $('sp-top-sub').textContent  = 'Add plants to see spotlight';
+    document.getElementById('health-pct').textContent = `${avg}%`;
   }
 
-  // Most penalized = highest recovery_days
-  const penalized = [...ps].sort((a,b)=>(b.recovery_days||0)-(a.recovery_days||0));
-  if (penalized.length > 0 && (penalized[0].recovery_days||0) > 0) {
-    const p = penalized[0];
-    $('sp-penalty-name').textContent = p.common_name || 'Unknown';
-    $('sp-penalty-sub').textContent  = `+${p.recovery_days}d recovery penalty`;
-    $('sp-penalty-icon').textContent = p.emoji || '⚠️';
-  } else {
-    $('sp-penalty-name').textContent = 'None';
-    $('sp-penalty-sub').textContent  = 'No recovery penalties logged';
-    $('sp-penalty-icon').textContent = '✅';
-  }
+  // ── Plant cards (FIX ISSUE-04: build once, set once) ─
+  const grid     = document.getElementById('seed-grid');
+  const forecast = document.getElementById('harvest-forecast');
 
-  // Longest to harvest = highest effective maturity days remaining
-  const remaining = ps.map(p => {
-    const grown = !p.planted_date ? 0 : Math.max(0,(Date.now()-new Date(p.planted_date))/86400000);
-    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
-    return { ...p, daysLeft: Math.max(0, Math.round(eff - grown)) };
-  }).sort((a,b)=>b.daysLeft-a.daysLeft);
-
-  if (remaining.length > 0) {
-    const r = remaining[0];
-    $('sp-longest-name').textContent = r.common_name || 'Unknown';
-    $('sp-longest-sub').textContent  = `${r.daysLeft}d until harvest`;
-    $('sp-longest-icon').textContent = r.emoji || '📅';
-  }
-}
-
-// ── Disease × Temperature chart (FIX BUG-02) ─
-async function loadDiseaseChart() {
-  const past30 = daysAgo(30);
-  const [scanRes, wxRes] = await Promise.all([
-    sb.from('plant_health_scans').select('scan_date').gte('scan_date', past30).order('scan_date'),
-    sb.from('weather_logs').select('log_date,temp_high_f,temp_low_f').gte('log_date', past30).order('log_date'),
-  ]);
-  done('disease');
-
-  const scanMap = {}, wxMap = {};
-  (scanRes.data||[]).forEach(s => { scanMap[s.scan_date] = (scanMap[s.scan_date]||0)+1; });
-  (wxRes.data||[]).forEach(w  => { wxMap[w.log_date] = ((w.temp_high_f||0)+(w.temp_low_f||0))/2; });
-
-  const labels=[], counts=[], temps=[];
-  for (let i=29;i>=0;i--) {
-    const d = daysAgo(i);
-    labels.push(d.slice(5));
-    counts.push(scanMap[d]||0);
-    temps.push(wxMap[d]||null);
-  }
-
-  mkChart('chart-disease', {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { type:'bar',  label:'Incidents',    data:counts, backgroundColor:'rgba(240,82,82,0.5)',  borderColor:'#f05252', borderWidth:1, yAxisID:'y'  },
-        { type:'line', label:'Avg Temp (°F)', data:temps,  borderColor:'#f5a623', backgroundColor:'rgba(245,166,35,0.08)', tension:0.4, pointRadius:2, yAxisID:'y1', spanGaps:true },
-      ],
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      interaction:{ mode:'index', intersect:false },
-      scales:{
-        x:  { grid:{color:'#1a2e1c'}, ticks:{maxTicksLimit:10, maxRotation:0} },
-        y:  { position:'left',  grid:{color:'#1a2e1c'}, title:{display:true,text:'Incidents',color:'#f05252'}, min:0, ticks:{stepSize:1} },
-        y1: { position:'right', grid:{drawOnChartArea:false}, title:{display:true,text:'°F',color:'#f5a623'} },
-      },
-      // FIX BUG-05: legend labels match dataset labels
-      plugins:{ legend:{ display:true, labels:{boxWidth:10, color:'#4d7050'} } },
-    },
-  });
-
-  // Correlation insight
-  const hotIncidents = counts.filter((_,i) => (temps[i]||0)>75 && counts[i]>0).length;
-  const insightEl = $('insight-disease');
-  insightEl.style.display = 'block';
-  if (hotIncidents >= 3) {
-    insightEl.className = 'insight-box warn';
-    insightEl.textContent = `⚠️ ${hotIncidents} days show disease incidents at temperatures above 75°F. Fungal pathogens and heat stress are likely cofactors. Consider prophylactic treatment during high-heat windows.`;
-  } else if ((scanRes.data||[]).length === 0) {
-    insightEl.className = 'insight-box info';
-    insightEl.textContent = `✅ No health incidents in the past 30 days. Weather logs will populate as data is recorded.`;
-  } else {
-    insightEl.className = 'insight-box';
-    insightEl.textContent = `📊 ${(scanRes.data||[]).length} incidents over 30 days. No strong temperature correlation detected. Continue monitoring.`;
-  }
-}
-
-// ── Severity donut ─────────────────────────────
-async function loadSeverityChart() {
-  const { data } = await sb.from('plant_health_scans').select('severity');
-  done('severity');
-  const c = {low:0,medium:0,high:0,critical:0};
-  (data||[]).forEach(s=>{ if(s.severity in c) c[s.severity]++; });
-  mkChart('chart-severity',{
-    type:'doughnut',
-    data:{ labels:['Low','Medium','High','Critical'], datasets:[{ data:[c.low,c.medium,c.high,c.critical], backgroundColor:['#1a6b34','#f5a623','#f05252','#991b1b'], borderWidth:1, borderColor:'#0b140d' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{boxWidth:10,padding:10} } } },
-  });
-}
-
-// ── Scan table ─────────────────────────────────
-async function loadScanTable() {
-  const { data } = await sb.from('plant_health_scans')
-    .select('scan_date,plant_name,issue_type,severity,status,recovery_days_added')
-    .order('scan_date',{ascending:false}).limit(20);
-  done('table');
-  const scans = data||[];
-  if (!scans.length) {
-    $('scan-table-wrap').innerHTML = '<div class="empty-state">No scan records yet. Add plant health scans in the Clinic.</div>';
-    return;
-  }
-  $('scan-table-wrap').innerHTML = `
-    <table class="data-table">
-      <thead><tr><th>Date</th><th>Plant</th><th>Issue</th><th>Severity</th><th>Status</th><th>Penalty</th></tr></thead>
-      <tbody>${scans.map(s=>`
-        <tr>
-          <td>${s.scan_date||'—'}</td>
-          <td>${s.plant_name||'—'}</td>
-          <td>${s.issue_type||'—'}</td>
-          <td><span class="sev-tag sev-${s.severity||'low'}">${(s.severity||'low').toUpperCase()}</span></td>
-          <td style="color:${s.status==='resolved'?'var(--green)':'var(--amber)'}">${s.status==='resolved'?'RESOLVED':'ACTIVE'}</td>
-          <td style="color:var(--red)">${s.recovery_days_added?`+${s.recovery_days_added}d`:'—'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
-}
-
-// ── Pest bars (FIX BUG-02: live from scans, FIX BUG-04 no markdown) ─
-async function loadPestBars() {
-  const { data } = await sb.from('plant_health_scans').select('issue_type');
-  const counts = {};
-  (data||[]).forEach(s => {
-    if (!s.issue_type) return;
-    counts[s.issue_type] = (counts[s.issue_type]||0)+1;
-  });
-
-  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const max    = sorted[0]?.[1] || 1;
-
-  if (!sorted.length) {
-    $('pest-bars').innerHTML = '<div class="empty-state" style="padding:0.75rem">No issue types recorded yet.</div>';
+  if (plants.length === 0) {
+    grid.innerHTML = '';
+    document.getElementById('empty-state').style.display = 'block';
+    forecast.innerHTML = '<div class="log-empty">No plants recorded yet.</div>';
     return;
   }
 
-  $('pest-bars').innerHTML = sorted.map(([name, count]) => `
-    <div class="pest-row">
-      <span class="pest-name">${name}</span>
-      <div class="pest-bar-track">
-        <div class="pest-bar-fill" style="width:${Math.round((count/max)*100)}%"></div>
-      </div>
-      <span class="pest-pct">${count}x</span>
-    </div>`).join('');
-}
+  document.getElementById('empty-state').style.display = 'none';
 
-// ── Maturity chart (FIX BUG-02, BUG-05) ──────
-async function loadMaturityChart() {
-  const { data } = await sb.from('garden_library')
-    .select('common_name,planted_date,maturity_days,recovery_days').order('common_name');
-  done('maturity');
-
-  const ps = (data||[]).filter(p=>p.planted_date&&p.maturity_days).slice(0,18);
-  const labels = ps.map(p=>(p.common_name||'?').slice(0,16));
-  const base   = ps.map(p=>{ const g=Math.max(0,(Date.now()-new Date(p.planted_date))/86400000); return Math.min(100,Math.round((g/p.maturity_days)*100)); });
-  const eff    = ps.map(p=>{ const g=Math.max(0,(Date.now()-new Date(p.planted_date))/86400000); const e=(p.maturity_days||60)+(p.recovery_days||0); return Math.min(100,Math.round((g/e)*100)); });
-
-  if (!ps.length) { done('maturity'); $('chart-maturity').closest('.chart-wrap').innerHTML='<div class="empty-state">Add plants with a planted date to see maturity progress.</div>'; return; }
-
-  mkChart('chart-maturity',{
-    type:'bar',
-    data:{ labels, datasets:[
-      // FIX BUG-05: labels correctly describe what they show
-      { label:'Effective (with penalty)', data:eff,  backgroundColor:'rgba(61,220,110,0.6)', borderColor:'#3ddc6e', borderWidth:1 },
-      { label:'Base (no penalty)',        data:base, backgroundColor:'rgba(61,220,110,0.15)',borderColor:'#1a6b34', borderWidth:1 },
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      scales:{ x:{min:0,max:100,grid:{color:'#1a2e1c'},ticks:{callback:v=>v+'%'}}, y:{grid:{display:false},ticks:{font:{size:9}}} },
-      plugins:{ legend:{ labels:{boxWidth:10} } },
-    },
-  });
-}
-
-// ── Penalty chart ─────────────────────────────
-async function loadPenaltyChart() {
-  const { data } = await sb.from('garden_library')
-    .select('common_name,recovery_days').gt('recovery_days',0).order('recovery_days',{ascending:false}).limit(12);
-  done('penalty');
-  const ps = data||[];
-  if (!ps.length) { $('chart-penalty').closest('.chart-wrap').innerHTML='<div class="empty-state" style="height:200px;display:flex;align-items:center;justify-content:center;">No recovery penalties logged yet.</div>'; return; }
-  mkChart('chart-penalty',{
-    type:'bar',
-    data:{ labels:ps.map(p=>(p.common_name||'?').slice(0,14)), datasets:[{ label:'Penalty Days', data:ps.map(p=>p.recovery_days), backgroundColor:'rgba(240,82,82,0.6)', borderColor:'#f05252', borderWidth:1 }] },
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      scales:{ x:{grid:{color:'#1a2e1c'},title:{display:true,text:'Days',color:'#4d7050'}}, y:{grid:{display:false},ticks:{font:{size:9}}} },
-      plugins:{ legend:{display:false} },
-    },
-  });
-}
-
-// ── Monarch chart ─────────────────────────────
-async function loadMonarchChart() {
-  const { data } = await sb.from('garden_library').select('is_native,is_host_plant,created_at').order('created_at');
-  done('monarch');
-  const months = {};
-  (data||[]).forEach(p=>{ const m=(p.created_at||today()).slice(0,7); if(!months[m])months[m]={native:0,host:0,other:0}; if(p.is_native)months[m].native++; else if(p.is_host_plant)months[m].host++; else months[m].other++; });
-  const labels = Object.keys(months).sort();
-  if (!labels.length) { $('chart-monarch').closest('.chart-wrap').innerHTML='<div class="empty-state">Add plants to see trends.</div>'; return; }
-  let cn=0,ch=0,co=0; const cN=[],cH=[],cO=[];
-  labels.forEach(l=>{ cn+=months[l].native;cN.push(cn); ch+=months[l].host;cH.push(ch); co+=months[l].other;cO.push(co); });
-  mkChart('chart-monarch',{
-    type:'line',
-    data:{ labels, datasets:[
-      { label:'Native',   data:cN, borderColor:'#3ddc6e', backgroundColor:'rgba(61,220,110,0.08)', fill:true, tension:0.4, pointRadius:3 },
-      { label:'Host',     data:cH, borderColor:'#5ba4f5', backgroundColor:'rgba(91,164,245,0.08)', fill:true, tension:0.4, pointRadius:3 },
-      { label:'Other',    data:cO, borderColor:'#4d7050', backgroundColor:'rgba(77,112,80,0.05)',  fill:true, tension:0.4, pointRadius:3 },
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{grid:{color:'#1a2e1c'}}, y:{grid:{color:'#1a2e1c'},min:0} }, plugins:{legend:{labels:{boxWidth:10}}} },
-  });
-}
-
-// ── Pie chart ─────────────────────────────────
-async function loadPieChart() {
-  const { data } = await sb.from('garden_library').select('is_native,is_host_plant');
-  done('pie');
-  const ps = data||[];
-  const nOnly = ps.filter(p=>p.is_native&&!p.is_host_plant).length;
-  const hOnly = ps.filter(p=>!p.is_native&&p.is_host_plant).length;
-  const both  = ps.filter(p=>p.is_native&&p.is_host_plant).length;
-  const other = ps.length-nOnly-hOnly-both;
-
-  mkChart('chart-pie',{
-    type:'doughnut',
-    data:{ labels:['Native Only','Host Only','Native+Host','Other'], datasets:[{ data:[nOnly,hOnly,both,other], backgroundColor:['#3ddc6e','#5ba4f5','#a8f5bc','#1a2e1c'], borderWidth:1, borderColor:'#0b140d' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}} },
+  // Sort forecast by harvest date
+  const sorted = [...plants].sort((a, b) => {
+    const da = harvestDate(a.planted_date, a.maturity_days, a.recovery_days);
+    const db = harvestDate(b.planted_date, b.maturity_days, b.recovery_days);
+    if (!da) return 1; if (!db) return -1;
+    return da - db;
   });
 
-  const total = ps.length||1;
-  const iq = Math.min(100,Math.round(((nOnly+both)*1.5+hOnly)/total*50));
-  const el = $('iq-callout');
-  el.style.display='block';
-  el.className = `insight-box${iq<40?' warn':''}`;
-  // FIX BUG-04: No markdown — using proper HTML
-  el.innerHTML = `<strong>POLLINATOR IQ: ${iq}/100</strong><br>${nOnly+both} native · ${hOnly+both} host · ${other} other<br>${iq>=70?'🌟 Excellent — your garden is a pollinator haven.':iq>=40?'🌱 Good start. More native and host species will boost your IQ.':'⚠️ Low IQ. Prioritize native plantings to support pollinators.'}`;
-}
+  // Build plant cards (FIX ISSUE-04)
+  grid.innerHTML = plants.map(p => {
+    const pct     = calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days);
+    const hDate   = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
+    const ready   = pct >= 100;
+    const penalty = (p.recovery_days || 0) > 0;
 
-// ── Activity chart ────────────────────────────
-async function loadActivityChart() {
-  const past90 = daysAgo(90);
-  const { data } = await sb.from('garden_logs').select('log_date,activity_type').gte('log_date',past90).order('log_date');
-  done('activity');
-  const map = {};
-  (data||[]).forEach(l=>{ map[l.log_date]=map[l.log_date]||{}; const t=l.activity_type||'other'; map[l.log_date][t]=(map[l.log_date][t]||0)+1; });
-  const labels=[],water=[],fert=[],prune=[],obs=[];
-  for(let i=89;i>=0;i--){ const d=daysAgo(i); labels.push(i%7===0?d.slice(5):''); const day=map[d]||{}; water.push(day.watering||day.water||0); fert.push(day.fertilizing||day.fertilize||0); prune.push(day.pruning||day.prune||0); obs.push(day.observation||day.note||0); }
-  mkChart('chart-activity',{
-    type:'bar',
-    data:{ labels, datasets:[
-      {label:'Watering',    data:water, backgroundColor:'#5ba4f5', stack:'a'},
-      {label:'Fertilizing', data:fert,  backgroundColor:'#3ddc6e', stack:'a'},
-      {label:'Pruning',     data:prune, backgroundColor:'#f5a623', stack:'a'},
-      {label:'Observation', data:obs,   backgroundColor:'#a8f5bc', stack:'a'},
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{grid:{display:false},stacked:true}, y:{grid:{color:'#1a2e1c'},stacked:true,min:0} }, plugins:{legend:{labels:{boxWidth:10}}}, barPercentage:0.9, categoryPercentage:1.0 },
-  });
-}
+    const badges = [
+      p.is_native    ? `<span class="badge badge-native">Native</span>` : '',
+      p.is_host_plant? `<span class="badge badge-host">Host</span>`   : '',
+      ready          ? `<span class="badge badge-harvest">Ready</span>`: '',
+      penalty        ? `<span class="badge badge-penalty">+${p.recovery_days}d penalty</span>` : '',
+    ].filter(Boolean).join('');
 
-// ── Strategic consultant (FIX BUG-04: proper HTML, no fake AI label) ─
-async function buildConsultant() {
-  const [plantRes, scanRes, logRes] = await Promise.all([
-    sb.from('garden_library').select('common_name,emoji,maturity_days,recovery_days,planted_date,is_native,is_host_plant'),
-    sb.from('plant_health_scans').select('plant_name,issue_type,severity,status').neq('status','resolved'),
-    sb.from('garden_logs').select('activity_type,log_date').order('log_date',{ascending:false}).limit(30),
-  ]);
-
-  const plants   = plantRes.data || [];
-  const scans    = scanRes.data  || [];
-  const logs     = logRes.data   || [];
-
-  const insights = [];
-
-  // Active health issues
-  if (scans.length > 0) {
-    const byPlant = {};
-    scans.forEach(s=>{ byPlant[s.plant_name||'Unknown']=(byPlant[s.plant_name||'Unknown']||0)+1; });
-    const top = Object.entries(byPlant).sort((a,b)=>b[1]-a[1])[0];
-    insights.push(`<strong>${top[0]}</strong> has ${top[1]} active health issue${top[1]>1?'s':''} — prioritize Clinic review.`);
-  }
-
-  // Highest penalty
-  const penalized = plants.filter(p=>(p.recovery_days||0)>0).sort((a,b)=>(b.recovery_days||0)-(a.recovery_days||0));
-  if (penalized.length > 0) {
-    insights.push(`<strong>${penalized[0].common_name}</strong> has accumulated <strong>${penalized[0].recovery_days} recovery penalty days</strong>, pushing its effective harvest window out.`);
-  }
-
-  // Native ratio
-  const nativeCount = plants.filter(p=>p.is_native||p.is_host_plant).length;
-  const nativeRatio = plants.length ? Math.round((nativeCount/plants.length)*100) : 0;
-  if (nativeRatio < 30) {
-    insights.push(`Only <strong>${nativeRatio}%</strong> of your library is native or host species. Adding more native plantings will meaningfully improve your Pollinator IQ.`);
-  } else if (nativeRatio >= 60) {
-    insights.push(`<strong>${nativeRatio}%</strong> native and host species — strong eco-balance. Your garden is providing significant pollinator habitat.`);
-  }
-
-  // Upcoming harvests
-  const soon = plants.filter(p=>{
-    if (!p.planted_date||!p.maturity_days) return false;
-    const grown = (Date.now()-new Date(p.planted_date))/86400000;
-    const eff   = (p.maturity_days||60)+(p.recovery_days||0);
-    const left  = eff - grown;
-    return left >= 0 && left <= 14;
-  });
-  if (soon.length > 0) {
-    insights.push(`<strong>${soon.map(p=>p.common_name).join(', ')}</strong> ${soon.length===1?'is':'are'} approaching harvest within the next 14 days.`);
-  }
-
-  // Watering cadence
-  const waterDays = new Set(logs.filter(l=>l.activity_type==='watering').map(l=>l.log_date)).size;
-  if (waterDays < 3) {
-    insights.push(`Only <strong>${waterDays} watering sessions</strong> recorded in the last 30 logs. Consider increasing frequency during active growth periods.`);
-  }
-
-  if (insights.length === 0) {
-    insights.push('Your garden data looks healthy. Continue logging activities in the Clinic and Garden Logs to receive personalized recommendations here.');
-  }
-
-  // FIX BUG-04: render as proper HTML (no markdown)
-  $('consultant-text').innerHTML = insights.map(i=>`<p style="margin-bottom:0.5rem;">→ ${i}</p>`).join('');
-}
-
-
-// ══════════════════════════════════════════════
-//  RESILIENCE SCORE ENGINE
-//  Score 0-100 from 4 weighted factors:
-//  - Health factor:   30pts  (incident rate last 90d)
-//  - Recovery factor: 25pts  (penalty burden)
-//  - Ecosystem factor:25pts  (native/host ratio)
-//  - Activity factor: 20pts  (logging consistency)
-// ══════════════════════════════════════════════
-
-let _resilienceHistory = []; // in-session snapshots for sparkline
-
-async function loadResilienceScore() {
-  const past90 = daysAgo(90);
-
-  const [plantRes, scanRes, logRes] = await Promise.all([
-    sb.from('garden_library').select('id,is_native,is_host_plant,recovery_days,maturity_days,planted_date,common_name'),
-    sb.from('plant_health_scans').select('scan_date,severity,status').gte('scan_date', past90),
-    sb.from('garden_logs').select('log_date').gte('log_date', past90),
-  ]);
-
-  const plants = plantRes.data || [];
-  const scans  = scanRes.data  || [];
-  const logs   = logRes.data   || [];
-
-  if (!plants.length) {
-    $('resilience-score-val').textContent = '—';
-    $('resilience-label').textContent = 'Add plants to your library to compute a Resilience Score.';
-    return;
-  }
-
-  // ── Factor 1: Health (30pts) ──
-  // Fewer active high/critical incidents = better
-  const activeHigh = scans.filter(s => s.status !== 'resolved' && ['high','critical'].includes(s.severity)).length;
-  const healthRaw  = Math.max(0, 1 - (activeHigh / Math.max(plants.length, 1)));
-  const healthPts  = Math.round(healthRaw * 30);
-
-  // ── Factor 2: Recovery burden (25pts) ──
-  // Lower average penalty ratio = better
-  const avgPenaltyRatio = plants.reduce((acc, p) => {
-    if (!p.maturity_days) return acc;
-    return acc + ((p.recovery_days||0) / p.maturity_days);
-  }, 0) / plants.length;
-  const recoveryRaw = Math.max(0, 1 - Math.min(1, avgPenaltyRatio * 3));
-  const recoveryPts = Math.round(recoveryRaw * 25);
-
-  // ── Factor 3: Ecosystem (25pts) ──
-  const ecoCount = plants.filter(p => p.is_native || p.is_host_plant).length;
-  const ecoRatio = ecoCount / plants.length;
-  const ecoPts   = Math.round(Math.min(1, ecoRatio * 1.5) * 25);
-
-  // ── Factor 4: Activity consistency (20pts) ──
-  // Unique log days in past 90d vs expected (every 3 days = 30 sessions)
-  const uniqueDays   = new Set(logs.map(l => l.log_date)).size;
-  const activityRaw  = Math.min(1, uniqueDays / 30);
-  const activityPts  = Math.round(activityRaw * 20);
-
-  const total = healthPts + recoveryPts + ecoPts + activityPts;
-
-  // ── Render score ──
-  $('resilience-score-val').textContent = total;
-
-  const label = total >= 85 ? 'Thriving Ecosystem'
-    : total >= 70 ? 'Healthy Garden'
-    : total >= 50 ? 'Developing Resilience'
-    : total >= 30 ? 'Needs Attention'
-    : 'Under Stress';
-  const labelColor = total >= 70 ? 'var(--green)' : total >= 50 ? 'var(--amber)' : 'var(--red)';
-  $('resilience-label').textContent = label;
-  $('resilience-label').style.color = labelColor;
-  $('resilience-score-val').style.color = labelColor;
-
-  // ── Factor bars ──
-  const factors = [
-    { label:'Health',      pts:healthPts,   max:30, color:'#3ddc6e' },
-    { label:'Recovery',    pts:recoveryPts, max:25, color:'#f5a623' },
-    { label:'Ecosystem',   pts:ecoPts,      max:25, color:'#5ba4f5' },
-    { label:'Consistency', pts:activityPts, max:20, color:'#a78bfa' },
-  ];
-  $('resilience-factors').innerHTML = factors.map(f => `
-    <div class="resilience-factor">
-      <div class="rf-label">${f.label}</div>
-      <div class="rf-track"><div class="rf-fill" style="width:${Math.round((f.pts/f.max)*100)}%;background:${f.color};"></div></div>
-      <div class="rf-val">${f.pts}/${f.max}</div>
-    </div>`).join('');
-
-  // ── Gauge chart (doughnut arc) ──
-  const gaugeColor = total >= 70 ? '#3ddc6e' : total >= 50 ? '#f5a623' : '#f05252';
-  if (charts['chart-resilience']) { charts['chart-resilience'].destroy(); delete charts['chart-resilience']; }
-  mkChart('chart-resilience', {
-    type: 'doughnut',
-    data: {
-      datasets: [{
-        data: [total, 100 - total],
-        backgroundColor: [gaugeColor, 'rgba(26,46,28,0.3)'],
-        borderWidth: 0,
-      }]
-    },
-    options: {
-      responsive: false, cutout: '72%',
-      rotation: -90, circumference: 180,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      animation: { duration: 1200, easing: 'easeOutQuart' },
-    }
-  });
-
-  // ── Sparkline (store in session) ──
-  _resilienceHistory.push(total);
-  if (_resilienceHistory.length > 7) _resilienceHistory.shift();
-  buildResilienceTrend();
-}
-
-function buildResilienceTrend() {
-  const h = _resilienceHistory;
-  if (h.length < 2) {
-    $('resilience-trend-note').textContent = 'Reload to build trend history.';
-    return;
-  }
-  const delta = h[h.length-1] - h[0];
-  $('resilience-trend-note').textContent = delta > 0 ? `↑ +${delta} pts trend` : delta < 0 ? `↓ ${delta} pts trend` : '→ Stable';
-  $('resilience-trend-note').style.color = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--muted)';
-
-  if (charts['chart-resilience-trend']) { charts['chart-resilience-trend'].destroy(); delete charts['chart-resilience-trend']; }
-  mkChart('chart-resilience-trend', {
-    type: 'line',
-    data: {
-      labels: h.map((_,i) => i+1),
-      datasets: [{ data: h, borderColor: '#3ddc6e', backgroundColor: 'rgba(61,220,110,0.1)', tension: 0.4, pointRadius: 3, borderWidth: 1.5 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } },
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-    }
-  });
-}
-
-// ══════════════════════════════════════════════
-//  YIELD SIGNATURE CHART
-//  Forward projection of harvest dates for all
-//  plants with planted_date + maturity_days.
-//  Shows two curves: base (no penalty) vs
-//  effective (with accumulated recovery_days).
-//  X-axis = future dates, Y-axis = % of plants
-//  that will be ready by that date.
-// ══════════════════════════════════════════════
-
-async function loadYieldSignature() {
-  const { data, error } = await sb.from('garden_library')
-    .select('common_name,planted_date,maturity_days,recovery_days')
-    .not('planted_date', 'is', null)
-    .not('maturity_days', 'is', null);
-
-  done('yield');
-
-  const plants = (data||[]).filter(p => p.planted_date && p.maturity_days);
-
-  if (!plants.length) {
-    $('chart-yield').closest('.chart-wrap').innerHTML =
-      '<div class="empty-state">Add plants with a planted date to see Yield Signature.</div>';
-    return;
-  }
-
-  // Build cumulative harvest curves over next 365 days
-  const today    = new Date();
-  const horizon  = 180; // show 180-day window
-  const labels   = [];
-  const baseData = [];
-  const effData  = [];
-
-  for (let d = 0; d <= horizon; d += 3) {
-    const futureDate = new Date(today.getTime() + d * 86400000);
-    labels.push(futureDate.toLocaleDateString('en-US', { month:'short', day:'numeric' }));
-
-    let baseReady = 0, effReady = 0;
-    plants.forEach(p => {
-      const planted  = new Date(p.planted_date + 'T12:00:00');
-      const baseDays = p.maturity_days;
-      const effDays  = p.maturity_days + (p.recovery_days || 0);
-      const baseHarvest = new Date(planted.getTime() + baseDays * 86400000);
-      const effHarvest  = new Date(planted.getTime() + effDays  * 86400000);
-      if (baseHarvest <= futureDate) baseReady++;
-      if (effHarvest  <= futureDate) effReady++;
-    });
-
-    baseData.push(Math.round((baseReady / plants.length) * 100));
-    effData.push(Math.round((effReady  / plants.length) * 100));
-  }
-
-  // Downsample labels for readability
-  const step = Math.ceil(labels.length / 8);
-  const sparseLabels = labels.map((l, i) => i % step === 0 ? l : '');
-
-  mkChart('chart-yield', {
-    type: 'line',
-    data: {
-      labels: sparseLabels,
-      datasets: [
-        {
-          label: 'Base (no penalty)',
-          data: baseData,
-          borderColor: '#3ddc6e',
-          backgroundColor: 'rgba(61,220,110,0.08)',
-          tension: 0.5, pointRadius: 0, borderWidth: 2,
-        },
-        {
-          label: 'Effective (with penalties)',
-          data: effData,
-          borderColor: '#f05252',
-          backgroundColor: 'rgba(240,82,82,0.06)',
-          tension: 0.5, pointRadius: 0, borderWidth: 2,
-          borderDash: [4, 3],
-        },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: { grid: { color: '#1a2e1c' }, ticks: { maxRotation: 0 } },
-        y: {
-          grid: { color: '#1a2e1c' },
-          min: 0, max: 100,
-          ticks: { callback: v => v + '%' },
-          title: { display: true, text: '% Plants Ready', color: '#4d7050' },
-        }
-      },
-      plugins: { legend: { display: true, labels: { boxWidth: 10, color: '#4d7050' } } },
-      animation: { duration: 1000, easing: 'easeOutQuart' },
-    }
-  });
-
-  // Insight: calculate how much penalty is shifting the 50% mark
-  const base50  = baseData.findIndex(v => v >= 50);
-  const eff50   = effData.findIndex(v => v >= 50);
-  const shiftDays = base50 >= 0 && eff50 >= 0 ? (eff50 - base50) * 3 : null;
-  const totalPenalty = plants.reduce((acc, p) => acc + (p.recovery_days || 0), 0);
-
-  const insightEl = $('insight-yield');
-  insightEl.style.display = 'block';
-  if (shiftDays !== null && shiftDays > 0) {
-    insightEl.className = 'insight-box warn';
-    insightEl.textContent = `⚠️ Recovery penalties are pushing your 50%-harvest milestone out by ~${shiftDays} days. Total accumulated penalty: ${totalPenalty}d across ${plants.length} plants. Resolving active Clinic issues will slow further accumulation.`;
-  } else if (totalPenalty === 0) {
-    insightEl.className = 'insight-box';
-    insightEl.textContent = `✅ No recovery penalties accumulated. Base and effective yield curves are identical — your garden is operating at full efficiency.`;
-  } else {
-    insightEl.className = 'insight-box';
-    insightEl.textContent = `📊 ${totalPenalty}d total penalty across ${plants.length} plants. Harvest curves are slightly offset but within normal range.`;
-  }
-}
-
-// ══════════════════════════════════════════════
-//  FEEDBACK LOOP — REMEDIATION ENGINE
-//  Loads active health scans with remediation
-//  steps. Checking a step marks progress.
-//  "Mark Resolved" button:
-//    1. Updates scan status → 'resolved'
-//    2. Adds recovery_days_added to plant's
-//       recovery_days in garden_library
-//    3. Re-renders maturity + yield charts
-//    4. Re-computes Resilience Score
-// ══════════════════════════════════════════════
-
-const REMEDIATION_STEPS = {
-  'Pest':        ['Remove affected foliage', 'Apply neem oil spray', 'Install sticky traps', 'Monitor weekly for 3 weeks'],
-  'Fungal':      ['Improve air circulation', 'Apply copper fungicide', 'Remove infected tissue', 'Avoid overhead watering'],
-  'Bacterial':   ['Remove infected plant material', 'Sterilize tools between plants', 'Apply copper-based bactericide', 'Improve drainage'],
-  'Viral':       ['Remove and destroy infected plants', 'Control aphid vectors', 'Disinfect tools', 'Plant resistant varieties next season'],
-  'Nutrient':    ['Soil test to confirm deficiency', 'Apply targeted amendment', 'Check soil pH', 'Foliar feed if acute'],
-  'Drought':     ['Deep water immediately', 'Add 2" mulch layer', 'Reduce sun exposure temporarily', 'Monitor soil moisture daily'],
-  'Overwatering':['Allow soil to dry between waterings', 'Improve drainage', 'Check for root rot', 'Reduce watering frequency'],
-  'Frost':       ['Remove damaged tissue after thaw', 'Apply floating row cover', 'Water soil before next frost', 'Mulch root zone'],
-  'Mechanical':  ['Stake or support damaged stems', 'Prune clean at node', 'Apply wound sealant if needed', 'Monitor for secondary infection'],
-  'Default':     ['Document symptoms with photo', 'Isolate plant if possible', 'Monitor for 48 hours', 'Consult Clinic for diagnosis'],
-};
-
-// Track which steps are checked per scan (in-memory, keyed by scan row id)
-const _stepState = {};
-
-async function loadFeedbackLoop() {
-  const { data, error } = await sb.from('plant_health_scans')
-    .select('id,plant_name,issue_type,severity,status,recovery_days_added,scan_date,plant_id')
-    .neq('status', 'resolved')
-    .order('scan_date', { ascending: false })
-    .limit(10);
-
-  const scans = data || [];
-
-  if (!scans.length) {
-    $('feedback-loop-wrap').innerHTML = `
-      <div class="empty-state" style="padding:1.5rem;text-align:center;">
-        <div style="font-size:1.5rem;margin-bottom:0.5rem;">✅</div>
-        <div>No active health issues. Your garden is clear.</div>
-        <div style="margin-top:0.4rem;font-size:0.65rem;color:var(--muted);">New issues logged in the Clinic will appear here.</div>
-      </div>`;
-    return;
-  }
-
-  $('feedback-loop-wrap').innerHTML = scans.map((s, si) => {
-    const steps = REMEDIATION_STEPS[s.issue_type] || REMEDIATION_STEPS['Default'];
-    if (!_stepState[s.id]) _stepState[s.id] = new Array(steps.length).fill(false);
-
-    const stepsHtml = steps.map((step, i) => `
-      <div class="fb-step" id="fbstep-${s.id}-${i}">
-        <div class="fb-step-check" id="fbcheck-${s.id}-${i}"
-          onclick="toggleStep('${s.id}', ${i}, ${steps.length})"
-          title="Mark complete"></div>
-        <span>${step}</span>
-      </div>`).join('');
-
-    const sevColor = { low:'var(--green-dim)', medium:'var(--amber)', high:'#f05252', critical:'#991b1b' }[s.severity] || 'var(--muted)';
+    const hDateStr = hDate
+      ? hDate.toLocaleDateString('en-US', { month:'short', day:'numeric' })
+      : 'Unknown';
 
     return `
-      <div class="fb-card" id="fbcard-${s.id}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
-          <div>
-            <div class="fb-plant">${s.plant_name || 'Unknown Plant'}</div>
-            <div class="fb-issue">
-              <span style="color:${sevColor};text-transform:uppercase;">${s.severity||'?'}</span>
-              <span style="margin:0 0.3rem;">·</span>${s.issue_type||'Unknown issue'}
-              <span style="margin:0 0.3rem;">·</span>${s.scan_date||''}
-            </div>
-          </div>
-          <div style="font-family:var(--mono);font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;text-align:right;flex-shrink:0;">
-            SCAN #${si+1}
-          </div>
+      <div class="plant-card">
+        <div class="plant-name">${p.emoji || '🌱'} ${p.common_name || 'Unknown'}</div>
+        <div class="plant-meta">${p.scientific_name || ''} · Harvest ~${hDateStr}</div>
+        ${badges ? `<div class="plant-badges">${badges}</div>` : ''}
+        <div class="progress-track">
+          <div class="progress-fill ${ready ? 'fill-harvest' : 'fill-growing'}" style="width:${pct}%"></div>
         </div>
-        <div class="fb-steps">${stepsHtml}</div>
-        <button class="fb-resolve-btn" id="fbbtn-${s.id}"
-          onclick="resolveFromFeedback('${s.id}', '${s.plant_id||''}', this)">
-          Mark Remediation Successful → Apply Recovery Penalty
-        </button>
-        <div class="fb-penalty-note">Resolving will add <strong>5 recovery days</strong> to this plant's maturity window and update the Yield Signature.</div>
+        <div style="font-family:var(--mono);font-size:0.55rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;">${pct}% mature</div>
+      </div>`;
+  }).join('');
+
+  // ── Temporal Pulse (FIX ISSUE-02: real dates) ─────────
+  forecast.innerHTML = sorted.map(p => {
+    const pct   = calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days);
+    const hDate = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
+    const days  = hDate ? daysUntil(hDate) : null;
+
+    let statusClass = 'status-growing', statusLabel = 'Growing';
+    if (pct >= 100) { statusClass = 'status-ready';  statusLabel = 'Ready Now'; }
+    else if (days !== null && days <= 14) { statusClass = 'status-soon'; statusLabel = `In ${days}d`; }
+
+    const dateStr = hDate
+      ? hDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+      : '—';
+
+    return `
+      <div class="forecast-item">
+        <div class="forecast-name">${p.emoji || '🌱'} ${p.common_name || 'Unknown'}</div>
+        <div class="forecast-date">Harvest: ${dateStr}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+          <span class="forecast-status ${statusClass}">${statusLabel}</span>
+          <span class="forecast-pct">${pct}%</span>
+        </div>
       </div>`;
   }).join('');
 }
 
-function toggleStep(scanId, stepIdx, totalSteps) {
-  _stepState[scanId][stepIdx] = !_stepState[scanId][stepIdx];
-  const check = $(`fbcheck-${scanId}-${stepIdx}`);
-  const row   = $(`fbstep-${scanId}-${stepIdx}`);
-  check.classList.toggle('done',   _stepState[scanId][stepIdx]);
-  row.classList.toggle('completed', _stepState[scanId][stepIdx]);
+// ══════════════════════════════════════════════
+//  LOG FEED  (FIX BUG-03: actually queries garden_logs)
+// ══════════════════════════════════════════════
+async function loadLogFeed() {
+  const { data: logs } = await sb
+    .from('garden_logs')
+    .select('activity_type, notes, log_date, plant_name')
+    .order('log_date', { ascending: false })
+    .limit(5);
 
-  // Enable resolve button only when all steps checked
-  const allDone = _stepState[scanId].every(Boolean);
-  const btn = $(`fbbtn-${scanId}`);
-  if (btn) {
-    btn.disabled = !allDone;
-    btn.style.borderColor = allDone ? 'var(--green)' : '';
-    btn.style.color       = allDone ? 'var(--green)'  : '';
+  const feed = document.getElementById('log-feed');
+  if (!logs || logs.length === 0) {
+    feed.innerHTML = '<div class="log-empty">No recent activity.</div>';
+    return;
   }
+
+  const icons = { watering:'💧', fertilizing:'🌿', pruning:'✂️', observation:'👁', harvest:'🌾', treatment:'💊' };
+
+  feed.innerHTML = logs.map(log => {
+    const icon    = icons[log.activity_type] || '📋';
+    const dateStr = log.log_date
+      ? new Date(log.log_date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })
+      : '';
+    return `
+      <div class="log-entry">
+        <span style="font-size:1rem;flex-shrink:0;">${icon}</span>
+        <div style="flex:1;">
+          <span style="color:var(--text);font-weight:500;">${log.plant_name || 'Garden'}</span>
+          ${log.activity_type ? ` — ${log.activity_type}` : ''}
+          ${log.notes ? `<br/><span style="font-size:0.7rem;color:var(--muted);">${log.notes}</span>` : ''}
+        </div>
+        <div class="log-time">${dateStr}</div>
+      </div>`;
+  }).join('');
 }
 
-async function resolveFromFeedback(scanId, plantId, btn) {
-  btn.disabled = true;
-  btn.textContent = 'Applying…';
+// ══════════════════════════════════════════════
+//  WATER PULSE  (FIX ISSUE-03: queries garden_logs)
+// ══════════════════════════════════════════════
+async function loadWaterPulse() {
+  const past7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10);
 
-  const PENALTY = 5; // recovery days per resolved scan
+  const { data: logs } = await sb
+    .from('garden_logs')
+    .select('quantity_gal, activity_type')
+    .eq('activity_type', 'watering')
+    .gte('log_date', past7);
+
+  const total = (logs || []).reduce((acc, l) => acc + (parseFloat(l.quantity_gal) || 0), 0);
+  const count = (logs || []).length;
+
+  document.getElementById('water-stat').textContent = `${total.toFixed(1)} gal/wk`;
+  document.getElementById('water-sub').textContent  =
+    count > 0 ? `${count} watering session${count>1?'s':''} this week` : 'No watering logged this week';
+}
+
+// ══════════════════════════════════════════════
+//  DIAGNOSTIC INTAKE  (FIX BUG-02: wired up)
+// ══════════════════════════════════════════════
+function onDiagFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  _diagFile = file;
+
+  const preview = document.getElementById('diag-preview');
+  const submit  = document.getElementById('diag-submit');
+  const reader  = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    submit.style.display  = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag and drop support for diagnostic
+const diagDrop = document.getElementById('diag-drop');
+diagDrop.addEventListener('dragover',  e => { e.preventDefault(); diagDrop.classList.add('dragover'); });
+diagDrop.addEventListener('dragleave', () => diagDrop.classList.remove('dragover'));
+diagDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  diagDrop.classList.remove('dragover');
+  const file = e.dataTransfer.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    // Simulate the file input change
+    _diagFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('diag-preview').src = ev.target.result;
+      document.getElementById('diag-preview').style.display = 'block';
+      document.getElementById('diag-submit').style.display  = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+async function submitDiagnostic() {
+  if (!_diagFile || !_userId) return;
+
+  const btn = document.getElementById('diag-submit');
+  btn.textContent = 'Uploading…';
+  btn.disabled    = true;
 
   try {
-    // 1. Mark scan resolved
-    const { error: scanErr } = await sb.from('plant_health_scans')
-      .update({ status: 'resolved', recovery_days_added: PENALTY })
-      .eq('id', scanId);
-    if (scanErr) throw scanErr;
+    const ext  = _diagFile.name.split('.').pop();
+    const path = `diagnostics/${_userId}/${Date.now()}.${ext}`;
 
-    // 2. Add penalty days to the plant's recovery_days
-    if (plantId) {
-      const { data: plantData } = await sb.from('garden_library')
-        .select('recovery_days').eq('id', plantId).single();
+    // Upload to Supabase Storage (bucket: "plant-scans")
+    const { error: upErr } = await sb.storage.from('plant-scans').upload(path, _diagFile);
+    if (upErr) throw upErr;
 
-      const currentPenalty = plantData?.recovery_days || 0;
-      const { error: libErr } = await sb.from('garden_library')
-        .update({ recovery_days: currentPenalty + PENALTY })
-        .eq('id', plantId);
-      if (libErr) throw libErr;
-    }
+    const { data: { publicUrl } } = sb.storage.from('plant-scans').getPublicUrl(path);
 
-    // 3. Show success state on card
-    const card = $(`fbcard-${scanId}`);
-    if (card) {
-      card.style.opacity = '0.6';
-      card.style.pointerEvents = 'none';
-      const badge = document.createElement('div');
-      badge.className = 'fb-resolved-badge';
-      badge.textContent = `✓ Resolved — +${PENALTY}d recovery penalty applied`;
-      card.appendChild(badge);
-      btn.remove();
-    }
+    // Create a pending scan record in plant_health_scans
+    await sb.from('plant_health_scans').insert({
+      user_id:    _userId,
+      image_url:  publicUrl,
+      scan_date:  new Date().toISOString().slice(0,10),
+      status:     'pending',
+      severity:   'unknown',
+    });
 
-    // 4. Refresh affected charts live (no full reload)
-    toast(`✓ Remediation logged. +${PENALTY}d recovery penalty applied to plant.`);
-    await Promise.all([
-      loadMaturityChart(),
-      loadPenaltyChart(),
-      loadYieldSignature(),
-      loadResilienceScore(),
-    ]);
-
+    // Redirect to clinic for review
+    window.location.href = `clinic.html?scan=new`;
   } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Mark Remediation Successful → Apply Recovery Penalty';
-    toast('Error: ' + e.message, true);
-    console.error('[FeedbackLoop] resolve error:', e);
+    btn.textContent = '→ Send to Clinic';
+    btn.disabled    = false;
+    alert('Upload failed: ' + e.message);
   }
 }
 
-// ── Toast ──────────────────────────────────────
-function toast(msg, isErr = false) {
-  let el = $('toast-msg');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'toast-msg';
-    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:800;padding:0.65rem 1rem;font-family:var(--mono);font-size:0.62rem;letter-spacing:0.08em;border:1px solid;opacity:0;transform:translateY(6px);transition:opacity 0.2s,transform 0.2s;pointer-events:none;max-width:320px;';
-    document.body.appendChild(el);
+// ══════════════════════════════════════════════
+//  ADD PLANT MODAL  (FIX BUG-04: correct column names
+//                   FIX ISSUE-05: validation + error handling)
+// ══════════════════════════════════════════════
+function openModal() {
+  // Set today's date as default planted date
+  document.getElementById('p-planted').value = new Date().toISOString().slice(0,10);
+  document.getElementById('add-modal').classList.remove('hidden');
+  document.getElementById('modal-error').textContent = '';
+  document.getElementById('p-name').focus();
+}
+function closeModal() {
+  document.getElementById('add-modal').classList.add('hidden');
+  // Reset
+  ['p-name','p-scientific','p-days','p-emoji'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-native').checked = false;
+  document.getElementById('p-host').checked   = false;
+  document.getElementById('modal-error').textContent = '';
+  document.getElementById('btn-save-plant').disabled = false;
+}
+
+async function saveNewPlant() {
+  const nameEl  = document.getElementById('p-name');
+  const daysEl  = document.getElementById('p-days');
+  const errEl   = document.getElementById('modal-error');
+  const saveBtn = document.getElementById('btn-save-plant');
+  errEl.textContent = '';
+  errEl.classList.remove('modal-success');
+
+  // FIX ISSUE-05: validation
+  if (!nameEl.value.trim()) { errEl.textContent = 'Plant name is required.'; return; }
+  if (!daysEl.value || parseInt(daysEl.value) < 1) { errEl.textContent = 'Valid maturity days required.'; return; }
+
+  saveBtn.disabled    = true;
+  saveBtn.textContent = 'Recording…';
+
+  // FIX BUG-04: correct column names matching Supabase schema
+  const { error } = await sb.from('garden_library').insert({
+    user_id:        _userId,
+    common_name:    nameEl.value.trim(),                             // was: name
+    scientific_name:document.getElementById('p-scientific').value.trim() || null,
+    emoji:          document.getElementById('p-emoji').value.trim() || null,
+    maturity_days:  parseInt(daysEl.value),                          // was: days_to_mature
+    recovery_days:  0,                                               // new v10.6 column, default 0
+    planted_date:   document.getElementById('p-planted').value || new Date().toISOString().slice(0,10), // was: date_planted
+    is_native:      document.getElementById('p-native').checked,
+    is_host_plant:  document.getElementById('p-host').checked,       // was: is_host
+  });
+
+  saveBtn.disabled    = false;
+  saveBtn.textContent = 'Record Plant';
+
+  if (error) {
+    errEl.textContent = error.message;
+  } else {
+    errEl.classList.add('modal-success');
+    errEl.textContent = `✓ ${nameEl.value.trim()} recorded!`;
+    setTimeout(() => { closeModal(); renderDashboard(); }, 800);
   }
-  el.textContent = msg;
-  el.style.background   = isErr ? '#1a0808' : 'var(--surface2)';
-  el.style.color        = isErr ? 'var(--red)' : 'var(--green)';
-  el.style.borderColor  = isErr ? 'var(--red)' : 'var(--border2)';
-  el.style.opacity = '1';
-  el.style.transform = 'translateY(0)';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.opacity='0'; el.style.transform='translateY(6px)'; }, 3000);
 }
 
-
-// ── Export Report (FIX BUG-03: implemented) ──
-function exportReport() {
-  const rows = [['Metric','Value']];
-
-  // Collect live values from KPI cards
-  [
-    ['Plants Tracked',     $('kpi-plants')?.textContent],
-    ['Avg Maturity',       $('kpi-maturity')?.textContent],
-    ['Health Incidents',   $('kpi-incidents')?.textContent],
-    ['Pollinator IQ',      $('kpi-iq')?.textContent],
-    ['Top Performer',      $('sp-top-name')?.textContent + ' — ' + $('sp-top-sub')?.textContent],
-    ['Most Penalized',     $('sp-penalty-name')?.textContent + ' — ' + $('sp-penalty-sub')?.textContent],
-    ['Strategic Notes',    $('consultant-text')?.innerText?.replace(/\n/g,' ')],
-  ].forEach(row => rows.push(row));
-
-  const csv = rows.map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `gardenhub-insights-${today()}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+// Close modals on backdrop click
+document.getElementById('add-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('add-modal')) closeModal();
+});
 </script>
 </body>
 </html>
