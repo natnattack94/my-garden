@@ -481,19 +481,7 @@ nav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
 </head>
 <body>
 
-<!-- ═══ AUTH ═══ -->
-<div id="auth-overlay">
-  <div class="auth-box">
-    <div class="auth-title">Seasonal Calendar</div>
-    <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
-    <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
-    <div id="auth-err"></div>
-    <div class="auth-btns">
-      <button class="auth-btn primary" id="btn-login">Sign In</button>
-      <button class="auth-btn ghost"   id="btn-reg">Register</button>
-    </div>
-  </div>
-</div>
+<!-- Auth overlay removed — public access -->
 
 <!-- ═══ POPOVER ═══ -->
 <div id="popover">
@@ -734,72 +722,8 @@ let _plantFilter= '';
 
 const $ = id => document.getElementById(id);
 
-// ── Auth ──────────────────────────────────────
-let _booted = false; // guard against double-boot from onAuthStateChange + getSession race
-
-function initSession(session) {
-  if (_booted) return;
-  _booted = true;
-  _userId = session.user.id;
-  $('auth-overlay').classList.add('hidden');
-  boot();
-}
-
-$('btn-login').onclick = async () => {
-  $('auth-err').textContent = '';
-  $('auth-err').style.cssText = 'color:#f87171;font-size:0.75rem;margin-top:0.75rem;display:block;';
-  $('btn-login').textContent = 'Signing in…';
-  $('btn-login').disabled = true;
-
-  let session_check;
-  try {
-    session_check = await sb.auth.getSession();
-    console.log('[Auth] Existing session before login:', JSON.stringify(session_check?.data?.session?.user?.email));
-  } catch(e) { console.warn('[Auth] getSession failed:', e); }
-
-  const {data, error} = await sb.auth.signInWithPassword({
-    email: $('a-email').value.trim(),
-    password: $('a-pass').value
-  });
-
-  $('btn-login').textContent = 'Sign In';
-  $('btn-login').disabled = false;
-
-  console.log('[Auth] signInWithPassword result:', JSON.stringify({
-    user: data?.user?.email,
-    error: error?.message,
-    status: error?.status
-  }));
-
-  if (error) {
-    $('auth-err').textContent = '⚠ ' + error.message + ' (status: ' + (error.status||'none') + ')';
-    alert('Login error: ' + error.message + '\nStatus: ' + (error.status||'none') + '\n\nCheck browser console for details.');
-  } else if (data?.user) {
-    $('auth-err').style.color = 'var(--spring)';
-    $('auth-err').textContent = '✓ Signed in as ' + data.user.email + ' — loading…';
-    // onAuthStateChange will call initSession
-  } else {
-    $('auth-err').textContent = '⚠ No error but no user returned. Check console.';
-  }
-};
-$('btn-reg').onclick = async () => {
-  const {error} = await sb.auth.signUp({email:$('a-email').value.trim(), password:$('a-pass').value});
-  $('auth-err').style.color = error?'#f87171':'var(--spring)';
-  $('auth-err').textContent = error?error.message:'Check email to confirm.';
-};
+// ── No auth required — public access ──────────
 $('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
-
-// onAuthStateChange handles login events
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' && session) initSession(session);
-  else if (event === 'SIGNED_OUT') { _booted = false; $('auth-overlay').classList.remove('hidden'); }
-});
-
-// getSession handles page reload when already logged in
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) initSession(session);
-})();
 
 // ── Boot ──────────────────────────────────────
 async function boot() {
@@ -808,8 +732,8 @@ async function boot() {
     await loadPlants();
   } catch(e) {
     console.error('[Calendar] loadPlants failed:', e);
-    $('auth-err').textContent = 'Data load error: ' + e.message;
-    $('auth-overlay').classList.remove('hidden');
+    const grid = $('grid-area');
+    if (grid) grid.innerHTML = '<div style="padding:2rem;font-family:var(--mono);font-size:0.7rem;color:#f87171;">Data load error: ' + e.message + '</div>';
     return;
   }
   buildCalendar();
@@ -817,6 +741,9 @@ async function boot() {
   jumpToToday();
   selectMonth(_activeMonth);
 }
+
+// Boot immediately on page load — no login required
+boot();
 
 // ── Weather ───────────────────────────────────
 async function loadWeather() {
@@ -836,9 +763,19 @@ async function loadWeather() {
 // ── Load plants ───────────────────────────────
 async function loadPlants() {
   $('main-loader').classList.remove('done');
-  const {data, error} = await sb.from('garden_library')
+
+  // Try authenticated fetch first, fall back to unauthenticated
+  const { data: { session } } = await sb.auth.getSession();
+  let query = sb.from('garden_library')
     .select('id,common_name,scientific_name,emoji,plant_family,maturity_days,recovery_days,planted_date,is_native,is_host_plant')
     .order('common_name');
+
+  // If logged in, filter to their plants; otherwise get all readable rows
+  if (session?.user?.id) {
+    query = query.eq('user_id', session.user.id);
+  }
+
+  const {data, error} = await query;
   $('main-loader').classList.add('done');
   if (error) throw new Error(error.message);
   _plants = data||[];
