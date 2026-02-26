@@ -735,10 +735,52 @@ let _plantFilter= '';
 const $ = id => document.getElementById(id);
 
 // ── Auth ──────────────────────────────────────
+let _booted = false; // guard against double-boot from onAuthStateChange + getSession race
+
+function initSession(session) {
+  if (_booted) return;
+  _booted = true;
+  _userId = session.user.id;
+  $('auth-overlay').classList.add('hidden');
+  boot();
+}
+
 $('btn-login').onclick = async () => {
   $('auth-err').textContent = '';
-  const {error} = await sb.auth.signInWithPassword({email:$('a-email').value.trim(), password:$('a-pass').value});
-  if (error) $('auth-err').textContent = error.message;
+  $('auth-err').style.cssText = 'color:#f87171;font-size:0.75rem;margin-top:0.75rem;display:block;';
+  $('btn-login').textContent = 'Signing in…';
+  $('btn-login').disabled = true;
+
+  let session_check;
+  try {
+    session_check = await sb.auth.getSession();
+    console.log('[Auth] Existing session before login:', JSON.stringify(session_check?.data?.session?.user?.email));
+  } catch(e) { console.warn('[Auth] getSession failed:', e); }
+
+  const {data, error} = await sb.auth.signInWithPassword({
+    email: $('a-email').value.trim(),
+    password: $('a-pass').value
+  });
+
+  $('btn-login').textContent = 'Sign In';
+  $('btn-login').disabled = false;
+
+  console.log('[Auth] signInWithPassword result:', JSON.stringify({
+    user: data?.user?.email,
+    error: error?.message,
+    status: error?.status
+  }));
+
+  if (error) {
+    $('auth-err').textContent = '⚠ ' + error.message + ' (status: ' + (error.status||'none') + ')';
+    alert('Login error: ' + error.message + '\nStatus: ' + (error.status||'none') + '\n\nCheck browser console for details.');
+  } else if (data?.user) {
+    $('auth-err').style.color = 'var(--spring)';
+    $('auth-err').textContent = '✓ Signed in as ' + data.user.email + ' — loading…';
+    // onAuthStateChange will call initSession
+  } else {
+    $('auth-err').textContent = '⚠ No error but no user returned. Check console.';
+  }
 };
 $('btn-reg').onclick = async () => {
   const {error} = await sb.auth.signUp({email:$('a-email').value.trim(), password:$('a-pass').value});
@@ -747,19 +789,29 @@ $('btn-reg').onclick = async () => {
 };
 $('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
+// onAuthStateChange handles login events
 sb.auth.onAuthStateChange((event, session) => {
-  if (event==='SIGNED_IN' && session) { _userId=session.user.id; $('auth-overlay').classList.add('hidden'); boot(); }
-  else if (event==='SIGNED_OUT') $('auth-overlay').classList.remove('hidden');
+  if (event === 'SIGNED_IN' && session) initSession(session);
+  else if (event === 'SIGNED_OUT') { _booted = false; $('auth-overlay').classList.remove('hidden'); }
 });
-(async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  if (session) { _userId=session.user.id; $('auth-overlay').classList.add('hidden'); boot(); }
+
+// getSession handles page reload when already logged in
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) initSession(session);
 })();
 
 // ── Boot ──────────────────────────────────────
 async function boot() {
   loadWeather();
-  await loadPlants();
+  try {
+    await loadPlants();
+  } catch(e) {
+    console.error('[Calendar] loadPlants failed:', e);
+    $('auth-err').textContent = 'Data load error: ' + e.message;
+    $('auth-overlay').classList.remove('hidden');
+    return;
+  }
   buildCalendar();
   updateTodayStrip();
   jumpToToday();
@@ -784,11 +836,12 @@ async function loadWeather() {
 // ── Load plants ───────────────────────────────
 async function loadPlants() {
   $('main-loader').classList.remove('done');
-  const {data} = await sb.from('garden_library')
+  const {data, error} = await sb.from('garden_library')
     .select('id,common_name,scientific_name,emoji,plant_family,maturity_days,recovery_days,planted_date,is_native,is_host_plant')
     .order('common_name');
-  _plants = data||[];
   $('main-loader').classList.add('done');
+  if (error) throw new Error(error.message);
+  _plants = data||[];
 }
 
 // ── Resolve family for a plant ────────────────
