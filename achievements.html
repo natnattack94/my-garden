@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GardenHub OS | Achievements</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Tokens ──────────────────────────────────── */
+:root {
+  --bg:        #1a1208;
+  --surface:   #221a0a;
+  --surface2:  #2a2010;
+  --surface3:  #332816;
+  --border:    #3d2e14;
+  --border2:   #4d3a1a;
+
+  --gold:      #c8922a;
+  --gold-lt:   #e8c060;
+  --gold-pale: rgba(200,146,42,0.12);
+  --gold-glow: rgba(232,192,96,0.25);
+  --parchment: #f0e4c4;
+  --parchment2:#d8c898;
+  --green:     #4a8c3a;
+  --green-lt:  #6ab84a;
+  --red:       #8c2a1a;
+  --red-lt:    #c04030;
+  --blue:      #2a5080;
+  --monarch:   #c87030;
+
+  --locked:    rgba(255,255,255,0.06);
+  --locked-border: rgba(255,255,255,0.1);
+
+  --text:      #e8d8b0;
+  --muted:     #7a6040;
+  --serif:     'Cormorant Garamond', Georgia, serif;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Aged paper grain overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none; z-index: 0; opacity: 0.6;
+}
+
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, transparent 60%, rgba(10,6,2,0.6) 100%);
+  pointer-events: none; z-index: 0;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Top Bar ──────────────────────────────────── */
+.top-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 2rem; gap: 1rem;
+  position: relative; z-index: 10;
+}
+.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
+.logo-eye  { font-family: var(--mono); font-size: 0.5rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; }
+.logo-name { font-family: var(--serif); font-size: 1.2rem; color: var(--gold-lt); font-style: italic; }
+
+nav { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase;
+  text-decoration: none; padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border); color: var(--muted);
+  background: transparent; cursor: pointer; transition: all 0.15s;
+}
+.nav-link:hover  { border-color: var(--border2); color: var(--text); }
+.nav-link.active { border-color: var(--gold); color: var(--gold-lt); }
+.nav-link.danger:hover { border-color: var(--red-lt); color: var(--red-lt); }
+
+/* ── Page wrap ────────────────────────────────── */
+.page-wrap {
+  position: relative; z-index: 1;
+  max-width: 1320px; margin: 0 auto;
+  padding: 2rem 2rem 6rem;
+}
+
+/* ── Page header ──────────────────────────────── */
+.page-header {
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.page-header::before {
+  content: '✦ GardenHub OS // Field Medals & Seasonal Orders ✦';
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--gold); opacity: 0.7;
+  display: block; margin-bottom: 0.75rem;
+}
+.page-title {
+  font-family: var(--serif); font-size: 3.8rem; font-weight: 600;
+  color: var(--gold-lt); line-height: 1; letter-spacing: -0.01em;
+}
+.page-title em { font-style: italic; color: var(--parchment2); }
+.page-sub {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  color: var(--muted); margin-top: 0.6rem; text-transform: uppercase;
+}
+
+/* ── Summary strip ────────────────────────────── */
+.summary-strip {
+  display: flex; justify-content: center; align-items: center;
+  gap: 2.5rem; flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.summary-strip::before {
+  content: '';
+  position: absolute; inset: 3px;
+  border: 1px solid rgba(200,146,42,0.15);
+  pointer-events: none;
+}
+.sum-item { text-align: center; }
+.sum-num  { font-family: var(--serif); font-size: 2.4rem; font-style: italic; color: var(--gold-lt); line-height: 1; }
+.sum-lbl  { font-family: var(--mono);  font-size: 0.48rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: 0.15rem; }
+.sum-sep  { width: 1px; height: 3rem; background: var(--border); }
+
+/* ── Section heads ────────────────────────────── */
+.sec-head {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.25rem; margin-top: 2.5rem;
+}
+.sec-head::before, .sec-head::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.sec-head-text {
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--gold); white-space: nowrap;
+}
+
+/* ── SEASONAL CHALLENGES ──────────────────────── */
+.challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.challenge-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+.challenge-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.challenge-card:hover::before { opacity: 0.6; }
+
+.challenge-card.complete { border-color: var(--gold); }
+.challenge-card.complete::before { opacity: 1; }
+
+.ch-season {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.ch-season-dot { width: 5px; height: 5px; border-radius: 50%; }
+.ch-title {
+  font-family: var(--serif); font-size: 1.15rem; font-style: italic;
+  color: var(--text); margin-bottom: 0.25rem; line-height: 1.2;
+}
+.ch-desc {
+  font-family: var(--sans); font-size: 0.7rem; color: var(--muted);
+  line-height: 1.5; margin-bottom: 0.85rem;
+}
+.ch-progress-wrap { margin-top: auto; }
+.ch-prog-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.52rem; color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.ch-prog-label .ch-pct { color: var(--gold-lt); }
+.ch-track { height: 4px; background: var(--surface3); overflow: hidden; }
+.ch-fill  {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+.ch-fill.complete { background: var(--gold-lt); }
+.ch-fill.progress { background: var(--green-lt); }
+.ch-fill.locked   { background: var(--muted); }
+
+.ch-status {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-top: 0.5rem; text-align: right;
+}
+.ch-status.done    { color: var(--gold-lt); }
+.ch-status.active  { color: var(--green-lt); }
+.ch-status.locked  { color: var(--muted); }
+
+/* Deadline badge */
+.ch-deadline {
+  position: absolute; top: 0.85rem; right: 0.85rem;
+  font-family: var(--mono); font-size: 0.45rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  background: var(--surface2); padding: 0.15rem 0.4rem;
+  border: 1px solid var(--border);
+}
+
+/* ── ACHIEVEMENT BADGES ───────────────────────── */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.badge-card {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 1.5rem 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: center;
+  cursor: default;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  animation: fadeUp 0.4s ease both;
+}
+.badge-card:hover { transform: translateY(-3px); }
+.badge-card.earned {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(200,146,42,0.15), 0 0 40px rgba(200,146,42,0.06);
+}
+.badge-card.earned:hover {
+  box-shadow: 0 0 30px rgba(200,146,42,0.25), 0 4px 20px rgba(200,146,42,0.1);
+}
+
+/* The medal itself */
+.badge-medallion {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  position: relative;
+  margin-bottom: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Locked: dim, desaturated */
+.badge-card:not(.earned) .badge-medallion {
+  background: var(--locked);
+  border: 2px solid var(--locked-border);
+  filter: grayscale(1) opacity(0.35);
+}
+
+/* Earned: glowing ring */
+.badge-card.earned .badge-medallion {
+  background: radial-gradient(circle, var(--gold-pale) 0%, var(--surface2) 70%);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(200,146,42,0.1), 0 0 20px rgba(200,146,42,0.2);
+  animation: medalPulse 3s ease-in-out infinite;
+}
+@keyframes medalPulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(200,146,42,0.1), 0 0 20px rgba(200,146,42,0.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(200,146,42,0.15), 0 0 30px rgba(200,146,42,0.3); }
+}
+
+/* Decorative outer ring on earned badges */
+.badge-card.earned .badge-medallion::before {
+  content: '';
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(200,146,42,0.3);
+  animation: ringRotate 12s linear infinite;
+}
+.badge-card.earned .badge-medallion::after {
+  content: '';
+  position: absolute; inset: -14px;
+  border-radius: 50%;
+  border: 1px dashed rgba(200,146,42,0.15);
+  animation: ringRotate 20s linear infinite reverse;
+}
+@keyframes ringRotate { to { transform: rotate(360deg); } }
+
+.badge-name {
+  font-family: var(--serif); font-size: 0.9rem; font-style: italic;
+  color: var(--text); line-height: 1.2; margin-bottom: 0.3rem;
+}
+.badge-card:not(.earned) .badge-name { color: var(--muted); }
+.badge-card.earned .badge-name { color: var(--gold-lt); }
+
+.badge-desc {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.06em;
+  color: var(--muted); line-height: 1.5;
+}
+
+.badge-earned-date {
+  font-family: var(--mono); font-size: 0.48rem; color: var(--gold);
+  margin-top: 0.5rem; letter-spacing: 0.08em;
+}
+
+.badge-locked-hint {
+  font-family: var(--mono); font-size: 0.48rem; color: rgba(122,96,64,0.6);
+  margin-top: 0.5rem; letter-spacing: 0.06em; font-style: italic;
+}
+
+/* Category label */
+.badge-cat {
+  position: absolute; top: 0.55rem; right: 0.55rem;
+  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border2); color: var(--muted);
+}
+.badge-card.earned .badge-cat { border-color: rgba(200,146,42,0.3); color: var(--gold); }
+
+/* ── MONARCH CERTIFICATION ────────────────────── */
+.monarch-cert {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.monarch-cert::before {
+  content: '';
+  position: absolute; inset: 6px;
+  border: 1px solid rgba(200,146,42,0.2);
+  pointer-events: none;
+}
+.monarch-cert::after {
+  content: '';
+  position: absolute; inset: 10px;
+  border: 1px dashed rgba(200,146,42,0.1);
+  pointer-events: none;
+}
+.cert-locked {
+  opacity: 0.4; filter: grayscale(0.6);
+}
+.cert-icon { font-size: 3.5rem; display: block; margin-bottom: 0.75rem; }
+.cert-title {
+  font-family: var(--serif); font-size: 2rem; font-style: italic;
+  color: var(--gold-lt); margin-bottom: 0.5rem;
+}
+.cert-body {
+  font-family: var(--mono); font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 0.08em; line-height: 1.8; margin-bottom: 1rem;
+}
+.cert-requirements {
+  display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.cert-req {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+}
+.cert-req-val { font-family: var(--serif); font-size: 1.5rem; font-style: italic; }
+.cert-req-val.met { color: var(--gold-lt); }
+.cert-req-val.unmet { color: var(--muted); }
+.cert-req-lbl { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.cert-earned-banner {
+  background: linear-gradient(90deg, transparent, var(--gold-pale), transparent);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  padding: 0.6rem;
+  font-family: var(--serif); font-size: 1rem; font-style: italic;
+  color: var(--gold-lt); margin-top: 1.25rem; letter-spacing: 0.05em;
+}
+
+/* ── Animations ───────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Loading skeleton ─────────────────────────── */
+.skel { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%); background-size: 400%; animation: skelly 1.4s ease infinite; }
+@keyframes skelly { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+.skel-badge { width: 180px; height: 220px; }
+.skel-ch    { height: 160px; }
+
+/* ── Toast ────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 800;
+  padding: 0.7rem 1.1rem; font-family: var(--mono); font-size: 0.62rem;
+  letter-spacing: 0.08em; opacity: 0; transform: translateY(6px);
+  transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  background: var(--surface2); color: var(--gold-lt);
+  border: 1px solid var(--gold); max-width: 320px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 640px) {
+  .page-title { font-size: 2.5rem; }
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-strip { gap: 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="top-bar">
+  <div class="logo-block">
+    <div class="logo-eye">GardenHub OS // v10.6</div>
+    <div class="logo-name">Field Medals</div>
+  </div>
+  <nav>
+    <a href="index.html"        class="nav-link">Dashboard</a>
+    <a href="map.html"          class="nav-link">Map</a>
+    <a href="insights.html"     class="nav-link">Insights</a>
+    <a href="clinic.html"       class="nav-link">Clinic</a>
+    <a href="library.html"      class="nav-link">Library</a>
+    <a href="calendar.html"     class="nav-link">Calendar</a>
+    <a href="achievements.html" class="nav-link active">Medals</a>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
+</div>
+
+<!-- ═══ PAGE ═══ -->
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-title">Field <em>Medals</em></div>
+    <div class="page-sub">Seasonal Challenges · Botanical Achievements · Monarch Certification</div>
+  </div>
+
+  <!-- Summary strip -->
+  <div class="summary-strip">
+    <div class="sum-item"><div class="sum-num" id="s-earned">--</div><div class="sum-lbl">Medals Earned</div></div>
+    <div class="sum-sep"></div>
+    <div class="sum-item"><div class="sum-num" id="s-total">--</div><div class="sum-lbl">Total Available</div></div>
+    <div class="sum-sep"></div>
+    <div class="sum-item"><div class="sum-num" id="s-challenges">--</div><div class="sum-lbl">Challenges Active</div></div>
+    <div class="sum-sep"></div>
+    <div class="sum-item"><div class="sum-num" id="s-streak">--</div><div class="sum-lbl">Day Log Streak</div></div>
+  </div>
+
+  <!-- ═══ SEASONAL CHALLENGES ═══ -->
+  <div class="sec-head"><div class="sec-head-text">✦ Seasonal Challenges ✦</div></div>
+  <div id="challenges-loading" class="challenges-grid">
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+  </div>
+  <div id="challenges-grid" class="challenges-grid" style="display:none;"></div>
+
+  <!-- ═══ ACHIEVEMENTS ═══ -->
+  <div class="sec-head"><div class="sec-head-text">✦ Botanical Achievements ✦</div></div>
+  <div id="achievements-loading" class="achievements-grid">
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+  </div>
+  <div id="achievements-grid" class="achievements-grid" style="display:none;"></div>
+
+  <!-- ═══ MONARCH CERTIFICATION ═══ -->
+  <div class="sec-head"><div class="sec-head-text">✦ Monarch-Friendly Garden Certification ✦</div></div>
+  <div id="monarch-cert" class="monarch-cert cert-locked">
+    <span class="cert-icon">🦋</span>
+    <div class="cert-title">Monarch-Friendly Garden</div>
+    <div class="cert-body">
+      Awarded to gardens that provide essential habitat for monarch butterflies<br/>
+      through native plantings, host species, and chemical-free practices.
+    </div>
+    <div class="cert-requirements" id="cert-reqs">
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-native-val">0/5</div><div class="cert-req-lbl">Native Species</div></div>
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-host-val">0/3</div><div class="cert-req-lbl">Host Plants</div></div>
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-health-val">0</div><div class="cert-req-lbl">Active Issues</div></div>
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-log-val">0/5</div><div class="cert-req-lbl">Log Entries</div></div>
+    </div>
+    <div id="cert-earned-banner" style="display:none;" class="cert-earned-banner">
+      ✦ Certified Monarch-Friendly Garden — Zone 6b, Fairfield CT ✦
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  GardenHub OS — Field Medals & Achievements v10.6
+//  All achievements auto-detected from live garden data.
+//  No manual claiming — earned when criteria are met.
+// ══════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+
+// ── Seasonal challenge definitions ────────────────
+// Each challenge has auto-computed progress via `evaluate(data)` → { current, target }
+const NOW     = new Date();
+const MONTH   = NOW.getMonth(); // 0-indexed
+const YEAR    = NOW.getFullYear();
+
+function seasonOf(m) {
+  if (m <= 1 || m === 11) return 'Winter';
+  if (m <= 4)             return 'Spring';
+  if (m <= 7)             return 'Summer';
+  return 'Fall';
+}
+const SEASON = seasonOf(MONTH);
+const SEASON_COLORS = { Winter:'#4a7fa8', Spring:'#4a8c3a', Summer:'#c8922a', Fall:'#8c4a1a' };
+
+// Zone 6b bloom months (families that bloom in June)
+const JUNE_BLOOMERS = ['Asteraceae','Lamiaceae','Rosaceae'];
+
+const CHALLENGES = [
+  {
+    id: 'grow_5_natives',
+    title: 'Grow 5 Natives',
+    desc: 'Establish five native species in your library. Each native plant provides irreplaceable habitat for local fauna.',
+    season: 'Year-Round',
+    icon: '🌿',
+    target: 5,
+    deadline: `Dec 31, ${YEAR}`,
+    evaluate: (d) => ({ current: d.plants.filter(p => p.is_native).length, target: 5 }),
+  },
+  {
+    id: 'fill_june_gap',
+    title: 'Fill Your June Bloom Gap',
+    desc: 'Add plants from Asteraceae, Lamiaceae, or Rosaceae to ensure continuous bloom through June. Critical for pollinators.',
+    season: 'Spring',
+    icon: '🌸',
+    target: 3,
+    deadline: 'May 31',
+    evaluate: (d) => ({
+      current: d.plants.filter(p => JUNE_BLOOMERS.includes(p.plant_family)).length,
+      target: 3,
+    }),
+  },
+  {
+    id: 'save_seeds',
+    title: 'Save Seeds Successfully',
+    desc: 'Log a seed-saving activity in your garden logs. Seed saving preserves genetic diversity and reduces annual costs.',
+    season: 'Fall',
+    icon: '🌾',
+    target: 1,
+    deadline: `Oct 31, ${YEAR}`,
+    evaluate: (d) => ({
+      current: d.logs.filter(l => (l.activity_type||'').toLowerCase().includes('seed')).length,
+      target: 1,
+    }),
+  },
+  {
+    id: 'log_streak_7',
+    title: '7-Day Logging Streak',
+    desc: 'Record garden activities on 7 consecutive days. Consistent observation is the foundation of a healthy garden.',
+    season: 'Year-Round',
+    icon: '📓',
+    target: 7,
+    deadline: 'Ongoing',
+    evaluate: (d) => ({ current: d.streak, target: 7 }),
+  },
+  {
+    id: 'host_3_plants',
+    title: 'Plant 3 Host Species',
+    desc: 'Establish three host plants for butterfly and moth larvae. Milkweed, wild senna, and native oaks are excellent choices.',
+    season: 'Spring',
+    icon: '🦋',
+    target: 3,
+    deadline: `Jun 30, ${YEAR}`,
+    evaluate: (d) => ({ current: d.plants.filter(p => p.is_host_plant).length, target: 3 }),
+  },
+  {
+    id: 'resolve_3_scans',
+    title: 'Resolve 3 Clinic Issues',
+    desc: 'Successfully remediate 3 health scan issues using the Feedback Loop. Each resolution improves your Resilience Score.',
+    season: 'Year-Round',
+    icon: '🏥',
+    target: 3,
+    deadline: 'Ongoing',
+    evaluate: (d) => ({ current: d.resolvedScans, target: 3 }),
+  },
+  {
+    id: 'water_weekly',
+    title: 'Water Every Week This Month',
+    desc: `Log at least one watering session in each of the 4 weeks of ${NOW.toLocaleString('default',{month:'long'})}. Consistent moisture is critical during active growth.`,
+    season: SEASON,
+    icon: '💧',
+    target: 4,
+    deadline: `End of ${NOW.toLocaleString('default',{month:'long'})}`,
+    evaluate: (d) => {
+      // Count distinct weeks this month with a watering log
+      const weeksWatered = new Set();
+      d.logs.filter(l => {
+        const ld = new Date(l.log_date);
+        return ld.getMonth() === MONTH && ld.getFullYear() === YEAR &&
+          (l.activity_type||'').toLowerCase().includes('water');
+      }).forEach(l => {
+        const week = Math.floor((new Date(l.log_date).getDate()-1) / 7);
+        weeksWatered.add(week);
+      });
+      return { current: weeksWatered.size, target: 4 };
+    },
+  },
+  {
+    id: 'diverse_families',
+    title: 'Cultivate 5 Plant Families',
+    desc: 'Grow plants from 5 different botanical families. Diversity creates resilience, breaks pest cycles, and supports more species.',
+    season: 'Year-Round',
+    icon: '🌱',
+    target: 5,
+    deadline: `Dec 31, ${YEAR}`,
+    evaluate: (d) => ({
+      current: new Set(d.plants.map(p => p.plant_family).filter(Boolean)).size,
+      target: 5,
+    }),
+  },
+  {
+    id: 'first_harvest_season',
+    title: 'First Harvest of the Season',
+    desc: `Log a harvest activity this ${SEASON.toLowerCase()}. Your first harvest marks the culmination of a season's effort.`,
+    season: SEASON,
+    icon: '🌽',
+    target: 1,
+    deadline: `End of ${SEASON}`,
+    evaluate: (d) => ({
+      current: d.logs.filter(l => {
+        const ld = new Date(l.log_date);
+        return seasonOf(ld.getMonth()) === SEASON && ld.getFullYear() === YEAR &&
+          (l.activity_type||'').toLowerCase().includes('harvest');
+      }).length,
+      target: 1,
+    }),
+  },
+];
+
+// ── Achievement definitions ───────────────────────
+// `check(data)` returns true/false.
+// `earnedDate(data)` returns a display string or null.
+const ACHIEVEMENTS = [
+  // Ecosystem
+  {
+    id: 'first_native',
+    name: 'First Native',
+    desc: 'Added a native species to your garden library',
+    icon: '🌿', cat: 'Ecosystem',
+    check: d => d.plants.some(p => p.is_native),
+    earnedDate: d => {
+      const p = d.plants.filter(x => x.is_native).sort((a,b) => new Date(a.planted_date||0)-new Date(b.planted_date||0))[0];
+      return p?.planted_date ? fmtDate(p.planted_date) : 'Date unknown';
+    },
+    hint: 'Add a native plant to your Library',
+  },
+  {
+    id: 'first_host',
+    name: 'Host Guardian',
+    desc: 'Established your first host plant for butterfly larvae',
+    icon: '🦋', cat: 'Ecosystem',
+    check: d => d.plants.some(p => p.is_host_plant),
+    earnedDate: d => {
+      const p = d.plants.filter(x => x.is_host_plant)[0];
+      return p?.planted_date ? fmtDate(p.planted_date) : 'Date unknown';
+    },
+    hint: 'Mark a plant as "Host Plant" in your Library',
+  },
+  {
+    id: 'five_natives',
+    name: 'Native Steward',
+    desc: 'Grown five or more native species simultaneously',
+    icon: '🏡', cat: 'Ecosystem',
+    check: d => d.plants.filter(p => p.is_native).length >= 5,
+    earnedDate: () => 'Currently active',
+    hint: 'Reach 5 native species in your Library',
+  },
+  {
+    id: 'ten_natives',
+    name: 'Prairie Keeper',
+    desc: 'Maintained ten or more native species — a true ecological garden',
+    icon: '🌾', cat: 'Ecosystem',
+    check: d => d.plants.filter(p => p.is_native).length >= 10,
+    earnedDate: () => 'Currently active',
+    hint: 'Reach 10 native species in your Library',
+  },
+
+  // Clinic / Health
+  {
+    id: 'first_scan',
+    name: 'First Diagnosis',
+    desc: 'Logged your first plant health scan in the Clinic',
+    icon: '🔬', cat: 'Clinic',
+    check: d => d.totalScans > 0,
+    earnedDate: d => d.firstScanDate ? fmtDate(d.firstScanDate) : 'Date unknown',
+    hint: 'Log a health scan in the Clinic',
+  },
+  {
+    id: 'first_resolve',
+    name: 'Healer',
+    desc: 'Successfully resolved your first plant health issue',
+    icon: '💊', cat: 'Clinic',
+    check: d => d.resolvedScans > 0,
+    earnedDate: () => 'Via Feedback Loop',
+    hint: 'Resolve a scan in the Clinic or Insights',
+  },
+  {
+    id: 'three_resolves',
+    name: 'Garden Medic',
+    desc: 'Resolved three or more health issues through the Feedback Loop',
+    icon: '🏥', cat: 'Clinic',
+    check: d => d.resolvedScans >= 3,
+    earnedDate: () => 'Currently active',
+    hint: 'Resolve 3 scans via the Feedback Loop',
+  },
+  {
+    id: 'clear_garden',
+    name: 'Clean Bill',
+    desc: 'Maintained zero active health issues for 30 or more consecutive days',
+    icon: '✅', cat: 'Clinic',
+    check: d => d.activeScans === 0 && d.totalScans > 0,
+    earnedDate: () => 'Currently active',
+    hint: 'Resolve all active issues and keep them clear',
+  },
+
+  // Growth / Maturity
+  {
+    id: 'first_bloom',
+    name: 'First Bloom',
+    desc: 'A plant in your library has reached 100% maturity',
+    icon: '🌺', cat: 'Growth',
+    check: d => d.plants.some(p => {
+      if (!p.planted_date || !p.maturity_days) return false;
+      const eff  = (p.maturity_days) + (p.recovery_days||0);
+      const grown = (Date.now() - new Date(p.planted_date+'T12:00:00')) / 86400000;
+      return grown >= eff;
+    }),
+    earnedDate: d => {
+      const ready = d.plants.filter(p => {
+        if (!p.planted_date || !p.maturity_days) return false;
+        const eff  = p.maturity_days + (p.recovery_days||0);
+        const grown = (Date.now() - new Date(p.planted_date+'T12:00:00')) / 86400000;
+        return grown >= eff;
+      });
+      return ready.length ? `${ready.length} plant${ready.length>1?'s':''} ready` : '';
+    },
+    hint: 'Plant something and wait for it to reach maturity',
+  },
+  {
+    id: 'three_year_perennial',
+    name: 'Perennial Guardian',
+    desc: 'A native plant in your library has been growing for 3+ years',
+    icon: '🌳', cat: 'Growth',
+    check: d => d.plants.some(p => {
+      if (!p.planted_date || !p.is_native) return false;
+      const years = (Date.now() - new Date(p.planted_date+'T12:00:00')) / (86400000 * 365.25);
+      return years >= 3;
+    }),
+    earnedDate: d => {
+      const p = d.plants.find(x => {
+        if (!x.planted_date || !x.is_native) return false;
+        return (Date.now() - new Date(x.planted_date+'T12:00:00')) / (86400000*365.25) >= 3;
+      });
+      return p ? `${p.common_name} — planted ${fmtDate(p.planted_date)}` : '';
+    },
+    hint: 'Keep a native plant growing for 3+ years',
+  },
+  {
+    id: 'diverse_garden',
+    name: 'Polyculturalist',
+    desc: 'Cultivating plants from 5 or more distinct botanical families',
+    icon: '🎨', cat: 'Growth',
+    check: d => new Set(d.plants.map(p => p.plant_family).filter(Boolean)).size >= 5,
+    earnedDate: () => 'Currently active',
+    hint: 'Grow plants from 5+ different plant families',
+  },
+
+  // Logging / Consistency
+  {
+    id: 'first_log',
+    name: 'Garden Journalist',
+    desc: 'Recorded your first activity in the garden log',
+    icon: '📓', cat: 'Consistency',
+    check: d => d.totalLogs > 0,
+    earnedDate: d => d.firstLogDate ? fmtDate(d.firstLogDate) : 'Date unknown',
+    hint: 'Log any garden activity',
+  },
+  {
+    id: 'log_streak_7',
+    name: 'Week of Watchfulness',
+    desc: 'Maintained a 7-day consecutive logging streak',
+    icon: '📅', cat: 'Consistency',
+    check: d => d.streak >= 7,
+    earnedDate: () => 'Currently active',
+    hint: 'Log something every day for 7 days straight',
+  },
+  {
+    id: 'log_50',
+    name: 'Chronicler',
+    desc: 'Accumulated 50 or more garden log entries',
+    icon: '📚', cat: 'Consistency',
+    check: d => d.totalLogs >= 50,
+    earnedDate: () => `${Math.min(d => d.totalLogs, 50)}+ entries`,
+    hint: 'Reach 50 total log entries',
+  },
+  {
+    id: 'seed_saver',
+    name: 'Seed Keeper',
+    desc: 'Logged a successful seed-saving activity',
+    icon: '🌾', cat: 'Consistency',
+    check: d => d.logs.some(l => (l.activity_type||'').toLowerCase().includes('seed')),
+    earnedDate: d => {
+      const l = d.logs.find(x => (x.activity_type||'').toLowerCase().includes('seed'));
+      return l?.log_date ? fmtDate(l.log_date) : 'Logged';
+    },
+    hint: 'Log an activity with "seed" in the activity type',
+  },
+];
+
+// ── Data loading ──────────────────────────────────
+let _data = null;
+
+async function loadData() {
+  const past90 = daysAgo(90);
+  const past365 = daysAgo(365);
+
+  const [plantRes, scanRes, logRes] = await Promise.all([
+    sb.from('garden_library')
+      .select('id,common_name,emoji,plant_family,is_native,is_host_plant,maturity_days,recovery_days,planted_date'),
+    sb.from('plant_health_scans')
+      .select('id,status,severity,scan_date,plant_name')
+      .order('scan_date', { ascending: true }),
+    sb.from('garden_logs')
+      .select('id,activity_type,log_date')
+      .order('log_date', { ascending: false })
+      .limit(200),
+  ]);
+
+  const plants = plantRes.data || [];
+  const scans  = scanRes.data  || [];
+  const logs   = logRes.data   || [];
+
+  const resolvedScans = scans.filter(s => s.status === 'resolved').length;
+  const activeScans   = scans.filter(s => s.status !== 'resolved').length;
+  const totalScans    = scans.length;
+  const firstScanDate = scans[0]?.scan_date || null;
+  const totalLogs     = logs.length;
+  const firstLogDate  = logs.length ? logs[logs.length-1]?.log_date : null;
+
+  // ── Compute log streak ──
+  const logDays = new Set(logs.map(l => l.log_date));
+  let streak = 0;
+  const today = new Date().toISOString().slice(0,10);
+  let check   = new Date();
+  while (true) {
+    const d = check.toISOString().slice(0,10);
+    if (logDays.has(d)) { streak++; check.setDate(check.getDate()-1); }
+    else break;
+  }
+
+  _data = { plants, scans, logs, resolvedScans, activeScans, totalScans, firstScanDate, totalLogs, firstLogDate, streak };
+  return _data;
+}
+
+// ── Helpers ───────────────────────────────────────
+function daysAgo(n) {
+  const d = new Date(); d.setDate(d.getDate()-n);
+  return d.toISOString().slice(0,10);
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.className='show';
+  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3000);
+}
+
+// ── Render challenges ─────────────────────────────
+function renderChallenges(data) {
+  $('challenges-loading').style.display = 'none';
+  $('challenges-grid').style.display = 'grid';
+
+  let activeCount = 0;
+
+  $('challenges-grid').innerHTML = CHALLENGES.map((ch, i) => {
+    const { current, target } = ch.evaluate(data);
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    const complete = pct >= 100;
+    const fillClass = complete ? 'complete' : current > 0 ? 'progress' : 'locked';
+    const statusClass = complete ? 'done' : current > 0 ? 'active' : 'locked';
+    const statusText  = complete ? '✦ Complete' : current > 0 ? `In Progress` : 'Not Started';
+    const seasonColor = SEASON_COLORS[ch.season] || SEASON_COLORS['Year-Round'] || '#c8922a';
+    if (!complete) activeCount++;
+
+    return `
+      <div class="challenge-card${complete?' complete':''}" style="animation-delay:${i*0.06}s">
+        ${ch.deadline !== 'Ongoing' ? `<div class="ch-deadline">${ch.deadline}</div>` : ''}
+        <div class="ch-season">
+          <span class="ch-season-dot" style="background:${seasonColor}"></span>
+          ${ch.season}
+        </div>
+        <div class="ch-title">${ch.icon} ${ch.title}</div>
+        <div class="ch-desc">${ch.desc}</div>
+        <div class="ch-progress-wrap">
+          <div class="ch-prog-label">
+            <span>${current} / ${target}</span>
+            <span class="ch-pct">${pct}%</span>
+          </div>
+          <div class="ch-track">
+            <div class="ch-fill ${fillClass}" style="width:${pct}%"></div>
+          </div>
+          <div class="ch-status ${statusClass}">${statusText}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  $('s-challenges').textContent = activeCount;
+}
+
+// ── Render achievements ───────────────────────────
+function renderAchievements(data) {
+  $('achievements-loading').style.display = 'none';
+  $('achievements-grid').style.display = 'grid';
+
+  let earned = 0;
+  const newlyEarned = [];
+
+  $('achievements-grid').innerHTML = ACHIEVEMENTS.map((ach, i) => {
+    let isEarned = false;
+    try { isEarned = ach.check(data); } catch(e) {}
+    if (isEarned) earned++;
+
+    const dateStr = isEarned ? (()=>{ try{ return ach.earnedDate(data); }catch(e){ return ''; } })() : null;
+
+    return `
+      <div class="badge-card${isEarned?' earned':''}" title="${isEarned?ach.name+' — Earned':ach.hint}"
+        style="animation-delay:${i*0.04}s">
+        <div class="badge-cat">${ach.cat}</div>
+        <div class="badge-medallion">${ach.icon}</div>
+        <div class="badge-name">${ach.name}</div>
+        <div class="badge-desc">${ach.desc}</div>
+        ${isEarned && dateStr
+          ? `<div class="badge-earned-date">✦ ${dateStr}</div>`
+          : `<div class="badge-locked-hint">${ach.hint}</div>`
+        }
+      </div>`;
+  }).join('');
+
+  // Summary
+  $('s-earned').textContent = earned;
+  $('s-total').textContent  = ACHIEVEMENTS.length;
+  $('s-streak').textContent = data.streak + 'd';
+}
+
+// ── Render Monarch certification ──────────────────
+function renderMonarchCert(data) {
+  const nativeCount = data.plants.filter(p => p.is_native).length;
+  const hostCount   = data.plants.filter(p => p.is_host_plant).length;
+  const activeIssues= data.activeScans;
+  const recentLogs  = data.logs.filter(l => {
+    const d = new Date(l.log_date); const a = new Date(); a.setDate(a.getDate()-30);
+    return d >= a;
+  }).length;
+
+  const nativeMet = nativeCount >= 5;
+  const hostMet   = hostCount   >= 3;
+  const healthMet = activeIssues === 0;
+  const logMet    = recentLogs  >= 5;
+
+  // Update display values
+  $('cert-native-val').textContent = `${nativeCount}/5`;
+  $('cert-host-val').textContent   = `${hostCount}/3`;
+  $('cert-health-val').textContent = activeIssues === 0 ? '✓' : activeIssues;
+  $('cert-log-val').textContent    = `${Math.min(recentLogs,5)}/5`;
+
+  [$('cert-native-val'), $('cert-host-val'), $('cert-health-val'), $('cert-log-val')]
+    .forEach((el, i) => {
+      const met = [nativeMet, hostMet, healthMet, logMet][i];
+      el.className = 'cert-req-val ' + (met ? 'met' : 'unmet');
+    });
+
+  const certified = nativeMet && hostMet && healthMet && logMet;
+  const cert = $('monarch-cert');
+  if (certified) {
+    cert.classList.remove('cert-locked');
+    $('cert-earned-banner').style.display = 'block';
+  }
+}
+
+// ── Auth + boot ───────────────────────────────────
+document.getElementById('logout-btn').onclick = async () => {
+  await sb.auth.signOut(); location.reload();
+};
+
+async function boot() {
+  try {
+    const data = await loadData();
+    renderChallenges(data);
+    renderAchievements(data);
+    renderMonarchCert(data);
+  } catch(e) {
+    console.error('[Achievements] boot error:', e);
+    toast('Error loading data: ' + e.message);
+  }
+}
+
+// Session-aware boot: works logged in or out (anon read)
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  boot();
+})();
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') boot();
+});
+</script>
+</body>
+</html>
