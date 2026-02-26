@@ -1,1309 +1,522 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GardenHub OS | Seasonal Calendar</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-
-<style>
-/* ── Tokens ──────────────────────────────────── */
-:root {
-  --bg:         #0d1117;
-  --surface:    #141b22;
-  --surface2:   #1a2433;
-  --surface3:   #1f2b3a;
-  --border:     #243040;
-  --border2:    #2d3d50;
-
-  /* Season palette */
-  --winter:     #4a7fa8;
-  --spring:     #7ab84a;
-  --summer:     #e8a020;
-  --fall:       #c05a20;
-
-  /* Activity colours */
-  --sow-in:     #5ba4f5;   /* Sow indoors — blue */
-  --sow-out:    #3ddc6e;   /* Direct sow — green */
-  --transplant: #a78bfa;   /* Transplant — purple */
-  --harvest:    #f5c842;   /* Harvest — gold */
-  --prune:      #f07850;   /* Prune — orange */
-  --frost:      rgba(74,127,168,0.18); /* frost band */
-
-  --text:       #c8d8e8;
-  --muted:      #4a6080;
-  --serif:      'Libre Baskerville', Georgia, serif;
-  --mono:       'DM Mono', monospace;
-  --sans:       'DM Sans', sans-serif;
-
-  --today-line: #e84040;
-  --col-w:      88px;   /* width per month column */
-  --row-h:      36px;   /* height per plant row */
-  --label-w:    200px;  /* left label column */
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Star-field background */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 10% 15%, rgba(200,220,240,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 45%, rgba(200,220,240,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 55% 25%, rgba(200,220,240,0.25) 0%, transparent 100%),
-    radial-gradient(1px 1px at 75% 65%, rgba(200,220,240,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 88% 35%, rgba(200,220,240,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 20% 80%, rgba(200,220,240,0.15) 0%, transparent 100%),
-    radial-gradient(1px 1px at 65% 85%, rgba(200,220,240,0.2) 0%, transparent 100%);
-  pointer-events: none; z-index: 0;
-}
-
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-/* ── Auth ─────────────────────────────────────── */
-#auth-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(13,17,23,0.97);
-  display: flex; align-items: center; justify-content: center;
-}
-#auth-overlay.hidden { display: none; }
-.auth-box {
-  border: 1px solid var(--spring);
-  background: var(--surface);
-  padding: 2.5rem; width: 360px; position: relative;
-}
-.auth-box::before {
-  content: 'PLANTING CALENDAR // ZONE 6B';
-  font-family: var(--mono); font-size: 0.5rem; color: var(--spring);
-  letter-spacing: 0.2em; opacity: 0.7;
-  position: absolute; top: -0.6rem; left: 1rem;
-  background: var(--surface); padding: 0 0.4rem;
-}
-.auth-title { font-family: var(--serif); font-size: 1.8rem; color: var(--spring); margin-bottom: 1.5rem; font-style: italic; }
-.auth-input {
-  width: 100%; background: var(--bg); border: 1px solid var(--border);
-  color: var(--text); padding: 0.6rem 0.75rem;
-  font-family: var(--mono); font-size: 0.75rem;
-  margin-bottom: 0.55rem; outline: none; transition: border-color 0.15s;
-}
-.auth-input:focus { border-color: var(--spring); }
-.auth-btns { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
-.auth-btn {
-  flex: 1; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.65rem; border: none; cursor: pointer; transition: opacity 0.15s;
-}
-.auth-btn.primary { background: var(--spring); color: var(--bg); }
-.auth-btn.ghost   { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-.auth-btn:hover   { opacity: 0.82; }
-#auth-err { font-family: var(--mono); font-size: 0.58rem; color: #f87171; min-height: 1rem; margin-top: 0.5rem; }
-
-/* ── Top Bar ──────────────────────────────────── */
-.top-bar {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.75rem 1.5rem; gap: 1rem;
-}
-.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
-.logo-eye  { font-family: var(--mono); font-size: 0.5rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; }
-.logo-name { font-family: var(--serif); font-size: 1.15rem; color: var(--text); font-style: italic; }
-.logo-name em { color: var(--spring); }
-
-nav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
-.nav-link {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase;
-  text-decoration: none; padding: 0.3rem 0.6rem;
-  border: 1px solid var(--border); color: var(--muted);
-  background: transparent; cursor: pointer; transition: all 0.15s;
-}
-.nav-link:hover  { border-color: var(--border2); color: var(--text); }
-.nav-link.active { border-color: var(--spring); color: var(--spring); }
-.nav-link.danger:hover { border-color: #f87171; color: #f87171; }
-
-/* ── Climate Bar ──────────────────────────────── */
-.climate-bar {
-  background: var(--surface2); border-bottom: 1px solid var(--border);
-  display: flex; font-family: var(--mono); overflow-x: auto; position: relative; z-index: 1;
-}
-.cc { padding: 0.4rem 1rem; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.05rem; white-space: nowrap; }
-.cl { font-size: 0.45rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
-.cv { font-size: 0.65rem; color: var(--text); }
-.cv.spring { color: var(--spring); }
-.cv.summer { color: var(--summer); }
-.cv.fall   { color: var(--fall); }
-.cv.winter { color: var(--winter); }
-.cv.warn   { color: #fcd34d; }
-.cv.bad    { color: #f87171; }
-
-/* ── Control bar ──────────────────────────────── */
-.controls {
-  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  padding: 0.85rem 1.5rem;
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  position: relative; z-index: 1;
-}
-
-.year-nav { display: flex; align-items: center; gap: 0.4rem; }
-.year-btn {
-  font-family: var(--mono); font-size: 0.75rem; background: var(--surface2);
-  border: 1px solid var(--border); color: var(--muted);
-  padding: 0.3rem 0.55rem; cursor: pointer; transition: all 0.15s;
-}
-.year-btn:hover { border-color: var(--border2); color: var(--text); }
-.year-display {
-  font-family: var(--serif); font-size: 1.1rem; font-style: italic;
-  color: var(--spring); min-width: 3.5rem; text-align: center;
-}
-
-.ctrl-sep { width: 1px; height: 1.5rem; background: var(--border); }
-
-/* Activity filter pills */
-.pill {
-  display: flex; align-items: center; gap: 0.35rem;
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 0.28rem 0.65rem; border: 1px solid var(--border);
-  color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none;
-}
-.pill:hover { border-color: var(--border2); color: var(--text); }
-.pill.on { color: var(--bg); }
-.pill-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.pill[data-type="sow-in"].on    { background: var(--sow-in);    border-color: var(--sow-in); }
-.pill[data-type="sow-out"].on   { background: var(--sow-out);   border-color: var(--sow-out); }
-.pill[data-type="transplant"].on{ background: var(--transplant);border-color: var(--transplant); }
-.pill[data-type="harvest"].on   { background: var(--harvest);   border-color: var(--harvest); color: var(--bg); }
-.pill[data-type="prune"].on     { background: var(--prune);     border-color: var(--prune); }
-
-/* Plant search */
-.plant-search {
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); padding: 0.35rem 0.65rem;
-  font-family: var(--mono); font-size: 0.65rem; outline: none;
-  transition: border-color 0.15s; width: 160px;
-}
-.plant-search:focus { border-color: var(--spring); }
-
-/* Toggle buttons */
-.toggle-btn {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 0.3rem 0.65rem; border: 1px solid var(--border); color: var(--muted);
-  background: transparent; cursor: pointer; transition: all 0.15s;
-}
-.toggle-btn.on { background: var(--surface3); border-color: var(--border2); color: var(--text); }
-.toggle-btn:hover { border-color: var(--border2); color: var(--text); }
-
-.jump-today-btn {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 0.3rem 0.7rem; border: 1px solid var(--today-line);
-  color: var(--today-line); background: transparent; cursor: pointer; transition: opacity 0.15s;
-  margin-left: auto;
-}
-.jump-today-btn:hover { opacity: 0.75; }
-
-/* ── LEGEND ───────────────────────────────────── */
-.legend {
-  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-  padding: 0.5rem 1.5rem; background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.08em;
-}
-.leg-item { display: flex; align-items: center; gap: 0.35rem; color: var(--muted); }
-.leg-swatch { width: 18px; height: 7px; border-radius: 2px; flex-shrink: 0; }
-.leg-frost  { width: 18px; height: 7px; border: 1px dashed var(--winter); flex-shrink: 0; }
-
-/* ── CALENDAR LAYOUT ──────────────────────────── */
-.calendar-shell {
-  display: flex;
-  height: calc(100vh - 220px);
-  min-height: 400px;
-  overflow: hidden;
-  position: relative; z-index: 1;
-}
-
-/* Left: month summary sidebar */
-.sidebar {
-  width: 240px;
-  min-width: 240px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  display: flex; flex-direction: column;
-}
-.sidebar-inner { padding: 1rem; }
-.sidebar-month {
-  font-family: var(--serif); font-size: 1.1rem; font-style: italic;
-  color: var(--text); margin-bottom: 0.25rem;
-}
-.sidebar-season {
-  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em;
-  text-transform: uppercase; margin-bottom: 0.9rem;
-}
-.task-section { margin-bottom: 0.85rem; }
-.task-head {
-  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.15em;
-  text-transform: uppercase; margin-bottom: 0.4rem;
-  display: flex; align-items: center; gap: 0.3rem;
-}
-.task-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.task-list { list-style: none; }
-.task-list li {
-  font-size: 0.7rem; color: var(--muted); padding: 0.2rem 0;
-  border-bottom: 1px solid rgba(36,48,64,0.5);
-  display: flex; align-items: center; gap: 0.4rem;
-}
-.task-list li:last-child { border-bottom: none; }
-.task-emoji { font-size: 0.75rem; flex-shrink: 0; }
-.sidebar-empty { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); padding: 1rem; opacity: 0.6; }
-
-.frost-warning {
-  background: rgba(74,127,168,0.12);
-  border: 1px solid rgba(74,127,168,0.3);
-  padding: 0.6rem 0.75rem;
-  font-family: var(--mono); font-size: 0.58rem; color: var(--winter);
-  line-height: 1.6; margin: 0 1rem 0.75rem;
-}
-
-/* Right: scrollable calendar grid */
-.grid-area {
-  flex: 1;
-  overflow: auto;
-  position: relative;
-}
-
-/* Sticky header row */
-.cal-header {
-  display: flex;
-  position: sticky; top: 0; z-index: 20;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border2);
-}
-.cal-header-label {
-  width: var(--label-w); min-width: var(--label-w);
-  padding: 0.5rem 0.75rem;
-  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em;
-  text-transform: uppercase; color: var(--muted);
-  border-right: 1px solid var(--border2);
-  position: sticky; left: 0; z-index: 30;
-  background: var(--surface);
-}
-.month-header {
-  width: var(--col-w); min-width: var(--col-w);
-  padding: 0.5rem 0; text-align: center;
-  border-right: 1px solid var(--border);
-  cursor: pointer; transition: background 0.15s;
-}
-.month-header:hover { background: var(--surface2); }
-.month-header.active-month { background: var(--surface3); border-bottom: 2px solid var(--spring); }
-.month-header.current-month { border-bottom: 2px solid var(--today-line); }
-.month-abbr {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.month-season { font-family: var(--mono); font-size: 0.45rem; letter-spacing: 0.1em; margin-top: 0.1rem; opacity: 0.6; }
-
-/* Season color coding for months */
-.month-header.winter .month-abbr { color: var(--winter); }
-.month-header.spring .month-abbr { color: var(--spring); }
-.month-header.summer .month-abbr { color: var(--summer); }
-.month-header.fall   .month-abbr { color: var(--fall);   }
-
-/* Calendar body */
-.cal-body { position: relative; }
-
-/* Section headers (SOW / HARVEST etc.) within the grid */
-.section-row {
-  display: flex; align-items: center;
-  height: 26px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  position: sticky; left: 0;
-}
-.section-label-cell {
-  width: var(--label-w); min-width: var(--label-w);
-  padding: 0 0.75rem;
-  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.2em;
-  text-transform: uppercase;
-  position: sticky; left: 0; z-index: 15;
-  background: var(--surface);
-  border-right: 1px solid var(--border2);
-  display: flex; align-items: center; gap: 0.35rem;
-}
-.section-grid-cells { display: flex; flex: 1; }
-.section-cell {
-  width: var(--col-w); min-width: var(--col-w);
-  border-right: 1px solid var(--border); height: 100%;
-}
-
-/* Plant rows */
-.plant-row {
-  display: flex; align-items: center;
-  height: var(--row-h);
-  border-bottom: 1px solid rgba(36,48,64,0.5);
-  transition: background 0.12s;
-}
-.plant-row:hover { background: rgba(26,36,51,0.6); }
-.plant-row.filtered-out { display: none; }
-
-.plant-label {
-  width: var(--label-w); min-width: var(--label-w);
-  padding: 0 0.75rem;
-  display: flex; align-items: center; gap: 0.5rem;
-  border-right: 1px solid var(--border2);
-  position: sticky; left: 0; z-index: 10;
-  background: var(--bg); height: 100%;
-  cursor: default;
-  transition: background 0.12s;
-}
-.plant-row:hover .plant-label { background: var(--surface); }
-.plant-emoji { font-size: 0.9rem; flex-shrink: 0; }
-.plant-name-txt { font-size: 0.7rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.plant-family-txt { font-family: var(--mono); font-size: 0.48rem; color: var(--muted); letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* Month cells within a plant row */
-.plant-cells { display: flex; position: relative; height: 100%; }
-.month-cell {
-  width: var(--col-w); min-width: var(--col-w);
-  height: 100%; border-right: 1px solid var(--border);
-  position: relative; flex-shrink: 0;
-}
-/* Today vertical line */
-.today-line {
-  position: absolute; top: 0; width: 2px;
-  background: var(--today-line); opacity: 0.7;
-  z-index: 5; pointer-events: none;
-}
-
-/* Frost bands */
-.frost-band {
-  position: absolute; top: 0; height: 100%;
-  background: var(--frost);
-  border-left: 1px dashed rgba(74,127,168,0.35);
-  border-right: 1px dashed rgba(74,127,168,0.35);
-  pointer-events: none; z-index: 1;
-}
-
-/* Activity bars */
-.activity-bar {
-  position: absolute;
-  height: 12px;
-  top: 50%; transform: translateY(-50%);
-  border-radius: 2px;
-  cursor: pointer;
-  transition: filter 0.12s, height 0.12s;
-  z-index: 4;
-}
-.activity-bar:hover { filter: brightness(1.25); height: 16px; }
-.activity-bar.sow-in    { background: var(--sow-in);    opacity: 0.85; }
-.activity-bar.sow-out   { background: var(--sow-out);   opacity: 0.85; }
-.activity-bar.transplant{ background: var(--transplant); opacity: 0.85; }
-.activity-bar.harvest   { background: var(--harvest);   opacity: 0.9; }
-.activity-bar.prune     { background: var(--prune);     opacity: 0.85; }
-
-/* Planted-date dot */
-.planted-dot {
-  position: absolute; width: 8px; height: 8px; border-radius: 50%;
-  background: white; border: 2px solid var(--spring);
-  top: 50%; transform: translateY(-50%);
-  z-index: 6; cursor: pointer;
-}
-
-/* ── Popover ──────────────────────────────────── */
-#popover {
-  position: fixed; z-index: 400;
-  background: var(--surface); border: 1px solid var(--border2);
-  padding: 1rem 1.1rem; width: 240px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  pointer-events: none; opacity: 0; transform: translateY(4px);
-  transition: opacity 0.15s, transform 0.15s;
-}
-#popover.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.pop-plant { font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--text); margin-bottom: 0.2rem; }
-.pop-type  { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.65rem; }
-.pop-row   { display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 0.6rem; }
-.pop-row:last-child { border-bottom: none; }
-.pop-key   { color: var(--muted); }
-.pop-val   { color: var(--text); }
-.pop-close { position: absolute; top: 0.4rem; right: 0.5rem; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; }
-
-/* ── Month highlight ──────────────────────────── */
-.month-col-highlight {
-  position: absolute; top: 0; width: var(--col-w);
-  background: rgba(122,184,74,0.04);
-  pointer-events: none; z-index: 0;
-}
-
-/* ── Today's summary strip ────────────────────── */
-.today-strip {
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-  padding: 0.55rem 1.5rem;
-  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
-  font-family: var(--mono); font-size: 0.58rem; color: var(--muted);
-  position: relative; z-index: 1;
-}
-.today-strip .today-date { color: var(--today-line); letter-spacing: 0.1em; text-transform: uppercase; }
-.today-task { display: flex; align-items: center; gap: 0.35rem; }
-.today-task-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-/* ── Loading ──────────────────────────────────── */
-.loader-bar { height: 2px; background: var(--border); overflow: hidden; }
-.loader-bar::after {
-  content: ''; display: block; height: 100%; width: 35%;
-  background: var(--spring);
-  animation: scan 1.1s ease-in-out infinite;
-}
-.loader-bar.done { display: none; }
-@keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(340%)} }
-
-/* ── Toast ────────────────────────────────────── */
-#toast {
-  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 800;
-  background: var(--surface2); color: var(--spring); border: 1px solid var(--border2);
-  padding: 0.65rem 1rem; font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em;
-  opacity: 0; transform: translateY(6px);
-  transition: opacity 0.2s, transform 0.2s; pointer-events: none; max-width: 300px;
-}
-#toast.show { opacity: 1; transform: translateY(0); }
-</style>
-</head>
-<body>
-
-<!-- ═══ AUTH ═══ -->
-<div id="auth-overlay">
-  <div class="auth-box">
-    <div class="auth-title">Seasonal Calendar</div>
-    <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
-    <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
-    <div id="auth-err"></div>
-    <div class="auth-btns">
-      <button class="auth-btn primary" id="btn-login">Sign In</button>
-      <button class="auth-btn ghost"   id="btn-reg">Register</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ POPOVER ═══ -->
-<div id="popover">
-  <button class="pop-close" onclick="closePopover()">✕</button>
-  <div class="pop-plant" id="pop-plant"></div>
-  <div class="pop-type"  id="pop-type"></div>
-  <div id="pop-rows"></div>
-</div>
-
-<!-- ═══ TOAST ═══ -->
-<div id="toast"></div>
-
-<!-- ═══ TOP BAR ═══ -->
-<div class="top-bar">
-  <div class="logo-block">
-    <div class="logo-eye">GardenHub OS // v10.6</div>
-    <div class="logo-name">Seasonal <em>Calendar</em></div>
-  </div>
-  <nav>
-    <a href="index.html"    class="nav-link">Dashboard</a>
-    <a href="map.html"      class="nav-link">Map</a>
-    <a href="insights.html" class="nav-link">Insights</a>
-    <a href="clinic.html"   class="nav-link">Clinic</a>
-    <a href="library.html"  class="nav-link">Library</a>
-    <a href="calendar.html" class="nav-link active">Calendar</a>
-    <button class="nav-link danger" id="logout-btn">Logout</button>
-  </nav>
-</div>
-
-<!-- ═══ CLIMATE BAR ═══ -->
-<div class="climate-bar">
-  <div class="cc"><div class="cl">Zone</div><div class="cv spring">6b — Fairfield CT</div></div>
-  <div class="cc"><div class="cl">Last Frost</div><div class="cv winter">~Apr 15</div></div>
-  <div class="cc"><div class="cl">First Frost</div><div class="cv fall">~Oct 15</div></div>
-  <div class="cc"><div class="cl">Growing Season</div><div class="cv summer">~183 days</div></div>
-  <div class="cc"><div class="cl">Live Temp</div><div class="cv" id="w-temp">--</div></div>
-  <div class="cc"><div class="cl">Today</div><div class="cv" id="w-today">--</div></div>
-  <div class="cc"><div class="cl">Risk</div><div class="cv" id="w-risk">--</div></div>
-</div>
-
-<!-- ═══ LOADER ═══ -->
-<div class="loader-bar" id="main-loader"></div>
-
-<!-- ═══ TODAY STRIP ═══ -->
-<div class="today-strip" id="today-strip">
-  <span class="today-date" id="strip-date">Loading…</span>
-  <span id="strip-tasks"></span>
-</div>
-
-<!-- ═══ CONTROLS ═══ -->
-<div class="controls">
-  <div class="year-nav">
-    <button class="year-btn" onclick="changeYear(-1)">‹</button>
-    <div class="year-display" id="year-display">2026</div>
-    <button class="year-btn" onclick="changeYear(+1)">›</button>
-  </div>
-
-  <div class="ctrl-sep"></div>
-
-  <div class="pill on" data-type="sow-in"    onclick="togglePill(this)"><div class="pill-dot" style="background:var(--sow-in)"></div>Sow Indoors</div>
-  <div class="pill on" data-type="sow-out"   onclick="togglePill(this)"><div class="pill-dot" style="background:var(--sow-out)"></div>Direct Sow</div>
-  <div class="pill on" data-type="transplant"onclick="togglePill(this)"><div class="pill-dot" style="background:var(--transplant)"></div>Transplant</div>
-  <div class="pill on" data-type="harvest"   onclick="togglePill(this)"><div class="pill-dot" style="background:var(--harvest)"></div>Harvest</div>
-  <div class="pill on" data-type="prune"     onclick="togglePill(this)"><div class="pill-dot" style="background:var(--prune)"></div>Prune</div>
-
-  <div class="ctrl-sep"></div>
-
-  <input class="plant-search" id="plant-search" type="text" placeholder="Filter plants…" oninput="filterPlants(this.value)"/>
-
-  <button class="toggle-btn on" id="btn-frost" onclick="toggleFrost(this)">❄ Frost Zones</button>
-  <button class="toggle-btn on" id="btn-planted" onclick="togglePlanted(this)">◉ Planted Dates</button>
-
-  <button class="jump-today-btn" onclick="jumpToToday()">→ Today</button>
-</div>
-
-<!-- ═══ LEGEND ═══ -->
-<div class="legend">
-  <div class="leg-item"><div class="leg-swatch" style="background:var(--sow-in)"></div>Sow Indoors</div>
-  <div class="leg-item"><div class="leg-swatch" style="background:var(--sow-out)"></div>Direct Sow</div>
-  <div class="leg-item"><div class="leg-swatch" style="background:var(--transplant)"></div>Transplant</div>
-  <div class="leg-item"><div class="leg-swatch" style="background:var(--harvest)"></div>Harvest Window</div>
-  <div class="leg-item"><div class="leg-swatch" style="background:var(--prune)"></div>Prune</div>
-  <div class="leg-item"><div class="leg-frost"></div>Frost Risk Zone</div>
-  <div class="leg-item" style="color:var(--today-line)">— Today</div>
-  <div class="leg-item">◉ Planted Date</div>
-</div>
-
-<!-- ═══ CALENDAR SHELL ═══ -->
-<div class="calendar-shell">
-
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-inner" id="sidebar-content">
-      <div class="sidebar-empty">Click a month header to see tasks for that month.</div>
-    </div>
-  </div>
-
-  <!-- Grid area -->
-  <div class="grid-area" id="grid-area">
-    <!-- Built by JS -->
-  </div>
-
-</div>
-
-<script>
-// ══════════════════════════════════════════════════
-//  GardenHub OS — Seasonal Planting Calendar v10.6
-//  Zone 6b // Fairfield, CT
-//  Last frost: ~April 15 | First frost: ~October 15
-// ══════════════════════════════════════════════════
-
-const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ── Zone 6b frost constants (Fairfield CT) ────
-const LAST_FROST_MONTH  = 3;  // 0-indexed = April
-const LAST_FROST_DAY    = 15;
-const FIRST_FROST_MONTH = 9;  // 0-indexed = October
-const FIRST_FROST_DAY   = 15;
-const FROST_BUFFER_DAYS = 14; // danger zone either side of frost dates
-
-// ── Zone 6b zone knowledge database ──────────
-// activity windows are [startMonth (0-idx), startDay, endMonth, endDay]
-// based on Zone 6b Fairfield CT typical practice
-const ZONE_KB = {
-  // Key: plant_family or common_name keyword → { sow_in, sow_out, transplant, harvest_offset, prune }
-  // harvest_offset = weeks after transplant/sow that harvest begins
-  Solanaceae: {
-    sow_in:     [1,1,  2,28],  // Feb 1 – Feb 28 (8 weeks before last frost)
-    transplant: [4,15, 5,15],  // After last frost
-    harvest:    null,          // derived from maturity_days
-    prune:      [6,1,  8,31],
-    notes: 'Start indoors 8 weeks before last frost. Transplant after frost risk passes.'
-  },
-  Cucurbitaceae: {
-    sow_in:     [4,1,  4,30],
-    sow_out:    [5,15, 6,15],
-    transplant: [5,15, 6,1],
-    harvest:    null,
-    prune:      null,
-    notes: 'Frost-sensitive. Direct sow after soil warms to 60°F.'
-  },
-  Brassicaceae: {
-    sow_in:     [2,15, 3,15],
-    sow_out:    [3,1,  4,1],
-    transplant: [3,15, 4,15],
-    harvest:    null,
-    prune:      null,
-    notes: 'Cool-season crop. Can withstand light frost. Start indoors 4-6 weeks before transplant.'
-  },
-  Fabaceae: {
-    sow_out:    [4,15, 6,1],
-    harvest:    null,
-    prune:      null,
-    notes: 'Direct sow after last frost. Do not start indoors — dislikes transplanting.'
-  },
-  Apiaceae: {
-    sow_in:     [2,1,  3,1],
-    sow_out:    [4,1,  5,1],
-    transplant: [4,15, 5,15],
-    harvest:    null,
-    prune:      null,
-    notes: 'Slow to germinate. Start indoors 8-10 weeks before last frost.'
-  },
-  Asteraceae: {
-    sow_in:     [3,1,  4,1],
-    sow_out:    [4,15, 5,31],
-    transplant: [4,15, 5,31],
-    harvest:    [6,1,  10,15],
-    prune:      [8,1,  9,30],
-    notes: 'Deadhead regularly to extend bloom. Many are frost-hardy.'
-  },
-  Lamiaceae: {
-    sow_in:     [2,15, 3,15],
-    transplant: [4,15, 5,31],
-    harvest:    [5,15, 10,1],
-    prune:      [5,1,  9,30],
-    notes: 'Harvest before flowering for best flavor. Prune to prevent bolting.'
-  },
-  Rosaceae: {
-    sow_in:     [1,15, 2,28],
-    transplant: [3,15, 4,30],
-    harvest:    [6,1,  9,30],
-    prune:      [2,1,  3,31],
-    notes: 'Prune dormant canes in late winter. Many need cold stratification.'
-  },
-  Default: {
-    sow_in:     [3,1,  3,31],
-    sow_out:    [4,15, 5,31],
-    transplant: [4,15, 5,31],
-    harvest:    null,
-    prune:      [3,1,  4,30],
-    notes: 'Follow general Zone 6b guidelines. Transplant after last frost (Apr 15).'
-  }
-};
-
-// Month metadata
-const MONTHS = [
-  { abbr:'Jan', name:'January',   season:'winter', days:31 },
-  { abbr:'Feb', name:'February',  season:'winter', days:28 },
-  { abbr:'Mar', name:'March',     season:'spring', days:31 },
-  { abbr:'Apr', name:'April',     season:'spring', days:30 },
-  { abbr:'May', name:'May',       season:'spring', days:31 },
-  { abbr:'Jun', name:'June',      season:'summer', days:30 },
-  { abbr:'Jul', name:'July',      season:'summer', days:31 },
-  { abbr:'Aug', name:'August',    season:'summer', days:31 },
-  { abbr:'Sep', name:'September', season:'fall',   days:30 },
-  { abbr:'Oct', name:'October',   season:'fall',   days:31 },
-  { abbr:'Nov', name:'November',  season:'fall',   days:30 },
-  { abbr:'Dec', name:'December',  season:'winter', days:31 },
-];
-
-const SEASON_COLORS = { winter:'var(--winter)', spring:'var(--spring)', summer:'var(--summer)', fall:'var(--fall)' };
-const ACT_COLORS    = { 'sow-in':'var(--sow-in)', 'sow-out':'var(--sow-out)', transplant:'var(--transplant)', harvest:'var(--harvest)', prune:'var(--prune)' };
-const ACT_LABELS    = { 'sow-in':'Sow Indoors', 'sow-out':'Direct Sow', transplant:'Transplant', harvest:'Harvest Window', prune:'Prune' };
-
-const FAMILY_ALIASES = {
-  tomato:'Solanaceae', pepper:'Solanaceae', eggplant:'Solanaceae', potato:'Solanaceae',
-  squash:'Cucurbitaceae', cucumber:'Cucurbitaceae', melon:'Cucurbitaceae', pumpkin:'Cucurbitaceae', zucchini:'Cucurbitaceae',
-  kale:'Brassicaceae', cabbage:'Brassicaceae', broccoli:'Brassicaceae', cauliflower:'Brassicaceae', radish:'Brassicaceae', turnip:'Brassicaceae',
-  bean:'Fabaceae', pea:'Fabaceae', clover:'Fabaceae', vetch:'Fabaceae', milkweed:'Fabaceae',
-  carrot:'Apiaceae', parsley:'Apiaceae', dill:'Apiaceae', fennel:'Apiaceae', celery:'Apiaceae',
-  sunflower:'Asteraceae', coneflower:'Asteraceae', calendula:'Asteraceae', marigold:'Asteraceae', zinnia:'Asteraceae', cosmos:'Asteraceae',
-  basil:'Lamiaceae', mint:'Lamiaceae', lavender:'Lamiaceae', sage:'Lamiaceae', thyme:'Lamiaceae', oregano:'Lamiaceae', rosemary:'Lamiaceae',
-  strawberry:'Rosaceae', rose:'Rosaceae', raspberry:'Rosaceae',
-};
-
-// ── State ─────────────────────────────────────
-let _userId     = null;
-let _plants     = [];
-let _year       = new Date().getFullYear();
-let _activeMonth= new Date().getMonth();
-let _activePills= new Set(['sow-in','sow-out','transplant','harvest','prune']);
-let _showFrost  = true;
-let _showPlanted= true;
-let _plantFilter= '';
-
-const $ = id => document.getElementById(id);
-
-// ── Auth ──────────────────────────────────────
-$('btn-login').onclick = async () => {
-  $('auth-err').textContent = '';
-  const {error} = await sb.auth.signInWithPassword({email:$('a-email').value.trim(), password:$('a-pass').value});
-  if (error) $('auth-err').textContent = error.message;
-};
-$('btn-reg').onclick = async () => {
-  const {error} = await sb.auth.signUp({email:$('a-email').value.trim(), password:$('a-pass').value});
-  $('auth-err').style.color = error?'#f87171':'var(--spring)';
-  $('auth-err').textContent = error?error.message:'Check email to confirm.';
-};
-$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
-
-sb.auth.onAuthStateChange((event, session) => {
-  if (event==='SIGNED_IN' && session) { _userId=session.user.id; $('auth-overlay').classList.add('hidden'); boot(); }
-  else if (event==='SIGNED_OUT') $('auth-overlay').classList.remove('hidden');
-});
-(async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  if (session) { _userId=session.user.id; $('auth-overlay').classList.add('hidden'); boot(); }
-})();
-
-// ── Boot ──────────────────────────────────────
-async function boot() {
-  loadWeather();
-  await loadPlants();
-  buildCalendar();
-  updateTodayStrip();
-  jumpToToday();
-  selectMonth(_activeMonth);
-}
-
-// ── Weather ───────────────────────────────────
-async function loadWeather() {
-  const WMO={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:'🌧',80:'🌦',95:'⛈'};
-  try {
-    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635&current=temperature_2m,weathercode&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=1');
-    const d=await r.json(); const c=d.current;
-    const t=Math.round(c.temperature_2m), icon=WMO[c.weathercode]||'🌡';
-    let rc='', rl='LOW';
-    if(t<=36){rl='FROST';rc='warn';}else if(t>=90){rl='HEAT';rc='bad';}else if(t<50){rl='MOD';rc='warn';}
-    $('w-temp').textContent=`${icon} ${t}°F`;
-    $('w-risk').textContent=rl; $('w-risk').className=`cv ${rc}`;
-  } catch { $('w-temp').textContent='⚠️'; }
-  $('w-today').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-}
-
-// ── Load plants ───────────────────────────────
-async function loadPlants() {
-  $('main-loader').classList.remove('done');
-  const {data} = await sb.from('garden_library')
-    .select('id,common_name,scientific_name,emoji,plant_family,maturity_days,recovery_days,planted_date,is_native,is_host_plant')
-    .order('common_name');
-  _plants = data||[];
-  $('main-loader').classList.add('done');
-}
-
-// ── Resolve family for a plant ────────────────
-function resolveFamily(p) {
-  if (p.plant_family && ZONE_KB[p.plant_family]) return p.plant_family;
-  const name = (p.common_name||'').toLowerCase();
-  for (const [kw, fam] of Object.entries(FAMILY_ALIASES)) {
-    if (name.includes(kw)) return fam;
-  }
-  return 'Default';
-}
-
-// ── Build activity windows for a plant in a given year ─
-function getWindows(p, year) {
-  const fam = resolveFamily(p);
-  const kb  = ZONE_KB[fam] || ZONE_KB.Default;
-  const windows = [];
-
-  // Helper: convert [m,d,m2,d2] to {startDate, endDate} for the given year
-  function range(arr) {
-    if (!arr) return null;
-    return {
-      start: new Date(year, arr[0], arr[1]),
-      end:   new Date(year, arr[2], arr[3]),
-    };
-  }
-
-  if (kb.sow_in)     windows.push({ type:'sow-in',    ...range(kb.sow_in) });
-  if (kb.sow_out)    windows.push({ type:'sow-out',   ...range(kb.sow_out) });
-  if (kb.transplant) windows.push({ type:'transplant',...range(kb.transplant) });
-  if (kb.prune)      windows.push({ type:'prune',     ...range(kb.prune) });
-
-  // Harvest: derive from planted_date + maturity_days + recovery_days
-  if (p.planted_date && p.maturity_days) {
-    const eff      = (p.maturity_days||60) + (p.recovery_days||0);
-    const planted  = new Date(p.planted_date + 'T12:00:00');
-    const harvestStart = new Date(planted.getTime() + eff * 86400000);
-    // Harvest window = maturity date to maturity date + 30 days
-    const harvestEnd   = new Date(harvestStart.getTime() + 30 * 86400000);
-    if (harvestStart.getFullYear() === year || harvestEnd.getFullYear() === year) {
-      windows.push({ type:'harvest', start:harvestStart, end:harvestEnd, derived:true });
-    }
-  } else if (kb.harvest) {
-    windows.push({ type:'harvest', ...range(kb.harvest) });
-  }
-
-  return windows;
-}
-
-// ── Date → pixel position within a month cell ─
-function dateToPx(date, year) {
-  const m = date.getMonth();
-  const d = date.getDate();
-  const daysInMonth = new Date(year, m+1, 0).getDate();
-  return Math.round((d / daysInMonth) * 88); // 88 = col-w
-}
-
-// ── Build a bar's left/width within the 12-month strip ─
-// Returns array of {month, left, width} segments (bar can span months)
-function barSegments(start, end, year) {
-  const segs = [];
-  const yearStart = new Date(year,0,1);
-  const yearEnd   = new Date(year,11,31);
-  if (end < yearStart || start > yearEnd) return segs;
-
-  const s = start < yearStart ? yearStart : start;
-  const e = end   > yearEnd   ? yearEnd   : end;
-
-  let cur = new Date(s);
-  while (cur <= e) {
-    const m = cur.getMonth();
-    const daysInMonth = new Date(year, m+1, 0).getDate();
-    const monthEnd    = new Date(year, m, daysInMonth);
-    const segEnd      = e < monthEnd ? e : monthEnd;
-    const startPx = cur.getDate()===1 && cur.getMonth()===s.getMonth() && cur.getDate()===s.getDate()
-      ? Math.round(((s.getDate()-1)/daysInMonth)*88)
-      : 0;
-    const endPx   = Math.round((segEnd.getDate()/daysInMonth)*88);
-    segs.push({ month:m, left:startPx, width:Math.max(4, endPx-startPx) });
-    cur = new Date(year, m+1, 1);
-  }
-  return segs;
-}
-
-// ── Build calendar DOM ────────────────────────
-function buildCalendar() {
-  const grid = $('grid-area');
-  grid.innerHTML = '';
-
-  const now = new Date();
-  const todayMonth = now.getMonth();
-  const todayYear  = now.getFullYear();
-
-  // ── HEADER ROW ──
-  const header = document.createElement('div');
-  header.className = 'cal-header';
-
-  const labelCell = document.createElement('div');
-  labelCell.className = 'cal-header-label';
-  labelCell.textContent = `${_plants.length} Plants · ${_year}`;
-  header.appendChild(labelCell);
-
-  MONTHS.forEach((m, mi) => {
-    const cell = document.createElement('div');
-    const isCurrent = (mi === todayMonth && _year === todayYear);
-    const isActive  = (mi === _activeMonth);
-    cell.className  = `month-header ${m.season}${isCurrent?' current-month':''}${isActive?' active-month':''}`;
-    cell.id         = `mh-${mi}`;
-    cell.innerHTML  = `<div class="month-abbr">${m.abbr}</div><div class="month-season">${m.season}</div>`;
-    cell.onclick    = () => selectMonth(mi);
-    header.appendChild(cell);
-  });
-  grid.appendChild(header);
-
-  // ── FROST BAND REFERENCE (rendered as overlay in each plant row) ──
-  // Pre-compute: which months have frost risk
-  // Spring frost: Jan-Apr 14 (risk), Apr 15-Apr 30 (transition)
-  // Fall frost: Oct 15-Dec 31 (risk)
-  function isFrostMonth(mi) {
-    return mi <= 3 || mi >= 9; // Jan–Apr & Oct–Dec have frost risk
-  }
-
-  // ── PLANT ROWS ──
-  if (_plants.length === 0) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'padding:3rem;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--muted);';
-    empty.innerHTML = `No plants in your library yet.<br/><a href="library.html" style="color:var(--spring);text-decoration:none;">→ Add plants to the library</a> to see your calendar.`;
-    grid.appendChild(empty);
-    return;
-  }
-
-  _plants.forEach((p, pi) => {
-    const windows = getWindows(p, _year);
-    const row     = document.createElement('div');
-    row.className = 'plant-row';
-    row.id        = `row-${p.id}`;
-
-    // Label
-    const label = document.createElement('div');
-    label.className = 'plant-label';
-    label.innerHTML = `
-      <span class="plant-emoji">${p.emoji||'🌱'}</span>
-      <div>
-        <div class="plant-name-txt">${p.common_name||'Unknown'}</div>
-        <div class="plant-family-txt">${p.plant_family||resolveFamily(p)}</div>
-      </div>`;
-    row.appendChild(label);
-
-    // Cells container
-    const cells = document.createElement('div');
-    cells.className = 'plant-cells';
-
-    // One cell per month
-    MONTHS.forEach((m, mi) => {
-      const cell = document.createElement('div');
-      cell.className = 'month-cell';
-      cell.id = `cell-${p.id}-${mi}`;
-
-      // Frost band
-      if (_showFrost && isFrostMonth(mi)) {
-        const fb = document.createElement('div');
-        fb.className = 'frost-band';
-        fb.style.cssText = 'left:0;right:0;';
-        cell.appendChild(fb);
-      }
-
-      cells.appendChild(cell);
-    });
-
-    // Draw activity bars across cells
-    windows.forEach(win => {
-      if (!_activePills.has(win.type)) return;
-      const segs = barSegments(win.start, win.end, _year);
-      segs.forEach(seg => {
-        const targetCell = cells.children[seg.month];
-        if (!targetCell) return;
-        const bar = document.createElement('div');
-        bar.className = `activity-bar ${win.type}`;
-        bar.style.left  = seg.left + 'px';
-        bar.style.width = seg.width + 'px';
-        bar.title = `${p.common_name} — ${ACT_LABELS[win.type]}`;
-        bar.onclick = (e) => { e.stopPropagation(); showPopover(e, p, win); };
-        targetCell.appendChild(bar);
-      });
-    });
-
-    // Planted date dot
-    if (_showPlanted && p.planted_date) {
-      const pd    = new Date(p.planted_date + 'T12:00:00');
-      const pYear = pd.getFullYear();
-      if (pYear === _year) {
-        const pm   = pd.getMonth();
-        const cell = cells.children[pm];
-        if (cell) {
-          const daysInMonth = new Date(_year, pm+1, 0).getDate();
-          const px = Math.round(((pd.getDate()-1)/daysInMonth)*88);
-          const dot = document.createElement('div');
-          dot.className = 'planted-dot';
-          dot.style.left = px + 'px';
-          dot.title = `${p.common_name} planted ${p.planted_date}`;
-          dot.onclick = (e) => { e.stopPropagation(); showPlantedPopover(e, p); };
-          cell.appendChild(dot);
-        }
-      }
-    }
-
-    row.appendChild(cells);
-    grid.appendChild(row);
-
-    // Apply current plant filter
-    if (_plantFilter && !(p.common_name||'').toLowerCase().includes(_plantFilter.toLowerCase())) {
-      row.classList.add('filtered-out');
-    }
-  });
-
-  // ── TODAY LINE (vertical, spans full height) ──
-  if (_year === todayYear) {
-    const todayM = now.getMonth();
-    const daysInTodayMonth = new Date(_year, todayM+1, 0).getDate();
-    const todayPx = Math.round(((now.getDate()-1)/daysInTodayMonth)*88);
-    const todayLineLeft = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-w').trim()) ||200;
-
-    // Add today line to each row
-    grid.querySelectorAll('.plant-cells').forEach(cells => {
-      if (cells.children[todayM]) {
-        const line = document.createElement('div');
-        line.className = 'today-line';
-        line.style.cssText = `left:${todayPx}px;height:100%;`;
-        cells.children[todayM].appendChild(line);
-      }
-    });
-  }
-
-  // Apply stagger animation
-  grid.querySelectorAll('.plant-row').forEach((row, i) => {
-    row.style.animationDelay = `${i*0.02}s`;
-    row.style.animation = 'fadeIn 0.3s ease both';
-    row.style.animationDelay = `${i*0.02}s`;
-  });
-}
-
-// Make sure animation is defined
-const styleTag = document.createElement('style');
-styleTag.textContent = `@keyframes fadeIn { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }`;
-document.head.appendChild(styleTag);
-
-// ── Today strip ───────────────────────────────
-function updateTodayStrip() {
-  const now = new Date();
-  $('strip-date').textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).toUpperCase();
-
-  // Gather what's happening today across all plants
-  const tasksToday = [];
-  _plants.forEach(p => {
-    const wins = getWindows(p, now.getFullYear());
-    wins.forEach(w => {
-      if (now >= w.start && now <= w.end) {
-        tasksToday.push({ plant:p, type:w.type });
-      }
-    });
-  });
-
-  // Summarise
-  const counts = {};
-  tasksToday.forEach(t => { counts[t.type] = (counts[t.type]||0)+1; });
-  const parts = Object.entries(counts).map(([type, n]) =>
-    `<span class="today-task"><span class="today-task-dot" style="background:${ACT_COLORS[type]};"></span>${n} ${ACT_LABELS[type]}</span>`
-  );
-
-  // Frost advisory
-  const m = now.getMonth(), d = now.getDate();
-  const lastFrost  = new Date(now.getFullYear(), LAST_FROST_MONTH,  LAST_FROST_DAY);
-  const firstFrost = new Date(now.getFullYear(), FIRST_FROST_MONTH, FIRST_FROST_DAY);
-  const daysToLast = Math.ceil((lastFrost-now)/86400000);
-  const daysToFirst= Math.ceil((firstFrost-now)/86400000);
-
-  if (daysToLast > 0 && daysToLast <= 14) {
-    parts.push(`<span class="today-task" style="color:var(--winter)"><span class="today-task-dot" style="background:var(--winter);"></span>Last frost in ${daysToLast}d</span>`);
-  } else if (daysToFirst > 0 && daysToFirst <= 14) {
-    parts.push(`<span class="today-task" style="color:var(--fall)"><span class="today-task-dot" style="background:var(--fall);"></span>First frost in ${daysToFirst}d</span>`);
-  }
-
-  $('strip-tasks').innerHTML = parts.length > 0
-    ? parts.join('<span style="color:var(--border2);margin:0 0.25rem;">·</span>')
-    : '<span style="color:var(--muted);font-family:var(--mono);font-size:0.55rem;">No active tasks in library today</span>';
-}
-
-// ── Month sidebar ─────────────────────────────
-function selectMonth(mi) {
-  _activeMonth = mi;
-
-  // Update header highlights
-  MONTHS.forEach((_,i) => {
-    const hdr = $(`mh-${i}`);
-    if (hdr) hdr.classList.toggle('active-month', i===mi);
-  });
-
-  // Scroll month into view
-  const cell = $(`mh-${mi}`);
-  if (cell) cell.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
-
-  // Build sidebar
-  buildSidebar(mi);
-}
-
-function buildSidebar(mi) {
-  const m        = MONTHS[mi];
-  const mDate    = new Date(_year, mi, 1);
-  const now      = new Date();
-  const isNow    = (mi === now.getMonth() && _year === now.getFullYear());
-
-  // Frost advisory for this month
-  const lastFrost  = new Date(_year, LAST_FROST_MONTH,  LAST_FROST_DAY);
-  const firstFrost = new Date(_year, FIRST_FROST_MONTH, FIRST_FROST_DAY);
-  const monthEnd   = new Date(_year, mi+1, 0);
-  const monthStart = new Date(_year, mi,   1);
-  const hasFrost   = monthStart <= lastFrost || monthEnd >= firstFrost;
-  const isLFMonth  = (mi === LAST_FROST_MONTH);
-  const isFFMonth  = (mi === FIRST_FROST_MONTH);
-
-  // Gather tasks for this month
-  const tasks = { 'sow-in':[], 'sow-out':[], transplant:[], harvest:[], prune:[] };
-  _plants.forEach(p => {
-    const wins = getWindows(p, _year);
-    wins.forEach(w => {
-      const mStart = new Date(_year, mi, 1);
-      const mEnd   = new Date(_year, mi+1, 0);
-      if (w.end >= mStart && w.start <= mEnd) {
-        tasks[w.type].push(p);
-      }
-    });
-  });
-
-  let html = `
-    <div class="sidebar-month">${m.name}</div>
-    <div class="sidebar-season" style="color:${SEASON_COLORS[m.season]}">${m.season.toUpperCase()} · ${_year}</div>`;
-
-  if (isLFMonth) html += `<div class="frost-warning">❄️ Last Frost: ~Apr 15. Do not transplant frost-sensitive crops before this date.</div>`;
-  if (isFFMonth) html += `<div class="frost-warning" style="border-color:rgba(192,90,32,0.4);color:var(--fall);background:rgba(192,90,32,0.08);">🍂 First Frost: ~Oct 15. Begin harvesting and protecting tender crops.</div>`;
-
-  const actTypes = ['sow-in','sow-out','transplant','harvest','prune'];
-  const taskFound = actTypes.some(t => tasks[t].length > 0);
-
-  if (!taskFound) {
-    html += `<div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);padding:0.5rem 0;">No calendar tasks for this month.<br/><br/>Add more plants to your <a href="library.html" style="color:var(--spring);text-decoration:none;">library</a> to see a full schedule.</div>`;
-  } else {
-    actTypes.forEach(type => {
-      const list = tasks[type];
-      if (!list.length) return;
-      html += `<div class="task-section">
-        <div class="task-head"><span class="task-dot" style="background:${ACT_COLORS[type]}"></span>${ACT_LABELS[type]}</div>
-        <ul class="task-list">
-          ${list.map(p=>`<li><span class="task-emoji">${p.emoji||'🌱'}</span>${p.common_name}</li>`).join('')}
-        </ul>
-      </div>`;
-    });
-  }
-
-  // Zone 6b general tips for this month
-  const tips = getMonthTips(mi);
-  if (tips.length) {
-    html += `<div style="margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem;">
-      <div class="task-head" style="color:var(--muted)">Zone 6b Tips</div>
-      <ul class="task-list">
-        ${tips.map(t=>`<li style="color:var(--muted);font-size:0.65rem;">${t}</li>`).join('')}
-      </ul>
-    </div>`;
-  }
-
-  $('sidebar-content').innerHTML = html;
-}
-
-function getMonthTips(mi) {
-  const tips = [
-    // Jan
-    ['Order seeds. Review last season's notes. Check stored bulbs.'],
-    // Feb
-    ['Start tomatoes and peppers indoors. Test germination of old seeds.'],
-    // Mar
-    ['Start brassicas indoors. Prune roses on a mild day (above 40°F).'],
-    // Apr
-    ['Last frost ~Apr 15. Transplant brassicas early month. Sow cold-hardy crops direct.'],
-    // May
-    ['After May 15 — transplant tomatoes, peppers, squash. Soil should be 60°F+.'],
-    // Jun
-    ['Full planting season. Stake tomatoes. Mulch beds for moisture retention.'],
-    // Jul
-    ['Side-dress heavy feeders with compost. Watch for heat stress and pest pressure.'],
-    // Aug
-    ['Start fall brassicas indoors (mid-Aug). Begin second succession of greens.'],
-    // Sep
-    ['Harvest summer crops. Plant garlic after first cold snap. Begin hardening off.'],
-    // Oct
-    ['First frost ~Oct 15. Protect tender crops. Dig tender bulbs.'],
-    // Nov
-    ['Clean beds. Add compost. Plant cover crops. Mulch perennials.'],
-    // Dec
-    ['Plan next year. Review notes. Order seed catalogs.'],
-  ];
-  return tips[mi]||[];
-}
-
-// ── Year navigation ───────────────────────────
-function changeYear(delta) {
-  _year += delta;
-  $('year-display').textContent = _year;
-  buildCalendar();
-  updateTodayStrip();
-  selectMonth(_activeMonth);
-}
-
-// ── Pill toggles ──────────────────────────────
-function togglePill(el) {
-  const type = el.dataset.type;
-  if (_activePills.has(type)) { _activePills.delete(type); el.classList.remove('on'); }
-  else                        { _activePills.add(type);    el.classList.add('on'); }
-  buildCalendar();
-  buildSidebar(_activeMonth);
-}
-
-// ── Frost / planted toggles ───────────────────
-function toggleFrost(btn) {
-  _showFrost = !_showFrost;
-  btn.classList.toggle('on', _showFrost);
-  buildCalendar();
-}
-function togglePlanted(btn) {
-  _showPlanted = !_showPlanted;
-  btn.classList.toggle('on', _showPlanted);
-  buildCalendar();
-}
-
-// ── Plant search filter ───────────────────────
-function filterPlants(val) {
-  _plantFilter = val.trim().toLowerCase();
-  document.querySelectorAll('.plant-row').forEach(row => {
-    const id    = row.id.replace('row-','');
-    const plant = _plants.find(p=>p.id===id);
-    if (!plant) return;
-    const match = !_plantFilter || (plant.common_name||'').toLowerCase().includes(_plantFilter);
-    row.classList.toggle('filtered-out', !match);
-  });
-}
-
-// ── Jump to today ─────────────────────────────
-function jumpToToday() {
-  const now = new Date();
-  if (_year !== now.getFullYear()) return; // only works for current year
-
-  const mi = now.getMonth();
-  // Scroll the month header into view horizontally
-  const mh = $(`mh-${mi}`);
-  if (mh) {
-    const gridArea = $('grid-area');
-    const colW = 88;
-    const labelW = 200;
-    const targetScroll = labelW + mi * colW - 40;
-    gridArea.scrollTo({ left: targetScroll, behavior: 'smooth' });
-  }
-  selectMonth(mi);
-}
-
-// ── Popover ───────────────────────────────────
-function showPopover(e, plant, win) {
-  const pop = $('popover');
-  const hDate = win.derived
-    ? win.start.toLocaleDateString('en-US',{month:'short',day:'numeric'})
-    : null;
-
-  $('pop-plant').textContent = `${plant.emoji||'🌱'} ${plant.common_name}`;
-  $('pop-type').innerHTML    = `<span style="color:${ACT_COLORS[win.type]}">${ACT_LABELS[win.type]}</span>`;
-
-  const rows = [
-    ['Window start', win.start.toLocaleDateString('en-US',{month:'short',day:'numeric'})],
-    ['Window end',   win.end.toLocaleDateString('en-US',{month:'short',day:'numeric'})],
-    plant.planted_date ? ['Planted', plant.planted_date] : null,
-    plant.maturity_days ? ['Matures in', `${(plant.maturity_days+(plant.recovery_days||0))}d`] : null,
-    hDate && win.type==='harvest' ? ['Harvest from', hDate] : null,
-    ['Family', plant.plant_family||resolveFamily(plant)],
-  ].filter(Boolean);
-
-  $('pop-rows').innerHTML = rows.map(([k,v])=>`<div class="pop-row"><span class="pop-key">${k}</span><span class="pop-val">${v}</span></div>`).join('');
-
-  // Position near click
-  const px = Math.min(e.clientX+12, window.innerWidth-260);
-  const py = Math.min(e.clientY-20,  window.innerHeight-200);
-  pop.style.left = px+'px';
-  pop.style.top  = py+'px';
-  pop.classList.add('show');
-
-  // Auto-close after 5s
-  clearTimeout(pop._timer);
-  pop._timer = setTimeout(closePopover, 5000);
-}
-
-function showPlantedPopover(e, plant) {
-  showPopover(e, plant, {
-    type:'sow-out', derived:false,
-    start: new Date(plant.planted_date+'T12:00:00'),
-    end:   new Date(plant.planted_date+'T12:00:00'),
-  });
-}
-
-function closePopover() {
-  $('popover').classList.remove('show');
-}
-document.addEventListener('click', e => {
-  if (!$('popover').contains(e.target)) closePopover();
-});
-
-// ── Toast ─────────────────────────────────────
-function toast(msg) {
-  const el=$('toast'); el.textContent=msg; el.className='show';
-  setTimeout(()=>el.className='',2500);
-}
-</script>
-</body>
-</html>
+-- ============================================================
+-- GardenHub OS v10.6 — Complete Database Migration
+-- Migrates from v10.5 schema to v10.6
+--
+-- SAFE TO RUN MULTIPLE TIMES — all statements use
+-- IF NOT EXISTS / IF EXISTS guards.
+--
+-- Run order matters. Execute this entire file in one
+-- pass in the Supabase SQL Editor.
+--
+-- Supabase project: zrohwzqaksqruywiedxt
+-- ============================================================
+
+
+-- ============================================================
+-- SECTION 1: garden_library
+-- Renames: name→common_name, days_to_mature→maturity_days,
+--          mature_spread_inches→spread_in
+-- Adds:    scientific_name, common_name alias, maturity_days,
+--          recovery_days, planted_date, is_host_plant,
+--          spread_in, notes
+-- Keeps:   id, user_id, emoji, plant_family, is_native,
+--          pollinator_value (preserved, not removed)
+-- ============================================================
+
+-- 1a. Rename `name` → `common_name` (safe guard via DO block)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='name'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='common_name'
+  ) THEN
+    ALTER TABLE garden_library RENAME COLUMN name TO common_name;
+  END IF;
+END $$;
+
+-- 1b. Rename `days_to_mature` → `maturity_days`
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='days_to_mature'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='maturity_days'
+  ) THEN
+    ALTER TABLE garden_library RENAME COLUMN days_to_mature TO maturity_days;
+  END IF;
+END $$;
+
+-- 1c. Rename `mature_spread_inches` → `spread_in`
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='mature_spread_inches'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='spread_in'
+  ) THEN
+    ALTER TABLE garden_library RENAME COLUMN mature_spread_inches TO spread_in;
+  END IF;
+END $$;
+
+-- 1d. Add new columns (all safe with IF NOT EXISTS)
+ALTER TABLE garden_library
+  ADD COLUMN IF NOT EXISTS scientific_name   TEXT,
+  ADD COLUMN IF NOT EXISTS is_host_plant     BOOLEAN     NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS planted_date      DATE,
+  ADD COLUMN IF NOT EXISTS recovery_days     INTEGER     NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS notes             TEXT;
+
+-- 1e. Rename spread column if it came from mature_spread_inches
+--     and spread_in doesn't exist yet (handles edge case)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_library' AND column_name='spread_in'
+  ) THEN
+    ALTER TABLE garden_library ADD COLUMN IF NOT EXISTS spread_in INTEGER;
+  END IF;
+END $$;
+
+-- 1f. Obsolete garden_library columns dropped in Section 2e (after data migrations).
+-- 1g. Backfill: set recovery_days = 0 for any nulls
+UPDATE garden_library SET recovery_days = 0 WHERE recovery_days IS NULL;
+
+-- 1h. Comments
+COMMENT ON COLUMN garden_library.common_name IS
+  'Human-readable plant name, e.g. "Sungold Tomato"';
+COMMENT ON COLUMN garden_library.maturity_days IS
+  'Base days from planting to harvest. See also recovery_days for effective maturity.';
+COMMENT ON COLUMN garden_library.recovery_days IS
+  'Cumulative penalty days added by Clinic when resolving health scans. Added to maturity_days to compute effective maturity (Feedback Loop v10.6).';
+COMMENT ON COLUMN garden_library.planted_date IS
+  'Date this plant was put in the ground. Used for maturity %, harvest forecast, and calendar display.';
+COMMENT ON COLUMN garden_library.is_host_plant IS
+  'True if this plant hosts butterfly/moth larvae (e.g. milkweed for monarchs). Used in Pollinator IQ scoring.';
+
+
+-- ============================================================
+-- SECTION 2: plant_health_scans
+-- The v10.5 table is structured around spatial_id FK and
+-- uses numeric severity_level (1-10) + boolean is_resolved.
+-- v10.6 decouples from spatial, uses text severity + status.
+-- Strategy: ADD new columns, keep old ones (no data loss).
+-- ============================================================
+
+-- 2a. Add v10.6 columns
+ALTER TABLE plant_health_scans
+  ADD COLUMN IF NOT EXISTS plant_id             UUID REFERENCES garden_library(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS plant_name           TEXT,
+  ADD COLUMN IF NOT EXISTS issue_type           TEXT,
+  ADD COLUMN IF NOT EXISTS severity             TEXT    CHECK (severity IN ('low','medium','high','critical')),
+  ADD COLUMN IF NOT EXISTS status               TEXT    NOT NULL DEFAULT 'pending'
+                                                        CHECK (status IN ('pending','active','resolved')),
+  ADD COLUMN IF NOT EXISTS scan_date            DATE    DEFAULT CURRENT_DATE,
+  ADD COLUMN IF NOT EXISTS recovery_days_added  INTEGER NOT NULL DEFAULT 0;
+
+-- 2b. Migrate existing data from old columns to new columns
+--     so old records still appear correctly in the UI.
+
+-- Map severity_level (1-10) → text severity
+UPDATE plant_health_scans
+SET severity = CASE
+  WHEN severity_level >= 9 THEN 'critical'
+  WHEN severity_level >= 7 THEN 'high'
+  WHEN severity_level >= 4 THEN 'medium'
+  ELSE 'low'
+END
+WHERE severity IS NULL AND severity_level IS NOT NULL;
+
+-- Default severity for any remaining NULLs
+UPDATE plant_health_scans
+SET severity = 'low'
+WHERE severity IS NULL;
+
+-- Map is_resolved → status
+UPDATE plant_health_scans
+SET status = CASE
+  WHEN is_resolved = true THEN 'resolved'
+  ELSE 'active'
+END
+WHERE status = 'pending';
+
+-- Map issue_category → issue_type
+UPDATE plant_health_scans
+SET issue_type = issue_category
+WHERE issue_type IS NULL AND issue_category IS NOT NULL;
+
+-- Map detected_species → plant_name
+UPDATE plant_health_scans
+SET plant_name = detected_species
+WHERE plant_name IS NULL AND detected_species IS NOT NULL;
+
+-- Map created_at date → scan_date
+UPDATE plant_health_scans
+SET scan_date = created_at::DATE
+WHERE scan_date IS NULL AND created_at IS NOT NULL;
+
+-- 2c. Link plant_id via garden_plants_spatial where possible
+UPDATE plant_health_scans s
+SET plant_id = gps.plant_id
+FROM garden_plants_spatial gps
+WHERE s.plant_id IS NULL
+  AND s.spatial_id = gps.id
+  AND gps.plant_id IS NOT NULL;
+
+-- 2d. Comments
+COMMENT ON COLUMN plant_health_scans.severity IS
+  'Text severity level: low | medium | high | critical. Replaces old numeric severity_level.';
+COMMENT ON COLUMN plant_health_scans.status IS
+  'Lifecycle state: pending | active | resolved. Replaces old boolean is_resolved.';
+COMMENT ON COLUMN plant_health_scans.recovery_days_added IS
+  'Days added to the linked plant''s recovery_days when this scan is resolved (Feedback Loop). Default: 5.';
+COMMENT ON COLUMN plant_health_scans.scan_date IS
+  'Date the observation was made. Separate from created_at (system timestamp).';
+-- 2e. Drop obsolete garden_library columns (now safe -- all data migrated above)
+--     Drop garden_summary view first since it references pollinator_value,
+--     then drop columns, then the view is recreated in Section 7.
+DROP VIEW IF EXISTS garden_summary;
+DROP VIEW IF EXISTS garden_library_effective_maturity;
+
+ALTER TABLE garden_library
+  DROP COLUMN IF EXISTS is_invasive,
+  DROP COLUMN IF EXISTS ecoregion_affinity,
+  DROP COLUMN IF EXISTS mature_height_inches,
+  DROP COLUMN IF EXISTS growth_rate_category,
+  DROP COLUMN IF EXISTS pollinator_value;
+
+
+-- ============================================================
+-- SECTION 3: garden_logs
+-- Renames: category→activity_type, message→notes,
+--          timestamp→log_date
+-- Adds:    quantity_gal, plant_id
+-- ============================================================
+
+-- 3a. Rename category → activity_type
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_logs' AND column_name='category'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_logs' AND column_name='activity_type'
+  ) THEN
+    ALTER TABLE garden_logs RENAME COLUMN category TO activity_type;
+  END IF;
+END $$;
+
+-- 3b. Rename message → notes
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_logs' AND column_name='message'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='garden_logs' AND column_name='notes'
+  ) THEN
+    ALTER TABLE garden_logs RENAME COLUMN message TO notes;
+  END IF;
+END $$;
+
+-- 3c. Add log_date (date-only companion to timestamp)
+ALTER TABLE garden_logs
+  ADD COLUMN IF NOT EXISTS log_date      DATE,
+  ADD COLUMN IF NOT EXISTS quantity_gal  DECIMAL(6,2),
+  ADD COLUMN IF NOT EXISTS plant_id      UUID REFERENCES garden_library(id) ON DELETE SET NULL;
+
+-- 3d. Backfill log_date from timestamp
+UPDATE garden_logs
+SET log_date = timestamp::DATE
+WHERE log_date IS NULL AND timestamp IS NOT NULL;
+
+-- 3e. Backfill log_date for rows with no timestamp
+UPDATE garden_logs
+SET log_date = CURRENT_DATE
+WHERE log_date IS NULL;
+
+-- 3f. Comments
+COMMENT ON COLUMN garden_logs.activity_type IS
+  'Type of activity: watering | fertilizing | pruning | observation | harvest | planting | other';
+COMMENT ON COLUMN garden_logs.log_date IS
+  'Date of the activity. Date-only companion to the timestamp column.';
+COMMENT ON COLUMN garden_logs.quantity_gal IS
+  'Water quantity in gallons (for watering activity type). Used in Water Pulse KPI.';
+
+
+-- ============================================================
+-- SECTION 4: weather_logs (new table — did not exist in v10.5)
+-- Populated by the Climate Engine on each weather fetch.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS weather_logs (
+  id              UUID      DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id         UUID      REFERENCES auth.users(id) DEFAULT auth.uid(),
+  log_date        DATE      NOT NULL DEFAULT CURRENT_DATE,
+  temp_high_f     DECIMAL(5,1),
+  temp_low_f      DECIMAL(5,1),
+  temp_current_f  DECIMAL(5,1),
+  feels_like_f    DECIMAL(5,1),
+  solar_hours     DECIMAL(4,1),
+  humidity_pct    INTEGER,
+  wind_mph        DECIMAL(5,1),
+  precipitation_in DECIMAL(5,2),
+  weathercode     INTEGER,
+  risk_level      TEXT      CHECK (risk_level IN ('LOW','MODERATE','FROST','HEAT')),
+  created_at      TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+
+  CONSTRAINT weather_logs_user_date_unique UNIQUE (user_id, log_date)
+);
+
+ALTER TABLE weather_logs ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'weather_logs'
+      AND policyname = 'Users manage own weather_logs'
+  ) THEN
+    CREATE POLICY "Users manage own weather_logs"
+      ON weather_logs FOR ALL USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_weather_logs_user_date
+  ON weather_logs (user_id, log_date DESC);
+
+COMMENT ON TABLE weather_logs IS
+  'Daily weather snapshots for Fairfield CT fetched from Open-Meteo API by the Climate Engine. One row per user per day (upsert on log_date).';
+
+
+-- ============================================================
+-- SECTION 5: RLS policies for new/renamed columns
+-- ============================================================
+
+-- Ensure RLS is still enabled on all tables
+ALTER TABLE garden_library        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plant_health_scans    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE garden_logs           ENABLE ROW LEVEL SECURITY;
+
+-- Add policies only if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename='garden_logs' AND policyname='Users manage own logs'
+  ) THEN
+    CREATE POLICY "Users manage own logs"
+      ON garden_logs FOR ALL USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+
+-- ============================================================
+-- SECTION 6: Indexes for performance
+-- ============================================================
+
+CREATE INDEX IF NOT EXISTS idx_garden_library_user_id
+  ON garden_library (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_garden_library_recovery_days
+  ON garden_library (recovery_days DESC);
+
+CREATE INDEX IF NOT EXISTS idx_garden_library_planted_date
+  ON garden_library (planted_date);
+
+CREATE INDEX IF NOT EXISTS idx_plant_health_scans_user_status
+  ON plant_health_scans (user_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_plant_health_scans_scan_date
+  ON plant_health_scans (scan_date DESC);
+
+CREATE INDEX IF NOT EXISTS idx_garden_logs_user_date
+  ON garden_logs (user_id, log_date DESC);
+
+CREATE INDEX IF NOT EXISTS idx_garden_logs_activity_type
+  ON garden_logs (activity_type);
+
+
+-- ============================================================
+-- SECTION 7: Updated garden_summary view
+-- Replaces the v10.5 version with v10.6 column names
+-- ============================================================
+
+CREATE OR REPLACE VIEW garden_summary AS
+SELECT
+  u.id AS user_id,
+
+  -- Library stats
+  (SELECT count(*)
+   FROM garden_library g
+   WHERE g.user_id = u.id)                                          AS total_plants,
+
+  (SELECT count(*)
+   FROM garden_library g
+   WHERE g.user_id = u.id AND g.is_native = true)                  AS native_count,
+
+  (SELECT count(*)
+   FROM garden_library g
+   WHERE g.user_id = u.id AND g.is_host_plant = true)              AS host_plant_count,
+
+  -- Avg maturity % (effective = maturity_days + recovery_days)
+  (SELECT ROUND(AVG(
+     LEAST(100,
+       ROUND(
+         (EXTRACT(EPOCH FROM (NOW() - (g.planted_date::TIMESTAMP))) / 86400.0)
+         / NULLIF(g.maturity_days + g.recovery_days, 0) * 100
+       )
+     )
+   ))
+   FROM garden_library g
+   WHERE g.user_id = u.id
+     AND g.planted_date IS NOT NULL
+     AND g.maturity_days IS NOT NULL)                              AS avg_maturity_pct,
+
+  -- Total recovery penalty days accumulated
+  (SELECT COALESCE(SUM(g.recovery_days), 0)
+   FROM garden_library g
+   WHERE g.user_id = u.id)                                         AS total_recovery_days,
+
+  -- Pollinator IQ (native×1.5 + host) / total × 50, capped 100
+  (SELECT LEAST(100, ROUND(
+     (COUNT(*) FILTER (WHERE g.is_native) * 1.5 +
+      COUNT(*) FILTER (WHERE g.is_host_plant))
+     / NULLIF(COUNT(*), 0) * 50
+   ))
+   FROM garden_library g
+   WHERE g.user_id = u.id)                                         AS pollinator_iq,
+
+  -- Active health issues (high or critical, not resolved)
+  (SELECT count(*)
+   FROM plant_health_scans s
+   WHERE s.user_id = u.id
+     AND s.status != 'resolved'
+     AND s.severity IN ('high','critical'))                        AS critical_issues_count,
+
+  -- Most recent issue type
+  (SELECT s.issue_type
+   FROM plant_health_scans s
+   WHERE s.user_id = u.id
+   ORDER BY s.scan_date DESC NULLS LAST
+   LIMIT 1)                                                        AS last_diagnostic_event,
+
+  -- Recent activity (last 7 days)
+  (SELECT count(*)
+   FROM garden_logs l
+   WHERE l.user_id = u.id
+     AND l.log_date >= CURRENT_DATE - INTERVAL '7 days')          AS activities_last_7d,
+
+  -- Water this week (gallons)
+  (SELECT COALESCE(SUM(l.quantity_gal), 0)
+   FROM garden_logs l
+   WHERE l.user_id = u.id
+     AND l.activity_type IN ('watering','water')
+     AND l.log_date >= CURRENT_DATE - INTERVAL '7 days')          AS water_gal_last_7d
+
+FROM auth.users u;
+
+COMMENT ON VIEW garden_summary IS
+  'Per-user garden KPI summary. Aggregates library, clinic, and log data for the dashboard.';
+
+
+-- ============================================================
+-- SECTION 8: Effective maturity view (updated)
+-- ============================================================
+
+CREATE OR REPLACE VIEW garden_library_effective_maturity AS
+SELECT
+  id,
+  user_id,
+  common_name,
+  scientific_name,
+  emoji,
+  plant_family,
+  maturity_days,
+  recovery_days,
+  (maturity_days + recovery_days)                                  AS effective_maturity_days,
+  planted_date,
+  CASE
+    WHEN planted_date IS NOT NULL AND maturity_days IS NOT NULL THEN
+      planted_date + (maturity_days + recovery_days) * INTERVAL '1 day'
+    ELSE NULL
+  END                                                              AS estimated_harvest_date,
+  CASE
+    WHEN planted_date IS NOT NULL AND maturity_days IS NOT NULL THEN
+      LEAST(100, ROUND(
+        EXTRACT(EPOCH FROM (NOW() - planted_date::TIMESTAMP)) / 86400.0
+        / NULLIF(maturity_days + recovery_days, 0) * 100
+      ))
+    ELSE NULL
+  END                                                              AS maturity_pct,
+  is_native,
+  is_host_plant
+FROM garden_library;
+
+COMMENT ON VIEW garden_library_effective_maturity IS
+  'Plant maturity calculations including recovery penalty. Used by dashboard Biological Pulse and calendar harvest windows.';
+
+
+-- ============================================================
+-- SECTION 9: Verification queries
+-- Run these after applying the migration to confirm success.
+-- ============================================================
+
+-- Check garden_library columns
+SELECT
+  column_name,
+  data_type,
+  is_nullable,
+  column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name   = 'garden_library'
+ORDER BY ordinal_position;
+
+-- Check plant_health_scans new columns exist
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name   = 'plant_health_scans'
+  AND column_name IN ('severity','status','scan_date','recovery_days_added','plant_name','issue_type')
+ORDER BY column_name;
+
+-- Check weather_logs was created
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name   = 'weather_logs'
+ORDER BY ordinal_position;
+
+-- Check garden_logs new columns
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name   = 'garden_logs'
+  AND column_name IN ('activity_type','notes','log_date','quantity_gal')
+ORDER BY column_name;
+
+-- Spot-check data migration (severity backfill)
+SELECT
+  severity_level,
+  severity,
+  status,
+  issue_type,
+  scan_date,
+  count(*) AS rows
+FROM plant_health_scans
+GROUP BY severity_level, severity, status, issue_type, scan_date
+ORDER BY severity_level DESC NULLS LAST
+LIMIT 20;
+
+-- Summary view smoke test
+SELECT * FROM garden_summary LIMIT 5;
