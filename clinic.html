@@ -1,186 +1,1019 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GardenHub OS | Plant Clinic v10.6</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
-        .glass-panel { background: white; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; transition: all 0.3s ease; }
-        .severity-high { border-left: 8px solid #ef4444; }
-        .severity-mid { border-left: 8px solid #f59e0b; }
-        .severity-low { border-left: 8px solid #10b981; }
-        .scan-card:hover { transform: translateY(-4px); shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
-        .recommendation-badge { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GardenHub OS | Plant Clinic v10.6</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+<style>
+/* ── Tokens ──────────────────────────────────── */
+:root {
+  --bg:        #0e0b09;
+  --surface:   #16110e;
+  --surface2:  #1d1611;
+  --surface3:  #241b14;
+  --border:    #2e2118;
+  --border2:   #3d2d1f;
+  --red:       #e84040;
+  --red-lt:    rgba(232,64,64,0.12);
+  --amber:     #e8a020;
+  --amber-lt:  rgba(232,160,32,0.12);
+  --green:     #4caf72;
+  --green-lt:  rgba(76,175,114,0.12);
+  --blue:      #5b9ef5;
+  --blue-lt:   rgba(91,158,245,0.1);
+  --purple:    #a78bfa;
+  --text:      #e8d8c8;
+  --muted:     #7a6050;
+  --mono:      'DM Mono', monospace;
+  --serif:     'Cormorant Garamond', serif;
+  --sans:      'DM Sans', sans-serif;
+  --penalty:   5; /* default recovery penalty days */
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* subtle noise texture overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9998; opacity: 0.6;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Auth Overlay ─────────────────────────────── */
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(14,11,9,0.97);
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-overlay.hidden { display: none; }
+.auth-box {
+  border: 1px solid var(--red);
+  background: var(--surface);
+  padding: 2.5rem; width: 360px; position: relative;
+}
+.auth-box::before {
+  content: 'PLANT CLINIC // SECURE ACCESS';
+  font-family: var(--mono); font-size: 0.52rem; color: var(--red);
+  letter-spacing: 0.2em; opacity: 0.6;
+  position: absolute; top: -0.6rem; left: 1rem;
+  background: var(--surface); padding: 0 0.4rem;
+}
+.auth-title { font-family: var(--serif); font-size: 2rem; color: var(--red); margin-bottom: 1.5rem; }
+.auth-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 0.6rem 0.75rem;
+  font-family: var(--mono); font-size: 0.75rem;
+  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
+}
+.auth-input:focus { border-color: var(--red); }
+.auth-btn {
+  width: 100%; font-family: var(--mono); font-size: 0.7rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.65rem; border: none; cursor: pointer;
+  margin-bottom: 0.4rem; transition: opacity 0.15s;
+}
+.auth-btn.primary { background: var(--red); color: var(--bg); }
+.auth-btn.ghost   { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.auth-btn:hover   { opacity: 0.82; }
+#auth-err { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
+
+/* ── Top Bar ──────────────────────────────────── */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
+.logo-eye  { font-family: var(--mono); font-size: 0.52rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; }
+.logo-name { font-family: var(--serif); font-size: 1.4rem; color: var(--text); }
+.logo-name em { color: var(--red); font-style: italic; }
+
+nav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em;
+  text-transform: uppercase; text-decoration: none;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border); color: var(--muted);
+  background: transparent; cursor: pointer; transition: all 0.15s;
+}
+.nav-link:hover  { border-color: var(--border2); color: var(--text); }
+.nav-link.active { border-color: var(--red); color: var(--red); }
+.nav-link.danger:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Climate Bar ──────────────────────────────── */
+.climate-bar {
+  display: flex; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono); overflow-x: auto;
+}
+.cc { padding: 0.45rem 1.1rem; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.1rem; white-space: nowrap; }
+.cl { font-size: 0.48rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.cv { font-size: 0.68rem; color: var(--amber); }
+.cv.ok   { color: var(--green); }
+.cv.warn { color: var(--amber); }
+.cv.bad  { color: var(--red);   }
+
+/* ── Page ─────────────────────────────────────── */
+main { max-width: 1400px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
+
+/* ── Header KPIs ──────────────────────────────── */
+.clinic-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1.5rem; gap: 1.5rem; flex-wrap: wrap;
+}
+.clinic-title-block { flex: 1; }
+.clinic-eyebrow { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; margin-bottom: 0.35rem; }
+.clinic-title  { font-family: var(--serif); font-size: 3rem; line-height: 1; letter-spacing: -0.02em; }
+.clinic-title em { color: var(--red); font-style: italic; }
+
+.kpi-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.kpi-item { text-align: right; }
+.kpi-num  { font-family: var(--serif); font-size: 2rem; line-height: 1; }
+.kpi-lbl  { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: 0.15rem; }
+.kpi-sep  { width: 1px; background: var(--border); align-self: stretch; }
+
+/* ── New Scan Banner ──────────────────────────── */
+#new-scan-banner {
+  background: rgba(232,64,64,0.06);
+  border: 1px solid rgba(232,64,64,0.35);
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+#new-scan-banner.hidden { display: none; }
+.banner-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.banner-text { font-family: var(--mono); font-size: 0.65rem; color: var(--red); flex: 1; letter-spacing: 0.08em; }
+.banner-btn {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.35rem 0.75rem; background: var(--red); color: var(--bg);
+  border: none; cursor: pointer; transition: opacity 0.15s;
+}
+.banner-btn:hover { opacity: 0.82; }
+
+/* ── Add Scan Form ────────────────────────────── */
+#add-scan-panel {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+#add-scan-panel.hidden { display: none; }
+.panel-title { font-family: var(--serif); font-size: 1.1rem; font-style: italic; margin-bottom: 1rem; color: var(--text); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.6rem; }
+.form-row.single { grid-template-columns: 1fr; }
+.form-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 0.55rem 0.7rem;
+  font-family: var(--mono); font-size: 0.72rem;
+  outline: none; transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--amber); }
+.form-select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 0.55rem 0.7rem;
+  font-family: var(--mono); font-size: 0.72rem;
+  outline: none; cursor: pointer; appearance: none;
+}
+.form-select:focus { border-color: var(--amber); }
+.form-label { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+.form-group { display: flex; flex-direction: column; }
+.scan-image-preview {
+  width: 100%; max-height: 200px; object-fit: cover;
+  border: 1px solid var(--border); display: none; margin-bottom: 0.6rem;
+}
+.form-btns { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
+.form-btn {
+  flex: 1; padding: 0.6rem;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  border: none; cursor: pointer; transition: opacity 0.15s;
+}
+.form-btn.primary { background: var(--amber); color: var(--bg); }
+.form-btn.ghost   { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+.form-btn:hover   { opacity: 0.82; }
+.form-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+#form-err { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
+
+/* ── Sec header ───────────────────────────────── */
+.sec-head {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 1.5rem 0 1rem;
+}
+.sec-head h2 { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+.sec-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.sec-action {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.3rem 0.65rem; border: 1px solid var(--border2); color: var(--amber);
+  background: transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.sec-action:hover { border-color: var(--amber); }
+
+/* ── Smart Suggestions ────────────────────────── */
+#suggestions-shelf { margin-bottom: 0.5rem; }
+#suggestions-shelf.hidden { display: none; }
+.sug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+
+.sug-card {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  padding: 1rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
+  transition: border-color 0.15s;
+}
+.sug-card:hover { border-color: var(--amber); }
+.sug-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.sug-icon { font-size: 1.5rem; }
+.sug-type { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.15rem 0.4rem; border-radius: 2px; }
+.type-native  { background: var(--green-lt); color: var(--green); border: 1px solid rgba(76,175,114,0.3); }
+.type-hardy   { background: var(--amber-lt); color: var(--amber); border: 1px solid rgba(232,160,32,0.3); }
+.type-pollinator { background: var(--blue-lt); color: var(--blue); border: 1px solid rgba(91,158,245,0.3); }
+.sug-replace { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.sug-name { font-family: var(--serif); font-size: 1.1rem; font-style: italic; color: var(--text); }
+.sug-reason { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); line-height: 1.5; }
+.deploy-btn {
+  width: 100%; padding: 0.5rem;
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--surface3); border: 1px solid var(--border2);
+  color: var(--amber); cursor: pointer; transition: all 0.15s; margin-top: auto;
+}
+.deploy-btn:hover { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+.deploy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Scan Cards ───────────────────────────────── */
+.scans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem; }
+.urgent-grid { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0.5rem; }
+
+.scan-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+  display: flex; flex-direction: column;
+}
+.scan-card:hover { transform: translateY(-2px); }
+.scan-card.sev-high     { border-left-color: var(--red);   }
+.scan-card.sev-critical { border-left-color: #cc0000; }
+.scan-card.sev-medium   { border-left-color: var(--amber); }
+.scan-card.sev-low      { border-left-color: var(--green); }
+.scan-card.resolved     { border-left-color: var(--border); opacity: 0.7; }
+
+/* urgent: horizontal layout */
+.scan-card.urgent { flex-direction: row; max-width: 800px; }
+.urgent .card-img  { width: 200px; min-width: 200px; }
+.urgent .card-body { flex: 1; }
+
+.card-img {
+  position: relative; background: var(--surface2);
+  overflow: hidden;
+}
+.card-img img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  min-height: 180px;
+}
+.card-img.no-img {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 180px; font-size: 2.5rem; opacity: 0.3;
+}
+.img-date {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  background: rgba(14,11,9,0.8); backdrop-filter: blur(4px);
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.1em;
+  color: var(--text); padding: 0.2rem 0.45rem;
+}
+
+.card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 0.6rem; }
+
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.card-plant { font-family: var(--serif); font-size: 1.15rem; font-style: italic; color: var(--text); line-height: 1.2; }
+.card-status { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.15rem 0.4rem; flex-shrink: 0; }
+.status-active   { color: var(--red);   background: var(--red-lt);   border: 1px solid rgba(232,64,64,0.3); }
+.status-resolved { color: var(--green); background: var(--green-lt); border: 1px solid rgba(76,175,114,0.3); }
+.status-pending  { color: var(--amber); background: var(--amber-lt); border: 1px solid rgba(232,160,32,0.3); }
+
+.card-meta { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+
+.sev-badge {
+  display: inline-block; font-family: var(--mono); font-size: 0.48rem;
+  letter-spacing: 0.12em; text-transform: uppercase; padding: 0.15rem 0.45rem;
+}
+.sev-badge.high,
+.sev-badge.critical { background: var(--red-lt);   color: var(--red);   border: 1px solid rgba(232,64,64,0.3); }
+.sev-badge.medium   { background: var(--amber-lt); color: var(--amber); border: 1px solid rgba(232,160,32,0.3); }
+.sev-badge.low      { background: var(--green-lt); color: var(--green); border: 1px solid rgba(76,175,114,0.3); }
+
+.card-advice {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 0.65rem 0.75rem; flex: 1;
+  font-size: 0.75rem; color: var(--muted); line-height: 1.6; font-style: italic;
+}
+
+.card-penalty {
+  background: var(--red-lt); border: 1px solid rgba(232,64,64,0.25);
+  padding: 0.5rem 0.65rem;
+  font-family: var(--mono); font-size: 0.58rem; color: var(--red); line-height: 1.5;
+}
+
+.card-actions { display: flex; gap: 0.4rem; margin-top: auto; }
+.resolve-btn {
+  flex: 1; padding: 0.5rem;
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.resolve-btn:hover:not(:disabled) { background: var(--green-lt); border-color: var(--green); color: var(--green); }
+.resolve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.resolve-btn.resolved-state { color: var(--green); border-color: rgba(76,175,114,0.3); cursor: default; background: var(--green-lt); }
+
+/* ── Empty state ──────────────────────────────── */
+.empty-state {
+  padding: 3rem; text-align: center;
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em;
+  color: var(--muted); border: 1px dashed var(--border);
+}
+.empty-icon { font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.3; display: block; }
+
+/* ── Loading bar ──────────────────────────────── */
+.loader {
+  height: 2px; background: var(--border); overflow: hidden; margin-bottom: 1rem;
+}
+.loader::after {
+  content: ''; display: block; height: 100%; width: 35%;
+  background: var(--amber);
+  animation: scan 1.1s ease-in-out infinite;
+}
+.loader.done { display: none; }
+@keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(340%)} }
+
+/* ── Toast ────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 500;
+  background: var(--surface); border: 1px solid var(--border2);
+  padding: 0.75rem 1rem;
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em;
+  color: var(--green); opacity: 0; transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none; max-width: 320px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.error { color: var(--red); border-color: rgba(232,64,64,0.4); }
+</style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-<div class="max-w-6xl mx-auto">
-    <header class="flex justify-between items-center mb-8">
-        <div>
-            <a href="index.html" class="text-xs font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-700">← Mission Control</a>
-            <h1 class="text-4xl font-black text-slate-800 tracking-tighter mt-1">Plant <span class="text-red-500">Clinic</span></h1>
-        </div>
-        <div class="flex gap-8">
-            <div class="text-right">
-                <p id="native-ratio" class="text-2xl font-black text-indigo-600">0%</p>
-                <p class="text-[10px] font-black text-slate-400 uppercase">Native Density</p>
-            </div>
-            <div class="text-right border-l border-slate-200 pl-8">
-                <p id="total-scans" class="text-2xl font-black text-slate-800">0</p>
-                <p class="text-[10px] font-black text-slate-400 uppercase">Observations</p>
-            </div>
-        </div>
-    </header>
-
-    <div id="smart-recs-shelf" class="hidden mb-12">
-        <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span class="w-2 h-2 bg-indigo-500 rounded-full recommendation-badge"></span> 
-            AI Substitution Recommendations
-        </h2>
-        <div id="rec-output-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-    </div>
-
-    <div id="urgent-alerts" class="grid grid-cols-1 gap-4 mb-10"></div>
-
-    <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Historical Archive</h2>
-    <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+<!-- ═══ AUTH OVERLAY ═══ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-title">Plant Clinic</div>
+    <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
+    <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
+    <div id="auth-err"></div>
+    <button class="auth-btn primary" id="btn-login">Initialize Session</button>
+    <button class="auth-btn ghost"   id="btn-reg">Register</button>
+  </div>
 </div>
 
+<!-- ═══ TOAST ═══ -->
+<div id="toast"></div>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="top-bar">
+  <div class="logo-block">
+    <div class="logo-eye">GardenHub OS // v10.6</div>
+    <div class="logo-name">Plant <em>Clinic</em></div>
+  </div>
+  <nav>
+    <a href="index.html"    class="nav-link">Dashboard</a>
+    <a href="map.html"      class="nav-link">Map</a>
+    <a href="insights.html" class="nav-link">Insights</a>
+    <a href="clinic.html"   class="nav-link active">Clinic</a>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
+</div>
+
+<!-- ═══ CLIMATE BAR ═══ -->
+<div class="climate-bar">
+  <div class="cc"><div class="cl">Zone</div><div class="cv ok">6b (CT)</div></div>
+  <div class="cc"><div class="cl">Live Temp</div><div class="cv" id="w-temp">--</div></div>
+  <div class="cc"><div class="cl">Feels Like</div><div class="cv" id="w-feels">--</div></div>
+  <div class="cc"><div class="cl">Solar Hrs</div><div class="cv" id="w-solar">--</div></div>
+  <div class="cc"><div class="cl">Humidity</div><div class="cv" id="w-humidity">--</div></div>
+  <div class="cc" id="w-risk-cell"><div class="cl">Risk Level</div><div class="cv" id="w-risk">Scanning…</div></div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+
+  <!-- Header -->
+  <div class="clinic-header">
+    <div class="clinic-title-block">
+      <div class="clinic-eyebrow">GardenHub OS // Diagnostic Center</div>
+      <div class="clinic-title">Plant <em>Clinic</em></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-item">
+        <div class="kpi-num" id="kpi-active" style="color:var(--red)">--</div>
+        <div class="kpi-lbl">Active Issues</div>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <div class="kpi-num" id="kpi-resolved" style="color:var(--green)">--</div>
+        <div class="kpi-lbl">Resolved</div>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <div class="kpi-num" id="kpi-native" style="color:var(--blue)">--%</div>
+        <div class="kpi-lbl">Native Density</div>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <div class="kpi-num" id="kpi-penalty" style="color:var(--amber)">--d</div>
+        <div class="kpi-lbl">Total Penalty Days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New scan banner (shown when ?scan=new) — FIX BUG-08 -->
+  <div id="new-scan-banner" class="hidden">
+    <div class="banner-dot"></div>
+    <div class="banner-text">New diagnostic image uploaded from dashboard. Review and classify below.</div>
+    <button class="banner-btn" onclick="openAddScan()">Open Intake Form</button>
+  </div>
+
+  <!-- Add Scan Form -->
+  <div id="add-scan-panel" class="hidden">
+    <div class="panel-title">New Health Observation</div>
+    <div class="loader" id="lb-plants"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Plant Name *</div>
+        <select class="form-select" id="f-plant-id">
+          <option value="">Select from library…</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Issue Type *</div>
+        <select class="form-select" id="f-issue-type">
+          <option value="">Select issue type…</option>
+          <option value="Fungal">Fungal Disease</option>
+          <option value="Pest">Pest Infestation</option>
+          <option value="Bacterial">Bacterial Infection</option>
+          <option value="Viral">Viral Infection</option>
+          <option value="Nutrient">Nutrient Deficiency</option>
+          <option value="Drought">Drought Stress</option>
+          <option value="Overwatering">Overwatering</option>
+          <option value="Frost">Frost Damage</option>
+          <option value="Wet">Root Rot / Wet Feet</option>
+          <option value="Mechanical">Mechanical Damage</option>
+          <option value="Unknown">Unknown / Analyzing</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Severity</div>
+        <select class="form-select" id="f-severity">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high" selected>High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Scan Date</div>
+        <input type="date" class="form-input" id="f-date"/>
+      </div>
+    </div>
+
+    <div class="form-row single">
+      <div class="form-group">
+        <div class="form-label">Observation Notes / Remediation Advice</div>
+        <textarea class="form-input" id="f-notes" rows="3" placeholder="Describe symptoms, treatments applied, or recommended actions…" style="resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div class="form-row single">
+      <div class="form-group">
+        <div class="form-label">Diagnostic Image (optional)</div>
+        <input type="file" id="f-image" accept="image/*" class="form-input" style="padding:0.4rem;" onchange="previewImage(event)"/>
+        <img id="f-image-preview" class="scan-image-preview" alt="preview"/>
+      </div>
+    </div>
+
+    <div id="form-err"></div>
+    <div class="form-btns">
+      <button class="form-btn ghost" onclick="closeAddScan()">Cancel</button>
+      <button class="form-btn primary" id="btn-submit-scan" onclick="submitScan()">Record Observation</button>
+    </div>
+  </div>
+
+  <!-- Loading bar -->
+  <div class="loader" id="lb-clinic"></div>
+
+  <!-- Smart Suggestions (FIX ISSUE-02: relabeled; FIX BUG-05: text severity) -->
+  <div id="suggestions-shelf" class="hidden">
+    <div class="sec-head" style="margin-top:0">
+      <h2>// Smart Substitution Suggestions</h2>
+    </div>
+    <div class="sug-grid" id="sug-grid"></div>
+  </div>
+
+  <!-- Urgent Active Issues -->
+  <div id="urgent-section">
+    <div class="sec-head">
+      <h2>// Active Issues</h2>
+      <button class="sec-action" onclick="openAddScan()">+ Log Observation</button>
+    </div>
+    <div class="urgent-grid" id="urgent-grid"></div>
+  </div>
+
+  <!-- Historical Archive -->
+  <div id="history-section">
+    <div class="sec-head"><h2>// Historical Archive</h2></div>
+    <div class="scans-grid" id="history-grid"></div>
+  </div>
+
+</main>
+
 <script>
-    const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY_HERE'; 
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ══════════════════════════════════════════════════
+//  GardenHub OS — Plant Clinic v10.6
+//  Fixes: BUG-01 through BUG-08, ISSUE-01 through ISSUE-10
+// ══════════════════════════════════════════════════
 
-    // Smart Replacement Database
-    const REPLACEMENT_DB = {
-        'Pest': { name: 'Lavender', icon: '🌿', reason: 'Naturally deer & pest resistant.', type: 'Hardy' },
-        'Wet': { name: 'Blue Flag Iris', icon: '🪻', reason: 'Native species; loves "wet feet".', type: 'Native' },
-        'Frost': { name: 'Hellebore', icon: '🌸', reason: 'Winter-hardy; blooms in snow.', type: 'Hardy' },
-        'Fungal': { name: 'Bee Balm', icon: '🐝', reason: 'Improved air-flow resistant native.', type: 'Pollinator' },
-        'Default': { name: 'Milkweed', icon: '🦋', reason: 'Universal eco-booster.', type: 'Native' }
-    };
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+// FIX BUG-01: Real API key
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function loadClinicData() {
-        const { data: scans, error } = await _supabase
-            .from('plant_health_scans')
-            .select(`*, garden_plants_spatial(plant_id, garden_library(name, is_native))`)
-            .order('created_at', { ascending: false });
+const RECOVERY_PENALTY = 5; // days added per resolved incident (v10.6 spec)
 
-        if (error) return console.error(error);
-        
-        calculateEcoMetrics(scans);
-        renderScans(scans);
-        generateSmartRecs(scans);
+// FIX ISSUE-03: Expanded substitution DB — 11 issue types covered
+const REPLACEMENT_DB = {
+  Pest:         { name:'Lavender',          icon:'🌿', reason:'Naturally pest and deer resistant; oils deter most insects.', type:'hardy' },
+  Fungal:       { name:'Bee Balm',          icon:'🌺', reason:'Improved air-flow native; naturally fungal-resistant.', type:'pollinator' },
+  Bacterial:    { name:'Yarrow',            icon:'🌼', reason:'Antibacterial properties; attracts beneficial predator insects.', type:'native' },
+  Viral:        { name:'Coneflower',        icon:'🌸', reason:'Drought-hardy native; immune to most viral strains.', type:'native' },
+  Nutrient:     { name:'Comfrey',           icon:'🌱', reason:'Deep-root mineral accumulator; improves surrounding soil.', type:'hardy' },
+  Drought:      { name:'Native Sedum',      icon:'🪨', reason:'Extreme drought tolerance; thrives in Zone 6b dry spells.', type:'native' },
+  Overwatering: { name:'Blue Flag Iris',    icon:'🪻', reason:'Native species that thrives in wet, poorly-drained soil.', type:'native' },
+  Frost:        { name:'Hellebore',         icon:'🌸', reason:'Winter-hardy; blooms through snow in Zone 6b.', type:'hardy' },
+  Wet:          { name:'Blue Flag Iris',    icon:'🪻', reason:'Native species; loves wet feet and boggy conditions.', type:'native' },
+  Mechanical:   { name:'Milkweed',          icon:'🦋', reason:'Fast-recovering native; monarch host plant.', type:'native' },
+  Unknown:      { name:'Milkweed',          icon:'🦋', reason:'Universal eco-booster; native monarch host.', type:'native' },
+  Default:      { name:'Milkweed',          icon:'🦋', reason:'Universal eco-booster when issue type is unclear.', type:'native' },
+};
+
+// FIX ISSUE-10: Map text severity to CSS class
+const SEV_CLASS = { high:'sev-high', critical:'sev-critical', medium:'sev-medium', low:'sev-low' };
+const SEV_CARD  = { high:'sev-high', critical:'sev-critical', medium:'sev-medium', low:'sev-low' };
+
+let _userId  = null;
+let _plants  = []; // library cache for form dropdown
+let _scans   = []; // scan cache for suggestions/display
+let _pendingImageFile = null;
+
+// ── Helpers ───────────────────────────────────
+const $ = id => document.getElementById(id);
+function toast(msg, isError = false) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className   = `show${isError ? ' error' : ''}`;
+  setTimeout(() => el.className = '', 2800);
+}
+
+// SVG fallback instead of external placeholder service
+const FALLBACK_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%231d1611'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-family='monospace' font-size='14' fill='%233d2d1f'%3ENo image%3C/text%3E%3C/svg%3E`;
+
+// ── Auth ──────────────────────────────────────
+// FIX BUG-06: getSession on load; gate onAuthStateChange on SIGNED_IN
+$('btn-login').onclick = async () => {
+  $('auth-err').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('a-email').value.trim(), password: $('a-pass').value
+  });
+  if (error) $('auth-err').textContent = error.message;
+};
+$('btn-reg').onclick = async () => {
+  const { error } = await sb.auth.signUp({
+    email: $('a-email').value.trim(), password: $('a-pass').value
+  });
+  $('auth-err').style.color = error ? 'var(--red)' : 'var(--green)';
+  $('auth-err').textContent = error ? error.message : 'Check email to confirm.';
+};
+$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    _userId = session.user.id;
+    $('auth-overlay').classList.add('hidden');
+    boot();
+  } else if (event === 'SIGNED_OUT') {
+    $('auth-overlay').classList.remove('hidden');
+  }
+});
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    _userId = session.user.id;
+    $('auth-overlay').classList.add('hidden');
+    boot();
+  }
+})();
+
+// ── Boot ──────────────────────────────────────
+async function boot() {
+  loadWeather();
+  await Promise.all([loadLibrary(), loadClinicData()]);
+
+  // FIX BUG-08: handle ?scan=new from diagnostic intake
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('scan') === 'new') {
+    $('new-scan-banner').classList.remove('hidden');
+    // auto-populate pending scan if image_url is in params
+    if (params.get('image_url')) {
+      $('f-image-preview').src = decodeURIComponent(params.get('image_url'));
+      $('f-image-preview').style.display = 'block';
+    }
+  }
+}
+
+// ── Weather ───────────────────────────────────
+async function loadWeather() {
+  const WMO = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:'🌧',80:'🌦',95:'⛈'};
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635&current=temperature_2m,apparent_temperature,weathercode,relative_humidity_2m&daily=sunshine_duration&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=1');
+    const d = await r.json(); const c = d.current;
+    const tempF  = Math.round(c.temperature_2m);
+    const feelsF = Math.round(c.apparent_temperature);
+    const solar  = ((d.daily.sunshine_duration?.[0]||0)/3600).toFixed(1);
+    const icon   = WMO[c.weathercode]||'🌡';
+    let rClass = 'ok', rLabel = '✅ LOW';
+    if (tempF<=36) { rLabel='❄️ FROST'; rClass='bad'; }
+    else if (tempF>=90) { rLabel='🔥 HEAT'; rClass='bad'; }
+    else if (tempF<50)  { rLabel='⚠️ MOD';  rClass='warn'; }
+    $('w-temp').textContent     = `${icon} ${tempF}°F`;
+    $('w-feels').textContent    = `${feelsF}°F`;
+    $('w-solar').textContent    = `${solar} hrs`;
+    $('w-humidity').textContent = `${c.relative_humidity_2m}%`;
+    $('w-risk').textContent     = rLabel;
+    $('w-risk').className       = `cv ${rClass}`;
+  } catch { $('w-temp').textContent = '⚠️ Offline'; }
+}
+
+// ── Load library for form dropdown ────────────
+async function loadLibrary() {
+  const { data } = await sb.from('garden_library')
+    .select('id, common_name, is_native, is_host_plant')
+    .order('common_name');
+  _plants = data || [];
+
+  const sel = $('f-plant-id');
+  sel.innerHTML = '<option value="">Select from library…</option>' +
+    _plants.map(p => `<option value="${p.id}">${p.common_name}${p.is_native?' [N]':''}${p.is_host_plant?' [H]':''}</option>`).join('');
+  $('lb-plants').classList.add('done');
+}
+
+// ── Load native density KPI (FIX ISSUE-05) ────
+async function loadNativeDensity() {
+  const total  = _plants.length || 1;
+  const native = _plants.filter(p => p.is_native || p.is_host_plant).length;
+  $('kpi-native').textContent = `${Math.round((native/total)*100)}%`;
+}
+
+// ── Main clinic data load ─────────────────────
+async function loadClinicData() {
+  $('lb-clinic').classList.remove('done');
+
+  // FIX BUG-02: No join on non-existent table; direct query with correct columns
+  // FIX BUG-03: All correct column names
+  const { data, error } = await sb.from('plant_health_scans')
+    .select('id, plant_name, plant_id, issue_type, severity, status, scan_date, ai_remediation_advice, image_url, recovery_days_added')
+    .order('scan_date', { ascending: false });
+
+  $('lb-clinic').classList.add('done');
+
+  if (error) { toast('Failed to load clinic data: ' + error.message, true); return; }
+
+  _scans = data || [];
+  loadNativeDensity();
+  renderKPIs();
+  renderSuggestions();
+  renderScans();
+}
+
+// ── KPIs ──────────────────────────────────────
+function renderKPIs() {
+  // FIX BUG-03: use `status` column (text), not the old boolean flag
+  const active   = _scans.filter(s => s.status !== 'resolved').length;
+  const resolved = _scans.filter(s => s.status === 'resolved').length;
+  const totalPenalty = _scans.reduce((acc, s) => acc + (s.recovery_days_added || 0), 0);
+
+  $('kpi-active').textContent   = active;
+  $('kpi-resolved').textContent = resolved;
+  $('kpi-penalty').textContent  = `${totalPenalty}d`;
+}
+
+// ── Smart Suggestions (FIX BUG-05: text severity; FIX ISSUE-02: relabeled) ─
+function renderSuggestions() {
+  // FIX BUG-05: compare text severity, not numeric
+  const critical = _scans.filter(s =>
+    (s.severity === 'high' || s.severity === 'critical') && s.status !== 'resolved'
+  );
+
+  if (!critical.length) {
+    $('suggestions-shelf').classList.add('hidden');
+    return;
+  }
+
+  $('suggestions-shelf').classList.remove('hidden');
+  const seen = new Set();
+
+  $('sug-grid').innerHTML = critical.map(scan => {
+    const key = scan.issue_type || 'Default';
+    if (seen.has(key)) return '';
+    seen.add(key);
+    const rec = REPLACEMENT_DB[key] || REPLACEMENT_DB.Default;
+    const plantName = scan.plant_name || 'Failed Plant';
+    return `
+      <div class="sug-card">
+        <div class="sug-top">
+          <span class="sug-icon">${rec.icon}</span>
+          <span class="sug-type type-${rec.type}">${rec.type}</span>
+        </div>
+        <div class="sug-replace">Replace: ${plantName}</div>
+        <div class="sug-name">${rec.name}</div>
+        <div class="sug-reason">${rec.reason}</div>
+        <button class="deploy-btn" id="deploy-${scan.id}"
+          onclick="deployReplacement('${scan.id}', '${rec.name}', '${rec.icon}', ${rec.type==='native'})">
+          → Add to Library
+        </button>
+      </div>`;
+  }).filter(Boolean).join('');
+}
+
+// ── Render scan cards (FIX BUG-07: single innerHTML assignment; FIX BUG-03: correct columns) ─
+function renderScans() {
+  const urgent  = _scans.filter(s => (s.severity==='high'||s.severity==='critical') && s.status!=='resolved');
+  const history = _scans.filter(s => !(s.severity==='high'||s.severity==='critical') || s.status==='resolved');
+
+  // Urgent — horizontal layout
+  if (!urgent.length) {
+    $('urgent-grid').innerHTML = '<div class="empty-state"><span class="empty-icon">✅</span>No active high-severity issues.</div>';
+  } else {
+    // FIX BUG-07: build array then join
+    $('urgent-grid').innerHTML = urgent.map(s => buildCard(s, true)).join('');
+  }
+
+  if (!history.length) {
+    $('history-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">📋</span>No historical records yet. Add your first observation above.</div>';
+  } else {
+    $('history-grid').innerHTML = history.map(s => buildCard(s, false)).join('');
+  }
+}
+
+// ── Build a single scan card ──────────────────
+function buildCard(scan, isUrgent) {
+  // FIX BUG-03: correct column names throughout
+  const plantName   = scan.plant_name || 'Unknown Plant';
+  const issueType   = scan.issue_type || 'Analyzing…';
+  const severity    = scan.severity   || 'low';
+  const isResolved  = scan.status === 'resolved';
+  const scanDate    = scan.scan_date
+    ? new Date(scan.scan_date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+    : '—';
+
+  const sevClass    = SEV_CARD[severity] || 'sev-low';
+  const statusLabel = isResolved ? 'RESOLVED' : severity === 'critical' ? 'CRITICAL' : severity === 'high' ? 'ACTIVE' : 'MONITORING';
+  const statusClass = isResolved ? 'status-resolved' : (severity==='high'||severity==='critical') ? 'status-active' : 'status-pending';
+
+  const penaltyLine = (scan.recovery_days_added && isResolved)
+    ? `<div class="card-penalty">⚡ +${scan.recovery_days_added} recovery days applied to ${plantName}'s maturity timeline</div>`
+    : '';
+
+  // SVG data URI fallback — no third-party placeholder service needed
+  const imgBlock = scan.image_url
+    ? `<div class="card-img">
+         <img src="${scan.image_url}" alt="${plantName}" onerror="this.src='${FALLBACK_SVG}'"/>
+         <div class="img-date">${scanDate}</div>
+       </div>`
+    : `<div class="card-img no-img">🌿</div>`;
+
+  const resolveLabel = isResolved ? '✓ Resolved' : 'Mark Resolved';
+  const resolveClass = isResolved ? 'resolve-btn resolved-state' : 'resolve-btn';
+
+  return `
+    <div class="scan-card ${sevClass}${isResolved?' resolved':''}${isUrgent?' urgent':''}">
+      ${imgBlock}
+      <div class="card-body">
+        <div class="card-head">
+          <div class="card-plant">${plantName}</div>
+          <div class="card-status ${statusClass}">${statusLabel}</div>
+        </div>
+        <div class="card-meta">
+          ${issueType} &nbsp;·&nbsp;
+          <span class="sev-badge ${severity}">${severity}</span>
+          &nbsp;·&nbsp; ${scanDate}
+        </div>
+        <div class="card-advice">${scan.ai_remediation_advice || 'Diagnostic pending — add observation notes when logging.'}</div>
+        ${penaltyLine}
+        <div class="card-actions">
+          <button class="${resolveClass}" id="rbtn-${scan.id}"
+            onclick="resolveIssue('${scan.id}', '${scan.plant_id||''}')"
+            ${isResolved?'disabled':''}>
+            ${resolveLabel}
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Resolve Issue — THE FEEDBACK LOOP (FIX BUG-04, ISSUE-01) ──
+async function resolveIssue(scanId, plantId) {
+  const btn = $(`rbtn-${scanId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Resolving…'; }
+
+  try {
+    // Step 1: Update scan status to 'resolved' (FIX BUG-03: correct column name, not a boolean flag)
+    // Do NOT overwrite severity — it's a historical record (FIX ISSUE-01)
+    const { error: scanErr } = await sb.from('plant_health_scans')
+      .update({
+        status: 'resolved',                     // FIX BUG-03: was the old boolean column
+        recovery_days_added: RECOVERY_PENALTY,  // record the penalty applied
+      })
+      .eq('id', scanId);
+
+    if (scanErr) throw scanErr;
+
+    // Step 2: Apply recovery penalty to garden_library (FIX BUG-04: THE FEEDBACK LOOP)
+    if (plantId) {
+      // Fetch current recovery_days first, then increment
+      const { data: plant, error: fetchErr } = await sb.from('garden_library')
+        .select('recovery_days, common_name')
+        .eq('id', plantId)
+        .single();
+
+      if (!fetchErr && plant) {
+        const newPenalty = (plant.recovery_days || 0) + RECOVERY_PENALTY;
+        const { error: updateErr } = await sb.from('garden_library')
+          .update({ recovery_days: newPenalty })
+          .eq('id', plantId);
+
+        if (updateErr) console.warn('[Clinic] Penalty update error:', updateErr.message);
+        else toast(`✓ Resolved. +${RECOVERY_PENALTY} recovery days applied to ${plant.common_name}.`);
+      } else {
+        toast(`✓ Scan resolved. (Plant not found in library — penalty not applied.)`);
+      }
+    } else {
+      toast(`✓ Scan resolved. No plant linked — penalty not applied.`);
     }
 
-    function calculateEcoMetrics(scans) {
-        const total = scans.length;
-        if (total === 0) return;
-        const natives = scans.filter(s => s.garden_plants_spatial?.garden_library?.is_native).length;
-        document.getElementById('native-ratio').innerText = `${Math.round((natives / total) * 100)}%`;
+    // Reload to reflect updated state
+    await loadClinicData();
+
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Mark Resolved'; }
+    toast('Error resolving scan: ' + e.message, true);
+  }
+}
+
+// ── Deploy Replacement (FIX ISSUE-04: actually works) ─
+async function deployReplacement(scanId, plantName, emoji, isNative) {
+  const btn = $(`deploy-${scanId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+
+  const { error } = await sb.from('garden_library').insert({
+    user_id:       _userId,
+    common_name:   plantName,
+    emoji:         emoji,
+    is_native:     isNative,
+    is_host_plant: isNative,
+    maturity_days: 365,
+    recovery_days: 0,
+    planted_date:  new Date().toISOString().slice(0,10),
+  });
+
+  if (error) {
+    toast('Failed to add plant: ' + error.message, true);
+    if (btn) { btn.disabled = false; btn.textContent = '→ Add to Library'; }
+  } else {
+    toast(`✓ ${plantName} added to your garden library.`);
+    if (btn) { btn.textContent = '✓ Added'; }
+    _plants = []; // refresh library cache
+    await loadLibrary();
+  }
+}
+
+// ── Add Scan Form ─────────────────────────────
+function openAddScan() {
+  $('add-scan-panel').classList.remove('hidden');
+  $('f-date').value = new Date().toISOString().slice(0,10);
+  $('add-scan-panel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function closeAddScan() {
+  $('add-scan-panel').classList.add('hidden');
+  $('form-err').textContent = '';
+  $('f-plant-id').value = '';
+  $('f-issue-type').value = '';
+  $('f-severity').value = 'high';
+  $('f-notes').value = '';
+  $('f-image').value = '';
+  $('f-image-preview').style.display = 'none';
+  $('btn-submit-scan').disabled = false;
+  _pendingImageFile = null;
+}
+
+function previewImage(event) {
+  _pendingImageFile = event.target.files?.[0];
+  if (!_pendingImageFile) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    $('f-image-preview').src = e.target.result;
+    $('f-image-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(_pendingImageFile);
+}
+
+async function submitScan() {
+  const errEl = $('form-err');
+  errEl.textContent = '';
+
+  const plantSel   = $('f-plant-id');
+  const issueType  = $('f-issue-type').value;
+  const severity   = $('f-severity').value;
+  const scanDate   = $('f-date').value;
+  const notes      = $('f-notes').value.trim();
+
+  // Validation
+  if (!plantSel.value)  { errEl.textContent = 'Select a plant from the library.'; return; }
+  if (!issueType)        { errEl.textContent = 'Select an issue type.'; return; }
+  if (!scanDate)         { errEl.textContent = 'Enter a scan date.'; return; }
+
+  const plantName = plantSel.options[plantSel.selectedIndex]?.text?.replace(/ \[[NH]\]/g,'') || '';
+
+  $('btn-submit-scan').disabled    = true;
+  $('btn-submit-scan').textContent = 'Recording…';
+
+  let imageUrl = null;
+
+  // Upload image if provided
+  if (_pendingImageFile) {
+    const ext  = _pendingImageFile.name.split('.').pop();
+    const path = `diagnostics/${_userId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await sb.storage.from('plant-scans').upload(path, _pendingImageFile);
+    if (!upErr) {
+      const { data: { publicUrl } } = sb.storage.from('plant-scans').getPublicUrl(path);
+      imageUrl = publicUrl;
     }
+  }
 
-    function generateSmartRecs(scans) {
-        const shelf = document.getElementById('smart-recs-shelf');
-        const grid = document.getElementById('rec-output-grid');
-        const failures = scans.filter(s => s.severity_level > 7 && !s.is_resolved);
+  // FIX BUG-03: correct column names throughout
+  const { error } = await sb.from('plant_health_scans').insert({
+    user_id:               _userId,
+    plant_id:              plantSel.value,
+    plant_name:            plantName,
+    issue_type:            issueType,
+    severity:              severity,
+    status:                'pending',
+    scan_date:             scanDate,
+    ai_remediation_advice: notes || null,
+    image_url:             imageUrl,
+    recovery_days_added:   0,
+  });
 
-        if (failures.length > 0) {
-            shelf.classList.remove('hidden');
-            grid.innerHTML = failures.map(f => {
-                const rec = REPLACEMENT_DB[f.issue_category] || REPLACEMENT_DB['Default'];
-                return `
-                    <div class="bg-indigo-900 text-white p-4 rounded-3xl shadow-xl border border-indigo-400/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-2xl">${rec.icon}</span>
-                            <span class="text-[8px] font-black bg-indigo-500 px-2 py-0.5 rounded-full uppercase">${rec.type}</span>
-                        </div>
-                        <h4 class="text-xs font-black uppercase mb-1">Replace ${f.detected_species || 'Failed Plant'}</h4>
-                        <p class="text-[10px] text-indigo-200 leading-tight mb-3">${rec.reason}</p>
-                        <button class="w-full py-2 bg-white text-indigo-900 text-[9px] font-black uppercase rounded-xl hover:bg-indigo-100 transition">Deploy ${rec.name}</button>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
+  $('btn-submit-scan').disabled    = false;
+  $('btn-submit-scan').textContent = 'Record Observation';
 
-    function renderScans(scans) {
-        const alertContainer = document.getElementById('urgent-alerts');
-        const historyGrid = document.getElementById('history-grid');
-        document.getElementById('total-scans').innerText = scans.length;
-
-        alertContainer.innerHTML = '';
-        historyGrid.innerHTML = '';
-
-        scans.forEach(scan => {
-            const dateStr = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const severityClass = scan.severity_level > 7 ? 'severity-high' : (scan.severity_level > 3 ? 'severity-mid' : 'severity-low');
-            const plantName = scan.detected_species || scan.garden_plants_spatial?.garden_library?.name || "Unknown Species";
-            
-            const cardHTML = `
-                <div class="glass-panel scan-card ${severityClass} flex flex-col h-full bg-white shadow-sm border border-slate-200">
-                    <div class="relative h-48 overflow-hidden bg-slate-100">
-                        <img src="${scan.image_url}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image+Available'">
-                        <div class="absolute top-2 right-2 bg-black/50 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">${dateStr}</div>
-                    </div>
-                    <div class="p-5 flex-1 flex flex-col">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="font-black text-slate-800 leading-tight">${plantName}</h3>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">${scan.issue_category || 'Analyzing...'}</p>
-                            </div>
-                            <span class="text-xs font-black ${scan.is_healthy ? 'text-emerald-500' : 'text-red-500'} uppercase">
-                                ${scan.is_healthy ? 'Healthy' : 'Issue Detected'}
-                            </span>
-                        </div>
-                        
-                        <div class="bg-slate-50 rounded-xl p-3 my-3 flex-1 border border-slate-100">
-                            <p class="text-[11px] text-slate-600 italic">"${scan.ai_remediation_advice || 'Diagnostic pending...'}"</p>
-                        </div>
-
-                        ${scan.severity_level > 7 && !scan.is_resolved ? `
-                            <div class="mb-4 p-2 bg-red-50 rounded-lg border border-red-100">
-                                <p class="text-[9px] font-black text-red-500 uppercase">System Recommendation</p>
-                                <p class="text-[10px] font-bold text-slate-700">Replace with ${REPLACEMENT_DB[scan.issue_category]?.name || 'Native Alternative'}</p>
-                            </div>
-                        ` : ''}
-
-                        <button onclick="resolveIssue('${scan.id}')" class="mt-auto w-full py-2 bg-slate-100 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded-xl text-[10px] font-black uppercase transition-colors">
-                            Mark as Resolved
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            if (scan.severity_level > 7 && !scan.is_resolved) {
-                const alertWrapper = document.createElement('div');
-                alertWrapper.className = "w-full max-w-2xl mx-auto";
-                alertWrapper.innerHTML = cardHTML;
-                alertContainer.appendChild(alertWrapper);
-            } else {
-                historyGrid.innerHTML += cardHTML;
-            }
-        });
-    }
-
-    async function resolveIssue(id) {
-        const { error } = await _supabase
-            .from('plant_health_scans')
-            .update({ is_resolved: true, severity_level: 1 })
-            .eq('id', id);
-        if (!error) loadClinicData();
-    }
-
-    _supabase.auth.onAuthStateChange((event, session) => {
-        if (session) loadClinicData();
-        else window.location.href = 'index.html';
-    });
+  if (error) {
+    errEl.textContent = error.message;
+  } else {
+    toast(`✓ Observation recorded for ${plantName}.`);
+    closeAddScan();
+    await loadClinicData();
+  }
+}
 </script>
 </body>
 </html>
