@@ -1,1062 +1,1049 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GardenHub OS | Mission Control v10.6</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GardenHub OS | Achievements</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 /* ── Tokens ──────────────────────────────────── */
 :root {
-  --bg:        #f5f7f2;
-  --surface:   #ffffff;
-  --surface2:  #f0f4ee;
-  --border:    #e2e8df;
-  --border2:   #d0dace;
-  --text:      #1e2b1e;
-  --muted:     #7a9278;
-  --green:     #2d7a4f;
-  --green-lt:  #e8f5ee;
-  --green-vv:  #22c55e;
-  --amber:     #b45309;
-  --amber-lt:  #fef3c7;
-  --red:       #dc2626;
-  --red-lt:    #fef2f2;
-  --blue:      #1d4ed8;
-  --blue-lt:   #eff6ff;
-  --pink:      #be185d;
-  --pink-lt:   #fdf2f8;
+  --bg:        #1a1208;
+  --surface:   #221a0a;
+  --surface2:  #2a2010;
+  --surface3:  #332816;
+  --border:    #3d2e14;
+  --border2:   #4d3a1a;
+
+  --gold:      #c8922a;
+  --gold-lt:   #e8c060;
+  --gold-pale: rgba(200,146,42,0.12);
+  --gold-glow: rgba(232,192,96,0.25);
+  --parchment: #f0e4c4;
+  --parchment2:#d8c898;
+  --green:     #4a8c3a;
+  --green-lt:  #6ab84a;
+  --red:       #8c2a1a;
+  --red-lt:    #c04030;
+  --blue:      #2a5080;
+  --monarch:   #c87030;
+
+  --locked:    rgba(255,255,255,0.06);
+  --locked-border: rgba(255,255,255,0.1);
+
+  --text:      #e8d8b0;
+  --muted:     #7a6040;
+  --serif:     'Cormorant Garamond', Georgia, serif;
   --mono:      'DM Mono', monospace;
-  --serif:     'Instrument Serif', serif;
   --sans:      'DM Sans', sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
-  font-family: var(--sans);
   color: var(--text);
+  font-family: var(--sans);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* subtle dot grid background */
+/* Aged paper grain overlay */
 body::before {
   content: '';
   position: fixed; inset: 0;
-  background-image: radial-gradient(circle, #c8d9c4 1px, transparent 1px);
-  background-size: 24px 24px;
-  opacity: 0.35;
-  pointer-events: none;
-  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none; z-index: 0; opacity: 0.6;
 }
 
-.page-wrap { position: relative; z-index: 1; max-width: 1380px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
-
-/* ── Auth Overlay ────────────────────────────── */
-#auth-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(30,43,30,0.92);
-  backdrop-filter: blur(12px);
-  display: flex; align-items: center; justify-content: center;
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, transparent 60%, rgba(10,6,2,0.6) 100%);
+  pointer-events: none; z-index: 0;
 }
-#auth-overlay.hidden { display: none; }
 
-.auth-card {
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Top Bar ──────────────────────────────────── */
+.top-bar {
+  position: sticky; top: 0; z-index: 100;
   background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 2.5rem;
-  width: 360px;
-  position: relative;
-}
-.auth-logo {
-  font-family: var(--serif);
-  font-size: 1.75rem;
-  color: var(--text);
-  margin-bottom: 0.25rem;
-}
-.auth-logo span { color: var(--green); font-style: italic; }
-.auth-sub { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.75rem; }
-.auth-input {
-  width: 100%; padding: 0.75rem 0.9rem;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--sans); font-size: 0.85rem;
-  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
-}
-.auth-input:focus { border-color: var(--green); }
-.auth-btns { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
-.auth-btn {
-  flex: 1; padding: 0.75rem;
-  font-family: var(--mono); font-size: 0.65rem; font-weight: 500;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  cursor: pointer; border: none; transition: opacity 0.15s;
-}
-.auth-btn.primary { background: var(--green); color: white; }
-.auth-btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
-.auth-btn:hover { opacity: 0.85; }
-#auth-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1.2rem; margin-top: 0.6rem; }
-
-/* ── Header ──────────────────────────────────── */
-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-}
-.logo-block .wordmark {
-  font-family: var(--serif);
-  font-size: 2rem;
-  color: var(--text);
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-.logo-block .wordmark em { color: var(--green); font-style: italic; }
-.logo-block .datestamp {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  color: var(--muted);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  margin-top: 0.3rem;
-}
-
-nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-.nav-link {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  padding: 0.45rem 0.85rem;
-  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em;
-  text-transform: uppercase; text-decoration: none;
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--muted); cursor: pointer; transition: all 0.15s;
-}
-.nav-link:hover { border-color: var(--green); color: var(--green); background: var(--green-lt); }
-.nav-link.active { background: var(--green); border-color: var(--green); color: white; }
-.nav-link.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-lt); }
-
-/* ── Top Stats Row ───────────────────────────── */
-.top-row {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-/* ── Climate Engine Card ─────────────────────── */
-.climate-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
-}
-.climate-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 0.9rem;
-}
-.card-eyebrow {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
-}
-.refresh-btn {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.25rem 0.6rem;
-  background: var(--amber-lt); border: 1px solid #fcd34d;
-  color: var(--amber); cursor: pointer; transition: opacity 0.15s;
-}
-.refresh-btn:hover { opacity: 0.75; }
-.refresh-btn.loading { opacity: 0.5; cursor: wait; }
-
-.climate-cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
-.climate-cell {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 0.75rem 0.85rem;
-  text-align: center;
-}
-.climate-label { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
-.climate-val   { font-family: var(--serif); font-size: 1.1rem; color: var(--text); }
-.climate-val.good   { color: var(--green); }
-.climate-val.warn   { color: var(--amber); }
-.climate-val.danger { color: var(--red); }
-
-/* ── Biological Pulse ────────────────────────── */
-.bio-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--green);
-  padding: 1.1rem 1.25rem;
-  display: flex; flex-direction: column; justify-content: space-between;
-}
-.bio-pct {
-  font-family: var(--serif);
-  font-size: 3rem;
-  color: var(--green);
-  line-height: 1;
-  font-style: italic;
-}
-.bio-label {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
-  margin-bottom: 0.25rem;
-}
-.bio-title {
-  font-family: var(--serif); font-size: 1.2rem; color: var(--text);
-}
-.pulse-dot {
-  display: inline-block; width: 6px; height: 6px;
-  background: var(--green-vv); border-radius: 50%;
-  margin-right: 0.4rem;
-  animation: pulse-anim 2s ease-in-out infinite;
-}
-@keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
-
-/* ── Main Grid ───────────────────────────────── */
-.main-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr 260px;
-  gap: 1rem;
-}
-
-/* ── Left Column Cards ───────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
-}
-.card + .card { margin-top: 0.75rem; }
-.card-title {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 0.75rem;
-}
-.card-value {
-  font-family: var(--serif); font-size: 1.6rem; color: var(--text);
-}
-
-/* Diagnostic intake */
-.diag-card {
-  background: var(--text);
-  border: 1px solid #2a3d2a;
-  padding: 1.1rem 1.25rem;
-}
-.diag-card .card-title { color: #4a6a4a; }
-.diag-drop {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 0.5rem; padding: 1.5rem;
-  border: 1.5px dashed #2a3d2a;
-  cursor: pointer; transition: border-color 0.2s;
-}
-.diag-drop:hover, .diag-drop.dragover { border-color: var(--green-vv); }
-.diag-icon { font-size: 1.5rem; opacity: 0.4; }
-.diag-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase; color: #4a6a4a; }
-.diag-preview {
-  width: 100%; aspect-ratio: 4/3; object-fit: cover;
-  display: none; border: 1px solid #2a3d2a;
-}
-.diag-submit {
-  width: 100%; margin-top: 0.6rem;
-  background: var(--green); color: white;
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
-  text-transform: uppercase; padding: 0.55rem;
-  border: none; cursor: pointer; display: none;
-  transition: opacity 0.15s;
-}
-.diag-submit:hover { opacity: 0.85; }
-
-/* Water pulse */
-.water-card { border-left: 3px solid var(--blue); }
-.water-val  { font-family: var(--serif); font-size: 1.8rem; color: var(--blue); font-style: italic; }
-
-/* Pollinator IQ */
-.poll-card  { background: var(--text); border: 1px solid #2a3d2a; border-left: 3px solid var(--pink); }
-.poll-card .card-title { color: var(--pink); }
-.poll-iq    { font-family: var(--serif); font-size: 2.5rem; color: white; font-style: italic; line-height:1; }
-.poll-sub   { font-family: var(--mono); font-size: 0.55rem; color: #4a5a4a; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.3rem; }
-
-/* ── Center Column ───────────────────────────── */
-.section-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.9rem;
+  padding: 0.75rem 2rem; gap: 1rem;
+  position: relative; z-index: 10;
 }
-.section-title {
-  font-family: var(--serif); font-size: 1.4rem; font-style: italic; color: var(--text);
+.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
+.logo-eye  { font-family: var(--mono); font-size: 0.5rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; }
+.logo-name { font-family: var(--serif); font-size: 1.2rem; color: var(--gold-lt); font-style: italic; }
+
+nav { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase;
+  text-decoration: none; padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border); color: var(--muted);
+  background: transparent; cursor: pointer; transition: all 0.15s;
+}
+.nav-link:hover  { border-color: var(--border2); color: var(--text); }
+.nav-link.active { border-color: var(--gold); color: var(--gold-lt); }
+.nav-link.danger:hover { border-color: var(--red-lt); color: var(--red-lt); }
+
+/* ── Page wrap ────────────────────────────────── */
+.page-wrap {
+  position: relative; z-index: 1;
+  max-width: 1320px; margin: 0 auto;
+  padding: 2rem 2rem 6rem;
 }
 
-.add-btn {
-  background: var(--green); color: white;
-  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 0.5rem 0.9rem; border: none; cursor: pointer;
-  transition: opacity 0.15s;
-}
-.add-btn:hover { opacity: 0.85; }
-
-/* Log feed */
-.log-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border2);
-  padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
-}
-.log-entry {
-  display: flex; align-items: flex-start; gap: 0.75rem;
-  padding: 0.45rem 0;
-  border-bottom: 1px solid var(--surface2);
-  font-size: 0.75rem; color: var(--muted);
-}
-.log-entry:last-child { border-bottom: none; }
-.log-time { font-family: var(--mono); font-size: 0.55rem; color: var(--border2); white-space: nowrap; margin-top: 0.1rem; }
-.log-empty { font-family: var(--mono); font-size: 0.65rem; color: var(--border2); padding: 0.75rem 0; letter-spacing: 0.08em; }
-
-/* Plant grid */
-.plant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-.plant-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 0.85rem 1rem;
-  transition: border-color 0.15s;
-}
-.plant-card:hover { border-color: var(--green); }
-.plant-name { font-weight: 600; font-size: 0.82rem; color: var(--text); margin-bottom: 0.2rem; }
-.plant-meta { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.55rem; }
-.plant-badges { display: flex; gap: 0.3rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
-.badge {
-  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.15rem 0.4rem;
-  border-radius: 2px; font-weight: 500;
-}
-.badge-native { background: var(--green-lt); color: var(--green); border: 1px solid #bbddc8; }
-.badge-host   { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #bfdbfe; }
-.badge-harvest{ background: var(--amber-lt); color: var(--amber); border: 1px solid #fcd34d; animation: pulse-anim 2s infinite; }
-.badge-penalty{ background: var(--red-lt);   color: var(--red);   border: 1px solid #fecaca; }
-
-/* Progress bar */
-.progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
-.progress-fill  { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-.fill-growing  { background: var(--green-vv); }
-.fill-harvest  { background: var(--amber); animation: pulse-anim 2s infinite; }
-
-/* ── Right Column — Temporal Pulse ───────────── */
-.temporal-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
-  position: sticky; top: 1.5rem;
-}
-.forecast-item {
-  padding: 0.7rem 0;
-  border-bottom: 1px solid var(--surface2);
-  display: flex; flex-direction: column; gap: 0.3rem;
-}
-.forecast-item:last-child { border-bottom: none; }
-.forecast-name { font-weight: 600; font-size: 0.78rem; color: var(--text); }
-.forecast-date { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; }
-.forecast-status {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
-  text-transform: uppercase; align-self: flex-start;
-  padding: 0.15rem 0.4rem;
-}
-.status-ready   { color: var(--amber); border: 1px solid #fcd34d; background: var(--amber-lt); }
-.status-soon    { color: var(--green); border: 1px solid #bbddc8; background: var(--green-lt); }
-.status-growing { color: var(--muted); border: 1px solid var(--border); }
-.forecast-pct   { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); }
-
-/* ── Add Plant Modal ─────────────────────────── */
-#add-modal {
-  position: fixed; inset: 0; z-index: 500;
-  background: rgba(30,43,30,0.7); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
-}
-#add-modal.hidden { display: none; }
-.modal-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 2rem; width: 400px; max-width: 90vw;
+/* ── Page header ──────────────────────────────── */
+.page-header {
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
   position: relative;
 }
-.modal-title { font-family: var(--serif); font-size: 1.4rem; font-style: italic; margin-bottom: 1.25rem; }
-.modal-input {
-  width: 100%; padding: 0.65rem 0.8rem;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--sans); font-size: 0.82rem;
-  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
+.page-header::before {
+  content: '✦ GardenHub OS // Field Medals & Seasonal Orders ✦';
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--gold); opacity: 0.7;
+  display: block; margin-bottom: 0.75rem;
 }
-.modal-input:focus { border-color: var(--green); }
-.modal-check-row { display: flex; gap: 1.5rem; padding: 0.35rem 0; margin-bottom: 0.5rem; }
-.modal-check-row label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--muted); cursor: pointer; }
-.modal-btns { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-.modal-btn {
-  flex: 1; padding: 0.65rem;
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
-  text-transform: uppercase; border: none; cursor: pointer; transition: opacity 0.15s;
+.page-title {
+  font-family: var(--serif); font-size: 3.8rem; font-weight: 600;
+  color: var(--gold-lt); line-height: 1; letter-spacing: -0.01em;
 }
-.modal-btn.primary  { background: var(--green); color: white; }
-.modal-btn.ghost    { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
-.modal-btn:hover    { opacity: 0.85; }
-.modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-#modal-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
-.modal-success { color: var(--green) !important; }
+.page-title em { font-style: italic; color: var(--parchment2); }
+.page-sub {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  color: var(--muted); margin-top: 0.6rem; text-transform: uppercase;
+}
 
-/* ── Responsive ──────────────────────────────── */
-@media (max-width: 1100px) {
-  .main-grid { grid-template-columns: 1fr 1fr; }
-  .main-grid > :last-child { grid-column: span 2; }
+/* ── Summary strip ────────────────────────────── */
+.summary-strip {
+  display: flex; justify-content: center; align-items: center;
+  gap: 2.5rem; flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
 }
-@media (max-width: 700px) {
-  .top-row { grid-template-columns: 1fr; }
-  .climate-cells { grid-template-columns: 1fr 1fr; }
-  .main-grid { grid-template-columns: 1fr; }
-  .main-grid > :last-child { grid-column: span 1; }
-  .plant-grid { grid-template-columns: 1fr; }
+.summary-strip::before {
+  content: '';
+  position: absolute; inset: 3px;
+  border: 1px solid rgba(200,146,42,0.15);
+  pointer-events: none;
+}
+.sum-item { text-align: center; }
+.sum-num  { font-family: var(--serif); font-size: 2.4rem; font-style: italic; color: var(--gold-lt); line-height: 1; }
+.sum-lbl  { font-family: var(--mono);  font-size: 0.48rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: 0.15rem; }
+.sum-sep  { width: 1px; height: 3rem; background: var(--border); }
+
+/* ── Section heads ────────────────────────────── */
+.sec-head {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.25rem; margin-top: 2.5rem;
+}
+.sec-head::before, .sec-head::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.sec-head-text {
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--gold); white-space: nowrap;
+}
+
+/* ── SEASONAL CHALLENGES ──────────────────────── */
+.challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.challenge-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+.challenge-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.challenge-card:hover::before { opacity: 0.6; }
+
+.challenge-card.complete { border-color: var(--gold); }
+.challenge-card.complete::before { opacity: 1; }
+
+.ch-season {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.ch-season-dot { width: 5px; height: 5px; border-radius: 50%; }
+.ch-title {
+  font-family: var(--serif); font-size: 1.15rem; font-style: italic;
+  color: var(--text); margin-bottom: 0.25rem; line-height: 1.2;
+}
+.ch-desc {
+  font-family: var(--sans); font-size: 0.7rem; color: var(--muted);
+  line-height: 1.5; margin-bottom: 0.85rem;
+}
+.ch-progress-wrap { margin-top: auto; }
+.ch-prog-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.52rem; color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.ch-prog-label .ch-pct { color: var(--gold-lt); }
+.ch-track { height: 4px; background: var(--surface3); overflow: hidden; }
+.ch-fill  {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+.ch-fill.complete { background: var(--gold-lt); }
+.ch-fill.progress { background: var(--green-lt); }
+.ch-fill.locked   { background: var(--muted); }
+
+.ch-status {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-top: 0.5rem; text-align: right;
+}
+.ch-status.done    { color: var(--gold-lt); }
+.ch-status.active  { color: var(--green-lt); }
+.ch-status.locked  { color: var(--muted); }
+
+/* Deadline badge */
+.ch-deadline {
+  position: absolute; top: 0.85rem; right: 0.85rem;
+  font-family: var(--mono); font-size: 0.45rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  background: var(--surface2); padding: 0.15rem 0.4rem;
+  border: 1px solid var(--border);
+}
+
+/* ── ACHIEVEMENT BADGES ───────────────────────── */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.badge-card {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 1.5rem 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: center;
+  cursor: default;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  animation: fadeUp 0.4s ease both;
+}
+.badge-card:hover { transform: translateY(-3px); }
+.badge-card.earned {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(200,146,42,0.15), 0 0 40px rgba(200,146,42,0.06);
+}
+.badge-card.earned:hover {
+  box-shadow: 0 0 30px rgba(200,146,42,0.25), 0 4px 20px rgba(200,146,42,0.1);
+}
+
+/* The medal itself */
+.badge-medallion {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  position: relative;
+  margin-bottom: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Locked: dim, desaturated */
+.badge-card:not(.earned) .badge-medallion {
+  background: var(--locked);
+  border: 2px solid var(--locked-border);
+  filter: grayscale(1) opacity(0.35);
+}
+
+/* Earned: glowing ring */
+.badge-card.earned .badge-medallion {
+  background: radial-gradient(circle, var(--gold-pale) 0%, var(--surface2) 70%);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(200,146,42,0.1), 0 0 20px rgba(200,146,42,0.2);
+  animation: medalPulse 3s ease-in-out infinite;
+}
+@keyframes medalPulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(200,146,42,0.1), 0 0 20px rgba(200,146,42,0.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(200,146,42,0.15), 0 0 30px rgba(200,146,42,0.3); }
+}
+
+/* Decorative outer ring on earned badges */
+.badge-card.earned .badge-medallion::before {
+  content: '';
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(200,146,42,0.3);
+  animation: ringRotate 12s linear infinite;
+}
+.badge-card.earned .badge-medallion::after {
+  content: '';
+  position: absolute; inset: -14px;
+  border-radius: 50%;
+  border: 1px dashed rgba(200,146,42,0.15);
+  animation: ringRotate 20s linear infinite reverse;
+}
+@keyframes ringRotate { to { transform: rotate(360deg); } }
+
+.badge-name {
+  font-family: var(--serif); font-size: 0.9rem; font-style: italic;
+  color: var(--text); line-height: 1.2; margin-bottom: 0.3rem;
+}
+.badge-card:not(.earned) .badge-name { color: var(--muted); }
+.badge-card.earned .badge-name { color: var(--gold-lt); }
+
+.badge-desc {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.06em;
+  color: var(--muted); line-height: 1.5;
+}
+
+.badge-earned-date {
+  font-family: var(--mono); font-size: 0.48rem; color: var(--gold);
+  margin-top: 0.5rem; letter-spacing: 0.08em;
+}
+
+.badge-locked-hint {
+  font-family: var(--mono); font-size: 0.48rem; color: rgba(122,96,64,0.6);
+  margin-top: 0.5rem; letter-spacing: 0.06em; font-style: italic;
+}
+
+/* Category label */
+.badge-cat {
+  position: absolute; top: 0.55rem; right: 0.55rem;
+  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border2); color: var(--muted);
+}
+.badge-card.earned .badge-cat { border-color: rgba(200,146,42,0.3); color: var(--gold); }
+
+/* ── MONARCH CERTIFICATION ────────────────────── */
+.monarch-cert {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.monarch-cert::before {
+  content: '';
+  position: absolute; inset: 6px;
+  border: 1px solid rgba(200,146,42,0.2);
+  pointer-events: none;
+}
+.monarch-cert::after {
+  content: '';
+  position: absolute; inset: 10px;
+  border: 1px dashed rgba(200,146,42,0.1);
+  pointer-events: none;
+}
+.cert-locked {
+  opacity: 0.4; filter: grayscale(0.6);
+}
+.cert-icon { font-size: 3.5rem; display: block; margin-bottom: 0.75rem; }
+.cert-title {
+  font-family: var(--serif); font-size: 2rem; font-style: italic;
+  color: var(--gold-lt); margin-bottom: 0.5rem;
+}
+.cert-body {
+  font-family: var(--mono); font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 0.08em; line-height: 1.8; margin-bottom: 1rem;
+}
+.cert-requirements {
+  display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.cert-req {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+}
+.cert-req-val { font-family: var(--serif); font-size: 1.5rem; font-style: italic; }
+.cert-req-val.met { color: var(--gold-lt); }
+.cert-req-val.unmet { color: var(--muted); }
+.cert-req-lbl { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.cert-earned-banner {
+  background: linear-gradient(90deg, transparent, var(--gold-pale), transparent);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  padding: 0.6rem;
+  font-family: var(--serif); font-size: 1rem; font-style: italic;
+  color: var(--gold-lt); margin-top: 1.25rem; letter-spacing: 0.05em;
+}
+
+/* ── Animations ───────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Loading skeleton ─────────────────────────── */
+.skel { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%); background-size: 400%; animation: skelly 1.4s ease infinite; }
+@keyframes skelly { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+.skel-badge { width: 180px; height: 220px; }
+.skel-ch    { height: 160px; }
+
+/* ── Toast ────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 800;
+  padding: 0.7rem 1.1rem; font-family: var(--mono); font-size: 0.62rem;
+  letter-spacing: 0.08em; opacity: 0; transform: translateY(6px);
+  transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  background: var(--surface2); color: var(--gold-lt);
+  border: 1px solid var(--gold); max-width: 320px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 640px) {
+  .page-title { font-size: 2.5rem; }
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-strip { gap: 1.25rem; }
 }
 </style>
 </head>
-
 <body>
 
-<!-- ══════════ AUTH OVERLAY (shown by default) ══════════ -->
-<div id="auth-overlay">
-  <div class="auth-card">
-    <div class="auth-logo">GardenHub <em>OS</em></div>
-    <div class="auth-sub">Mission Control v10.6 // Fairfield, CT</div>
-    <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
-    <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password"/>
-    <div class="auth-btns">
-      <button class="auth-btn primary" id="btn-signin">Login</button>
-      <button class="auth-btn secondary" id="btn-signup">Register</button>
-    </div>
-    <div id="auth-error"></div>
+<div id="toast"></div>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="top-bar">
+  <div class="logo-block">
+    <div class="logo-eye">GardenHub OS // v10.6</div>
+    <div class="logo-name">Field Medals</div>
   </div>
+  <nav>
+    <a href="index.html"        class="nav-link">Dashboard</a>
+    <a href="map.html"          class="nav-link">Map</a>
+    <a href="insights.html"     class="nav-link">Insights</a>
+    <a href="clinic.html"       class="nav-link">Clinic</a>
+    <a href="library.html"      class="nav-link">Library</a>
+    <a href="calendar.html"     class="nav-link">Calendar</a>
+    <a href="achievements.html" class="nav-link active">Medals</a>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
 </div>
 
-<!-- ══════════ ADD PLANT MODAL ══════════ -->
-<div id="add-modal" class="hidden">
-  <div class="modal-card">
-    <div class="modal-title">Plant Resident 🌱</div>
-    <input class="modal-input" id="p-name" type="text" placeholder="Common name (e.g. Tomato)" />
-    <input class="modal-input" id="p-scientific" type="text" placeholder="Scientific name (optional)" />
-    <input class="modal-input" id="p-days" type="number" placeholder="Days to maturity" min="1" max="999"/>
-    <input class="modal-input" id="p-planted" type="date" />
-    <input class="modal-input" id="p-emoji" type="text" placeholder="Emoji (e.g. 🍅)" maxlength="4"/>
-    <div class="modal-check-row">
-      <label><input type="checkbox" id="p-native" /> Native species</label>
-      <label><input type="checkbox" id="p-host" /> Host plant</label>
-    </div>
-    <div id="modal-error"></div>
-    <div class="modal-btns">
-      <button class="modal-btn ghost" onclick="closeModal()">Cancel</button>
-      <button class="modal-btn primary" id="btn-save-plant" onclick="saveNewPlant()">Record Plant</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════ PAGE ══════════ -->
+<!-- ═══ PAGE ═══ -->
 <div class="page-wrap">
 
   <!-- Header -->
-  <header>
-    <div class="logo-block">
-      <div class="wordmark">GardenHub <em>OS</em></div>
-      <div class="datestamp" id="current-date">Loading…</div>
-    </div>
-    <nav>
-      <a href="map.html"      class="nav-link">🗺 Map View</a>
-      <a href="insights.html" class="nav-link">📊 Insights</a>
-      <a href="clinic.html"   class="nav-link">🏥 Plant Clinic</a>
-      <a href="library.html"  class="nav-link">📚 Library</a>
-      <a href="calendar.html" class="nav-link">📅 Calendar</a>
-      <button onclick="handleLogout()" class="nav-link danger">🚪 Logout</button>
-    </nav>
-  </header>
+  <div class="page-header">
+    <div class="page-title">Field <em>Medals</em></div>
+    <div class="page-sub">Seasonal Challenges · Botanical Achievements · Monarch Certification</div>
+  </div>
 
-  <!-- Top Row: Biological Pulse + Climate Engine -->
-  <div class="top-row">
-    <div class="bio-card">
-      <div>
-        <div class="bio-label">Biological Pulse</div>
-        <div class="bio-title">Active Growth</div>
-      </div>
-      <div class="bio-pct" id="health-pct">0%</div>
-      <div style="font-family:var(--mono);font-size:0.55rem;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;">
-        <span class="pulse-dot"></span><a href="library.html" style="color:inherit;text-decoration:none;">Memory Engine Active</a>
-      </div>
-    </div>
+  <!-- Summary strip -->
+  <div class="summary-strip">
+    <div class="sum-item"><div class="sum-num" id="s-earned">--</div><div class="sum-lbl">Medals Earned</div></div>
+    <div class="sum-sep"></div>
+    <div class="sum-item"><div class="sum-num" id="s-total">--</div><div class="sum-lbl">Total Available</div></div>
+    <div class="sum-sep"></div>
+    <div class="sum-item"><div class="sum-num" id="s-challenges">--</div><div class="sum-lbl">Challenges Active</div></div>
+    <div class="sum-sep"></div>
+    <div class="sum-item"><div class="sum-num" id="s-streak">--</div><div class="sum-lbl">Day Log Streak</div></div>
+  </div>
 
-    <div class="climate-card">
-      <div class="climate-header">
-        <div class="card-eyebrow">Climate Engine V10.6 — Zone 6b (Fairfield, CT)</div>
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <span class="card-eyebrow" id="weather-updated">--</span>
-          <button class="refresh-btn" id="weather-refresh-btn" onclick="refreshWeather()">↻ Refresh</button>
-        </div>
-      </div>
-      <div class="climate-cells">
-        <div class="climate-cell">
-          <div class="climate-label">Zone</div>
-          <div class="climate-val">6b (CT)</div>
-        </div>
-        <div class="climate-cell">
-          <div class="climate-label">Solar Hours</div>
-          <div class="climate-val" id="w-solar">--</div>
-        </div>
-        <div class="climate-cell">
-          <div class="climate-label">Live Temp</div>
-          <div class="climate-val" id="w-temp">--</div>
-        </div>
-        <div class="climate-cell">
-          <div class="climate-label">Risk</div>
-          <div class="climate-val" id="w-risk">--</div>
-        </div>
-      </div>
+  <!-- ═══ SEASONAL CHALLENGES ═══ -->
+  <div class="sec-head"><div class="sec-head-text">✦ Seasonal Challenges ✦</div></div>
+  <div id="challenges-loading" class="challenges-grid">
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+    <div class="skel skel-ch"></div>
+  </div>
+  <div id="challenges-grid" class="challenges-grid" style="display:none;"></div>
+
+  <!-- ═══ ACHIEVEMENTS ═══ -->
+  <div class="sec-head"><div class="sec-head-text">✦ Botanical Achievements ✦</div></div>
+  <div id="achievements-loading" class="achievements-grid">
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+    <div class="skel skel-badge"></div>
+  </div>
+  <div id="achievements-grid" class="achievements-grid" style="display:none;"></div>
+
+  <!-- ═══ MONARCH CERTIFICATION ═══ -->
+  <div class="sec-head"><div class="sec-head-text">✦ Monarch-Friendly Garden Certification ✦</div></div>
+  <div id="monarch-cert" class="monarch-cert cert-locked">
+    <span class="cert-icon">🦋</span>
+    <div class="cert-title">Monarch-Friendly Garden</div>
+    <div class="cert-body">
+      Awarded to gardens that provide essential habitat for monarch butterflies<br/>
+      through native plantings, host species, and chemical-free practices.
+    </div>
+    <div class="cert-requirements" id="cert-reqs">
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-native-val">0/5</div><div class="cert-req-lbl">Native Species</div></div>
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-host-val">0/3</div><div class="cert-req-lbl">Host Plants</div></div>
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-health-val">0</div><div class="cert-req-lbl">Active Issues</div></div>
+      <div class="cert-req"><div class="cert-req-val unmet" id="cert-log-val">0/5</div><div class="cert-req-lbl">Log Entries</div></div>
+    </div>
+    <div id="cert-earned-banner" style="display:none;" class="cert-earned-banner">
+      ✦ Certified Monarch-Friendly Garden — Zone 6b, Fairfield CT ✦
     </div>
   </div>
 
-  <!-- Main Grid -->
-  <div class="main-grid">
-
-    <!-- ── Left Column ── -->
-    <div>
-      <!-- Diagnostic Intake -->
-      <div class="diag-card card" style="margin-bottom:0.75rem;">
-        <div class="card-title">Diagnostic Intake</div>
-        <div class="diag-drop" id="diag-drop" onclick="document.getElementById('diag-file').click()">
-          <div class="diag-icon">📷</div>
-          <div class="diag-label">Capture Observation</div>
-          <div style="font-family:var(--mono);font-size:0.5rem;color:#2a4a2a;letter-spacing:0.1em;">Click or drag an image</div>
-        </div>
-        <img class="diag-preview" id="diag-preview" alt="Scan preview"/>
-        <button class="diag-submit" id="diag-submit" onclick="submitDiagnostic()">→ Send to Clinic</button>
-        <input type="file" id="diag-file" accept="image/*" capture="environment" style="display:none" onchange="onDiagFile(event)"/>
-      </div>
-
-      <!-- Water Pulse -->
-      <div class="card water-card" style="margin-bottom:0.75rem;">
-        <div class="card-title">Water Pulse</div>
-        <div class="water-val" id="water-stat">--</div>
-        <div style="font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;" id="water-sub">Last 7 days</div>
-      </div>
-
-      <!-- Pollinator IQ -->
-      <div class="poll-card card">
-        <div class="card-title">Pollinator IQ</div>
-        <div class="poll-iq" id="native-iq-count">0</div>
-        <div class="poll-sub" id="native-species-label">0 native · 0 host</div>
-      </div>
-    </div>
-
-    <!-- ── Center Column ── -->
-    <div>
-      <div class="section-header">
-        <div class="section-title">Active Growth</div>
-        <button class="add-btn" onclick="openModal()">+ Plant Resident</button>
-      </div>
-
-      <!-- Log feed -->
-      <div class="log-card">
-        <div class="card-eyebrow" style="margin-bottom:0.5rem;">Tactical Briefing & Logs</div>
-        <div id="log-feed"><div class="log-empty">No recent activity.</div></div>
-      </div>
-
-      <!-- Plant cards -->
-      <div id="seed-grid" class="plant-grid"></div>
-
-      <div id="empty-state" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;border:1px dashed var(--border);margin-top:0.5rem;">
-        No plants recorded yet. Add your first resident above.
-      </div>
-    </div>
-
-    <!-- ── Right Column: Temporal Pulse ── -->
-    <div>
-      <div class="temporal-card">
-        <div class="card-eyebrow" style="margin-bottom:1rem;">Temporal Pulse</div>
-        <div id="harvest-forecast">
-          <div class="log-empty">Loading forecast…</div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /main-grid -->
-</div><!-- /page-wrap -->
+</div>
 
 <script>
 // ══════════════════════════════════════════════════
-//  GardenHub OS — Mission Control v10.6
-//  Bugs fixed: BUG-01 through BUG-06, ISSUE-01 through ISSUE-08
+//  GardenHub OS — Field Medals & Achievements v10.6
+//  All achievements auto-detected from live garden data.
+//  No manual claiming — earned when criteria are met.
 // ══════════════════════════════════════════════════
 
 const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let _userId = null;
-let _diagFile = null;    // pending diagnostic image
+const $ = id => document.getElementById(id);
 
-// ── Date header ───────────────────────────────
-document.getElementById('current-date').textContent =
-  new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+// ── Seasonal challenge definitions ────────────────
+// Each challenge has auto-computed progress via `evaluate(data)` → { current, target }
+const NOW     = new Date();
+const MONTH   = NOW.getMonth(); // 0-indexed
+const YEAR    = NOW.getFullYear();
 
-// ══════════════════════════════════════════════
-//  AUTH  (FIX: overlay shown by default; gates
-//         on SIGNED_IN event only — BUG-06)
-// ══════════════════════════════════════════════
-document.getElementById('btn-signin').addEventListener('click', handleSignIn);
-document.getElementById('btn-signup').addEventListener('click', handleSignUp);
-
-async function handleSignIn() {
-  clearAuthError();
-  const { error } = await sb.auth.signInWithPassword({
-    email:    document.getElementById('auth-email').value.trim(),
-    password: document.getElementById('auth-password').value,
-  });
-  if (error) showAuthError(error.message);
+function seasonOf(m) {
+  if (m <= 1 || m === 11) return 'Winter';
+  if (m <= 4)             return 'Spring';
+  if (m <= 7)             return 'Summer';
+  return 'Fall';
 }
+const SEASON = seasonOf(MONTH);
+const SEASON_COLORS = { Winter:'#4a7fa8', Spring:'#4a8c3a', Summer:'#c8922a', Fall:'#8c4a1a' };
 
-async function handleSignUp() {
-  clearAuthError();
-  const { error } = await sb.auth.signUp({
-    email:    document.getElementById('auth-email').value.trim(),
-    password: document.getElementById('auth-password').value,
-  });
-  if (error) showAuthError(error.message);
-  else       showAuthError('Check your email to confirm your account.', true);
-}
+// Zone 6b bloom months (families that bloom in June)
+const JUNE_BLOOMERS = ['Asteraceae','Lamiaceae','Rosaceae'];
 
-async function handleLogout() {
-  await sb.auth.signOut();
-  location.reload();
-}
+const CHALLENGES = [
+  {
+    id: 'grow_5_natives',
+    title: 'Grow 5 Natives',
+    desc: 'Establish five native species in your library. Each native plant provides irreplaceable habitat for local fauna.',
+    season: 'Year-Round',
+    icon: '🌿',
+    target: 5,
+    deadline: `Dec 31, ${YEAR}`,
+    evaluate: (d) => ({ current: d.plants.filter(p => p.is_native).length, target: 5 }),
+  },
+  {
+    id: 'fill_june_gap',
+    title: 'Fill Your June Bloom Gap',
+    desc: 'Add plants from Asteraceae, Lamiaceae, or Rosaceae to ensure continuous bloom through June. Critical for pollinators.',
+    season: 'Spring',
+    icon: '🌸',
+    target: 3,
+    deadline: 'May 31',
+    evaluate: (d) => ({
+      current: d.plants.filter(p => JUNE_BLOOMERS.includes(p.plant_family)).length,
+      target: 3,
+    }),
+  },
+  {
+    id: 'save_seeds',
+    title: 'Save Seeds Successfully',
+    desc: 'Log a seed-saving activity in your garden logs. Seed saving preserves genetic diversity and reduces annual costs.',
+    season: 'Fall',
+    icon: '🌾',
+    target: 1,
+    deadline: `Oct 31, ${YEAR}`,
+    evaluate: (d) => ({
+      current: d.logs.filter(l => (l.activity_type||'').toLowerCase().includes('seed')).length,
+      target: 1,
+    }),
+  },
+  {
+    id: 'log_streak_7',
+    title: '7-Day Logging Streak',
+    desc: 'Record garden activities on 7 consecutive days. Consistent observation is the foundation of a healthy garden.',
+    season: 'Year-Round',
+    icon: '📓',
+    target: 7,
+    deadline: 'Ongoing',
+    evaluate: (d) => ({ current: d.streak, target: 7 }),
+  },
+  {
+    id: 'host_3_plants',
+    title: 'Plant 3 Host Species',
+    desc: 'Establish three host plants for butterfly and moth larvae. Milkweed, wild senna, and native oaks are excellent choices.',
+    season: 'Spring',
+    icon: '🦋',
+    target: 3,
+    deadline: `Jun 30, ${YEAR}`,
+    evaluate: (d) => ({ current: d.plants.filter(p => p.is_host_plant).length, target: 3 }),
+  },
+  {
+    id: 'resolve_3_scans',
+    title: 'Resolve 3 Clinic Issues',
+    desc: 'Successfully remediate 3 health scan issues using the Feedback Loop. Each resolution improves your Resilience Score.',
+    season: 'Year-Round',
+    icon: '🏥',
+    target: 3,
+    deadline: 'Ongoing',
+    evaluate: (d) => ({ current: d.resolvedScans, target: 3 }),
+  },
+  {
+    id: 'water_weekly',
+    title: 'Water Every Week This Month',
+    desc: `Log at least one watering session in each of the 4 weeks of ${NOW.toLocaleString('default',{month:'long'})}. Consistent moisture is critical during active growth.`,
+    season: SEASON,
+    icon: '💧',
+    target: 4,
+    deadline: `End of ${NOW.toLocaleString('default',{month:'long'})}`,
+    evaluate: (d) => {
+      // Count distinct weeks this month with a watering log
+      const weeksWatered = new Set();
+      d.logs.filter(l => {
+        const ld = new Date(l.log_date);
+        return ld.getMonth() === MONTH && ld.getFullYear() === YEAR &&
+          (l.activity_type||'').toLowerCase().includes('water');
+      }).forEach(l => {
+        const week = Math.floor((new Date(l.log_date).getDate()-1) / 7);
+        weeksWatered.add(week);
+      });
+      return { current: weeksWatered.size, target: 4 };
+    },
+  },
+  {
+    id: 'diverse_families',
+    title: 'Cultivate 5 Plant Families',
+    desc: 'Grow plants from 5 different botanical families. Diversity creates resilience, breaks pest cycles, and supports more species.',
+    season: 'Year-Round',
+    icon: '🌱',
+    target: 5,
+    deadline: `Dec 31, ${YEAR}`,
+    evaluate: (d) => ({
+      current: new Set(d.plants.map(p => p.plant_family).filter(Boolean)).size,
+      target: 5,
+    }),
+  },
+  {
+    id: 'first_harvest_season',
+    title: 'First Harvest of the Season',
+    desc: `Log a harvest activity this ${SEASON.toLowerCase()}. Your first harvest marks the culmination of a season's effort.`,
+    season: SEASON,
+    icon: '🌽',
+    target: 1,
+    deadline: `End of ${SEASON}`,
+    evaluate: (d) => ({
+      current: d.logs.filter(l => {
+        const ld = new Date(l.log_date);
+        return seasonOf(ld.getMonth()) === SEASON && ld.getFullYear() === YEAR &&
+          (l.activity_type||'').toLowerCase().includes('harvest');
+      }).length,
+      target: 1,
+    }),
+  },
+];
 
-function showAuthError(msg, success=false) {
-  const el = document.getElementById('auth-error');
-  el.textContent = msg;
-  el.style.color = success ? 'var(--green)' : 'var(--red)';
-}
-function clearAuthError() { document.getElementById('auth-error').textContent = ''; }
+// ── Achievement definitions ───────────────────────
+// `check(data)` returns true/false.
+// `earnedDate(data)` returns a display string or null.
+const ACHIEVEMENTS = [
+  // Ecosystem
+  {
+    id: 'first_native',
+    name: 'First Native',
+    desc: 'Added a native species to your garden library',
+    icon: '🌿', cat: 'Ecosystem',
+    check: d => d.plants.some(p => p.is_native),
+    earnedDate: d => {
+      const p = d.plants.filter(x => x.is_native).sort((a,b) => new Date(a.planted_date||0)-new Date(b.planted_date||0))[0];
+      return p?.planted_date ? fmtDate(p.planted_date) : 'Date unknown';
+    },
+    hint: 'Add a native plant to your Library',
+  },
+  {
+    id: 'first_host',
+    name: 'Host Guardian',
+    desc: 'Established your first host plant for butterfly larvae',
+    icon: '🦋', cat: 'Ecosystem',
+    check: d => d.plants.some(p => p.is_host_plant),
+    earnedDate: d => {
+      const p = d.plants.filter(x => x.is_host_plant)[0];
+      return p?.planted_date ? fmtDate(p.planted_date) : 'Date unknown';
+    },
+    hint: 'Mark a plant as "Host Plant" in your Library',
+  },
+  {
+    id: 'five_natives',
+    name: 'Native Steward',
+    desc: 'Grown five or more native species simultaneously',
+    icon: '🏡', cat: 'Ecosystem',
+    check: d => d.plants.filter(p => p.is_native).length >= 5,
+    earnedDate: () => 'Currently active',
+    hint: 'Reach 5 native species in your Library',
+  },
+  {
+    id: 'ten_natives',
+    name: 'Prairie Keeper',
+    desc: 'Maintained ten or more native species — a true ecological garden',
+    icon: '🌾', cat: 'Ecosystem',
+    check: d => d.plants.filter(p => p.is_native).length >= 10,
+    earnedDate: () => 'Currently active',
+    hint: 'Reach 10 native species in your Library',
+  },
 
-// FIX BUG-06: only react to SIGNED_IN, not TOKEN_REFRESHED etc.
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    _userId = session.user.id;
-    document.getElementById('auth-overlay').classList.add('hidden');
-    init();
-  } else if (event === 'SIGNED_OUT') {
-    document.getElementById('auth-overlay').classList.remove('hidden');
-  }
-});
+  // Clinic / Health
+  {
+    id: 'first_scan',
+    name: 'First Diagnosis',
+    desc: 'Logged your first plant health scan in the Clinic',
+    icon: '🔬', cat: 'Clinic',
+    check: d => d.totalScans > 0,
+    earnedDate: d => d.firstScanDate ? fmtDate(d.firstScanDate) : 'Date unknown',
+    hint: 'Log a health scan in the Clinic',
+  },
+  {
+    id: 'first_resolve',
+    name: 'Healer',
+    desc: 'Successfully resolved your first plant health issue',
+    icon: '💊', cat: 'Clinic',
+    check: d => d.resolvedScans > 0,
+    earnedDate: () => 'Via Feedback Loop',
+    hint: 'Resolve a scan in the Clinic or Insights',
+  },
+  {
+    id: 'three_resolves',
+    name: 'Garden Medic',
+    desc: 'Resolved three or more health issues through the Feedback Loop',
+    icon: '🏥', cat: 'Clinic',
+    check: d => d.resolvedScans >= 3,
+    earnedDate: () => 'Currently active',
+    hint: 'Resolve 3 scans via the Feedback Loop',
+  },
+  {
+    id: 'clear_garden',
+    name: 'Clean Bill',
+    desc: 'Maintained zero active health issues for 30 or more consecutive days',
+    icon: '✅', cat: 'Clinic',
+    check: d => d.activeScans === 0 && d.totalScans > 0,
+    earnedDate: () => 'Currently active',
+    hint: 'Resolve all active issues and keep them clear',
+  },
 
-// On hard reload, restore existing session silently
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    _userId = session.user.id;
-    document.getElementById('auth-overlay').classList.add('hidden');
-    init();
-  }
-})();
+  // Growth / Maturity
+  {
+    id: 'first_bloom',
+    name: 'First Bloom',
+    desc: 'A plant in your library has reached 100% maturity',
+    icon: '🌺', cat: 'Growth',
+    check: d => d.plants.some(p => {
+      if (!p.planted_date || !p.maturity_days) return false;
+      const eff  = (p.maturity_days) + (p.recovery_days||0);
+      const grown = (Date.now() - new Date(p.planted_date+'T12:00:00')) / 86400000;
+      return grown >= eff;
+    }),
+    earnedDate: d => {
+      const ready = d.plants.filter(p => {
+        if (!p.planted_date || !p.maturity_days) return false;
+        const eff  = p.maturity_days + (p.recovery_days||0);
+        const grown = (Date.now() - new Date(p.planted_date+'T12:00:00')) / 86400000;
+        return grown >= eff;
+      });
+      return ready.length ? `${ready.length} plant${ready.length>1?'s':''} ready` : '';
+    },
+    hint: 'Plant something and wait for it to reach maturity',
+  },
+  {
+    id: 'three_year_perennial',
+    name: 'Perennial Guardian',
+    desc: 'A native plant in your library has been growing for 3+ years',
+    icon: '🌳', cat: 'Growth',
+    check: d => d.plants.some(p => {
+      if (!p.planted_date || !p.is_native) return false;
+      const years = (Date.now() - new Date(p.planted_date+'T12:00:00')) / (86400000 * 365.25);
+      return years >= 3;
+    }),
+    earnedDate: d => {
+      const p = d.plants.find(x => {
+        if (!x.planted_date || !x.is_native) return false;
+        return (Date.now() - new Date(x.planted_date+'T12:00:00')) / (86400000*365.25) >= 3;
+      });
+      return p ? `${p.common_name} — planted ${fmtDate(p.planted_date)}` : '';
+    },
+    hint: 'Keep a native plant growing for 3+ years',
+  },
+  {
+    id: 'diverse_garden',
+    name: 'Polyculturalist',
+    desc: 'Cultivating plants from 5 or more distinct botanical families',
+    icon: '🎨', cat: 'Growth',
+    check: d => new Set(d.plants.map(p => p.plant_family).filter(Boolean)).size >= 5,
+    earnedDate: () => 'Currently active',
+    hint: 'Grow plants from 5+ different plant families',
+  },
 
-// ══════════════════════════════════════════════
-//  WEATHER ENGINE  (FIX BUG-01)
-//  Uses Open-Meteo — free, no API key needed
-// ══════════════════════════════════════════════
-async function fetchWeather() {
-  const url = 'https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635' +
-    '&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relative_humidity_2m' +
-    '&daily=sunshine_duration,temperature_2m_max,temperature_2m_min,precipitation_sum' +
-    '&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York&forecast_days=1';
+  // Logging / Consistency
+  {
+    id: 'first_log',
+    name: 'Garden Journalist',
+    desc: 'Recorded your first activity in the garden log',
+    icon: '📓', cat: 'Consistency',
+    check: d => d.totalLogs > 0,
+    earnedDate: d => d.firstLogDate ? fmtDate(d.firstLogDate) : 'Date unknown',
+    hint: 'Log any garden activity',
+  },
+  {
+    id: 'log_streak_7',
+    name: 'Week of Watchfulness',
+    desc: 'Maintained a 7-day consecutive logging streak',
+    icon: '📅', cat: 'Consistency',
+    check: d => d.streak >= 7,
+    earnedDate: () => 'Currently active',
+    hint: 'Log something every day for 7 days straight',
+  },
+  {
+    id: 'log_50',
+    name: 'Chronicler',
+    desc: 'Accumulated 50 or more garden log entries',
+    icon: '📚', cat: 'Consistency',
+    check: d => d.totalLogs >= 50,
+    earnedDate: () => `${Math.min(d => d.totalLogs, 50)}+ entries`,
+    hint: 'Reach 50 total log entries',
+  },
+  {
+    id: 'seed_saver',
+    name: 'Seed Keeper',
+    desc: 'Logged a successful seed-saving activity',
+    icon: '🌾', cat: 'Consistency',
+    check: d => d.logs.some(l => (l.activity_type||'').toLowerCase().includes('seed')),
+    earnedDate: d => {
+      const l = d.logs.find(x => (x.activity_type||'').toLowerCase().includes('seed'));
+      return l?.log_date ? fmtDate(l.log_date) : 'Logged';
+    },
+    hint: 'Log an activity with "seed" in the activity type',
+  },
+];
 
-  const WMO = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',80:'🌦',95:'⛈'};
+// ── Data loading ──────────────────────────────────
+let _data = null;
 
-  try {
-    const btn = document.getElementById('weather-refresh-btn');
-    btn.classList.add('loading');
-    btn.textContent = '…';
+async function loadData() {
+  const past90 = daysAgo(90);
+  const past365 = daysAgo(365);
 
-    const res  = await fetch(url);
-    const data = await res.json();
-    const cur  = data.current;
-    const day  = data.daily;
-
-    const tempF  = Math.round(cur.temperature_2m);
-    const icon   = WMO[cur.weathercode] || '🌡';
-    const solar  = ((day.sunshine_duration?.[0] || 0) / 3600).toFixed(1);
-
-    let riskLabel = '✅ LOW', riskClass = 'good';
-    if (tempF <= 36)       { riskLabel = '❄️ FROST';    riskClass = 'danger'; }
-    else if (tempF >= 90)  { riskLabel = '🔥 HEAT';     riskClass = 'danger'; }
-    else if (tempF < 50)   { riskLabel = '⚠️ MODERATE'; riskClass = 'warn';   }
-
-    document.getElementById('w-temp').textContent  = `${icon} ${tempF}°F`;
-    document.getElementById('w-solar').textContent = `${solar} hrs`;
-    document.getElementById('w-risk').textContent  = riskLabel;
-    document.getElementById('w-risk').className    = `climate-val ${riskClass}`;
-    document.getElementById('weather-updated').textContent =
-      new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
-
-    btn.classList.remove('loading');
-    btn.textContent = '↻ Refresh';
-
-    // Persist to weather_logs
-    const today = new Date().toISOString().slice(0,10);
-    await sb.from('weather_logs').upsert({
-      log_date:       today,
-      temp_high_f:    Math.round(day.temperature_2m_max?.[0] || tempF),
-      temp_low_f:     Math.round(day.temperature_2m_min?.[0] || tempF),
-      temp_current_f: tempF,
-      humidity_pct:   cur.relative_humidity_2m,
-      wind_mph:       Math.round(cur.windspeed_10m),
-      solar_hours:    parseFloat(solar),
-      risk_level:     riskLabel,
-      weather_code:   cur.weathercode,
-      precipitation_in: day.precipitation_sum?.[0] || 0,
-    }, { onConflict: 'log_date' });
-
-  } catch(e) {
-    document.getElementById('w-temp').textContent  = '⚠️ Offline';
-    document.getElementById('weather-refresh-btn').textContent = '↻ Refresh';
-    document.getElementById('weather-refresh-btn').classList.remove('loading');
-  }
-}
-
-function refreshWeather() { fetchWeather(); }
-
-// ══════════════════════════════════════════════
-//  MATURITY CALC  (FIX BUG-05: includes recovery_days)
-// ══════════════════════════════════════════════
-function calculateMaturity(planted, maturityDays, recoveryDays = 0) {
-  if (!planted || !maturityDays) return 0;
-  const daysGrown = (Date.now() - new Date(planted).getTime()) / 86400000;
-  const effective = maturityDays + (recoveryDays || 0);
-  return Math.min(100, Math.max(0, Math.floor((daysGrown / effective) * 100)));
-}
-
-function harvestDate(planted, maturityDays, recoveryDays = 0) {
-  if (!planted || !maturityDays) return null;
-  const effective = maturityDays + (recoveryDays || 0);
-  const d = new Date(new Date(planted).getTime() + effective * 86400000);
-  return d;
-}
-
-function daysUntil(date) {
-  return Math.ceil((date.getTime() - Date.now()) / 86400000);
-}
-
-// ══════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════
-async function init() {
-  fetchWeather(); // FIX BUG-01
-  await Promise.all([
-    renderDashboard(),
-    loadLogFeed(),
-    loadWaterPulse(),
+  const [plantRes, scanRes, logRes] = await Promise.all([
+    sb.from('garden_library')
+      .select('id,common_name,emoji,plant_family,is_native,is_host_plant,maturity_days,recovery_days,planted_date'),
+    sb.from('plant_health_scans')
+      .select('id,status,severity,scan_date,plant_name')
+      .order('scan_date', { ascending: true }),
+    sb.from('garden_logs')
+      .select('id,activity_type,log_date')
+      .order('log_date', { ascending: false })
+      .limit(200),
   ]);
+
+  const plants = plantRes.data || [];
+  const scans  = scanRes.data  || [];
+  const logs   = logRes.data   || [];
+
+  const resolvedScans = scans.filter(s => s.status === 'resolved').length;
+  const activeScans   = scans.filter(s => s.status !== 'resolved').length;
+  const totalScans    = scans.length;
+  const firstScanDate = scans[0]?.scan_date || null;
+  const totalLogs     = logs.length;
+  const firstLogDate  = logs.length ? logs[logs.length-1]?.log_date : null;
+
+  // ── Compute log streak ──
+  const logDays = new Set(logs.map(l => l.log_date));
+  let streak = 0;
+  const today = new Date().toISOString().slice(0,10);
+  let check   = new Date();
+  while (true) {
+    const d = check.toISOString().slice(0,10);
+    if (logDays.has(d)) { streak++; check.setDate(check.getDate()-1); }
+    else break;
+  }
+
+  _data = { plants, scans, logs, resolvedScans, activeScans, totalScans, firstScanDate, totalLogs, firstLogDate, streak };
+  return _data;
 }
 
-// ══════════════════════════════════════════════
-//  DASHBOARD  (FIX BUG-04, BUG-05, ISSUE-01,
-//              ISSUE-02, ISSUE-04)
-// ══════════════════════════════════════════════
-async function renderDashboard() {
-  const { data: plants, error } = await sb
-    .from('garden_library')
-    .select('id, common_name, scientific_name, emoji, maturity_days, recovery_days, planted_date, is_native, is_host_plant')
-    .order('common_name');
+// ── Helpers ───────────────────────────────────────
+function daysAgo(n) {
+  const d = new Date(); d.setDate(d.getDate()-n);
+  return d.toISOString().slice(0,10);
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.className='show';
+  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3000);
+}
 
-  if (error || !plants) return;
+// ── Render challenges ─────────────────────────────
+function renderChallenges(data) {
+  $('challenges-loading').style.display = 'none';
+  $('challenges-grid').style.display = 'grid';
 
-  // ── Pollinator IQ (FIX ISSUE-01: native + host) ──────
-  const nativeCount = plants.filter(p => p.is_native).length;
-  const hostCount   = plants.filter(p => p.is_host_plant).length;
-  const total       = plants.length || 1;
-  const iqScore     = Math.min(100, Math.round(((nativeCount * 1.5 + hostCount * 1.0) / total) * 50));
-  document.getElementById('native-iq-count').textContent     = iqScore;
-  document.getElementById('native-species-label').textContent = `${nativeCount} native · ${hostCount} host`;
+  let activeCount = 0;
 
-  // ── Biological Pulse ──────────────────────────────────
-  if (plants.length > 0) {
-    // FIX BUG-05: pass recovery_days to calculateMaturity
-    const avg = Math.floor(
-      plants.reduce((acc, p) => acc + calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days), 0)
-      / plants.length
-    );
-    document.getElementById('health-pct').textContent = `${avg}%`;
-  }
-
-  // ── Plant cards (FIX ISSUE-04: build once, set once) ─
-  const grid     = document.getElementById('seed-grid');
-  const forecast = document.getElementById('harvest-forecast');
-
-  if (plants.length === 0) {
-    grid.innerHTML = '';
-    document.getElementById('empty-state').style.display = 'block';
-    forecast.innerHTML = '<div class="log-empty">No plants recorded yet.</div>';
-    return;
-  }
-
-  document.getElementById('empty-state').style.display = 'none';
-
-  // Sort forecast by harvest date
-  const sorted = [...plants].sort((a, b) => {
-    const da = harvestDate(a.planted_date, a.maturity_days, a.recovery_days);
-    const db = harvestDate(b.planted_date, b.maturity_days, b.recovery_days);
-    if (!da) return 1; if (!db) return -1;
-    return da - db;
-  });
-
-  // Build plant cards (FIX ISSUE-04)
-  grid.innerHTML = plants.map(p => {
-    const pct     = calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days);
-    const hDate   = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-    const ready   = pct >= 100;
-    const penalty = (p.recovery_days || 0) > 0;
-
-    const badges = [
-      p.is_native    ? `<span class="badge badge-native">Native</span>` : '',
-      p.is_host_plant? `<span class="badge badge-host">Host</span>`   : '',
-      ready          ? `<span class="badge badge-harvest">Ready</span>`: '',
-      penalty        ? `<span class="badge badge-penalty">+${p.recovery_days}d penalty</span>` : '',
-    ].filter(Boolean).join('');
-
-    const hDateStr = hDate
-      ? hDate.toLocaleDateString('en-US', { month:'short', day:'numeric' })
-      : 'Unknown';
+  $('challenges-grid').innerHTML = CHALLENGES.map((ch, i) => {
+    const { current, target } = ch.evaluate(data);
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    const complete = pct >= 100;
+    const fillClass = complete ? 'complete' : current > 0 ? 'progress' : 'locked';
+    const statusClass = complete ? 'done' : current > 0 ? 'active' : 'locked';
+    const statusText  = complete ? '✦ Complete' : current > 0 ? `In Progress` : 'Not Started';
+    const seasonColor = SEASON_COLORS[ch.season] || SEASON_COLORS['Year-Round'] || '#c8922a';
+    if (!complete) activeCount++;
 
     return `
-      <div class="plant-card">
-        <div class="plant-name">${p.emoji || '🌱'} ${p.common_name || 'Unknown'}</div>
-        <div class="plant-meta">${p.scientific_name || ''} · Harvest ~${hDateStr}</div>
-        ${badges ? `<div class="plant-badges">${badges}</div>` : ''}
-        <div class="progress-track">
-          <div class="progress-fill ${ready ? 'fill-harvest' : 'fill-growing'}" style="width:${pct}%"></div>
+      <div class="challenge-card${complete?' complete':''}" style="animation-delay:${i*0.06}s">
+        ${ch.deadline !== 'Ongoing' ? `<div class="ch-deadline">${ch.deadline}</div>` : ''}
+        <div class="ch-season">
+          <span class="ch-season-dot" style="background:${seasonColor}"></span>
+          ${ch.season}
         </div>
-        <div style="font-family:var(--mono);font-size:0.55rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;">${pct}% mature</div>
-      </div>`;
-  }).join('');
-
-  // ── Temporal Pulse (FIX ISSUE-02: real dates) ─────────
-  forecast.innerHTML = sorted.map(p => {
-    const pct   = calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days);
-    const hDate = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-    const days  = hDate ? daysUntil(hDate) : null;
-
-    let statusClass = 'status-growing', statusLabel = 'Growing';
-    if (pct >= 100) { statusClass = 'status-ready';  statusLabel = 'Ready Now'; }
-    else if (days !== null && days <= 14) { statusClass = 'status-soon'; statusLabel = `In ${days}d`; }
-
-    const dateStr = hDate
-      ? hDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
-      : '—';
-
-    return `
-      <div class="forecast-item">
-        <div class="forecast-name">${p.emoji || '🌱'} ${p.common_name || 'Unknown'}</div>
-        <div class="forecast-date">Harvest: ${dateStr}</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-          <span class="forecast-status ${statusClass}">${statusLabel}</span>
-          <span class="forecast-pct">${pct}%</span>
+        <div class="ch-title">${ch.icon} ${ch.title}</div>
+        <div class="ch-desc">${ch.desc}</div>
+        <div class="ch-progress-wrap">
+          <div class="ch-prog-label">
+            <span>${current} / ${target}</span>
+            <span class="ch-pct">${pct}%</span>
+          </div>
+          <div class="ch-track">
+            <div class="ch-fill ${fillClass}" style="width:${pct}%"></div>
+          </div>
+          <div class="ch-status ${statusClass}">${statusText}</div>
         </div>
       </div>`;
   }).join('');
+
+  $('s-challenges').textContent = activeCount;
 }
 
-// ══════════════════════════════════════════════
-//  LOG FEED  (FIX BUG-03: actually queries garden_logs)
-// ══════════════════════════════════════════════
-async function loadLogFeed() {
-  const { data: logs } = await sb
-    .from('garden_logs')
-    .select('activity_type, notes, log_date, plant_name')
-    .order('log_date', { ascending: false })
-    .limit(5);
+// ── Render achievements ───────────────────────────
+function renderAchievements(data) {
+  $('achievements-loading').style.display = 'none';
+  $('achievements-grid').style.display = 'grid';
 
-  const feed = document.getElementById('log-feed');
-  if (!logs || logs.length === 0) {
-    feed.innerHTML = '<div class="log-empty">No recent activity.</div>';
-    return;
-  }
+  let earned = 0;
+  const newlyEarned = [];
 
-  const icons = { watering:'💧', fertilizing:'🌿', pruning:'✂️', observation:'👁', harvest:'🌾', treatment:'💊' };
+  $('achievements-grid').innerHTML = ACHIEVEMENTS.map((ach, i) => {
+    let isEarned = false;
+    try { isEarned = ach.check(data); } catch(e) {}
+    if (isEarned) earned++;
 
-  feed.innerHTML = logs.map(log => {
-    const icon    = icons[log.activity_type] || '📋';
-    const dateStr = log.log_date
-      ? new Date(log.log_date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })
-      : '';
+    const dateStr = isEarned ? (()=>{ try{ return ach.earnedDate(data); }catch(e){ return ''; } })() : null;
+
     return `
-      <div class="log-entry">
-        <span style="font-size:1rem;flex-shrink:0;">${icon}</span>
-        <div style="flex:1;">
-          <span style="color:var(--text);font-weight:500;">${log.plant_name || 'Garden'}</span>
-          ${log.activity_type ? ` — ${log.activity_type}` : ''}
-          ${log.notes ? `<br/><span style="font-size:0.7rem;color:var(--muted);">${log.notes}</span>` : ''}
-        </div>
-        <div class="log-time">${dateStr}</div>
+      <div class="badge-card${isEarned?' earned':''}" title="${isEarned?ach.name+' — Earned':ach.hint}"
+        style="animation-delay:${i*0.04}s">
+        <div class="badge-cat">${ach.cat}</div>
+        <div class="badge-medallion">${ach.icon}</div>
+        <div class="badge-name">${ach.name}</div>
+        <div class="badge-desc">${ach.desc}</div>
+        ${isEarned && dateStr
+          ? `<div class="badge-earned-date">✦ ${dateStr}</div>`
+          : `<div class="badge-locked-hint">${ach.hint}</div>`
+        }
       </div>`;
   }).join('');
+
+  // Summary
+  $('s-earned').textContent = earned;
+  $('s-total').textContent  = ACHIEVEMENTS.length;
+  $('s-streak').textContent = data.streak + 'd';
 }
 
-// ══════════════════════════════════════════════
-//  WATER PULSE  (FIX ISSUE-03: queries garden_logs)
-// ══════════════════════════════════════════════
-async function loadWaterPulse() {
-  const past7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10);
+// ── Render Monarch certification ──────────────────
+function renderMonarchCert(data) {
+  const nativeCount = data.plants.filter(p => p.is_native).length;
+  const hostCount   = data.plants.filter(p => p.is_host_plant).length;
+  const activeIssues= data.activeScans;
+  const recentLogs  = data.logs.filter(l => {
+    const d = new Date(l.log_date); const a = new Date(); a.setDate(a.getDate()-30);
+    return d >= a;
+  }).length;
 
-  const { data: logs } = await sb
-    .from('garden_logs')
-    .select('quantity_gal, activity_type')
-    .eq('activity_type', 'watering')
-    .gte('log_date', past7);
+  const nativeMet = nativeCount >= 5;
+  const hostMet   = hostCount   >= 3;
+  const healthMet = activeIssues === 0;
+  const logMet    = recentLogs  >= 5;
 
-  const total = (logs || []).reduce((acc, l) => acc + (parseFloat(l.quantity_gal) || 0), 0);
-  const count = (logs || []).length;
+  // Update display values
+  $('cert-native-val').textContent = `${nativeCount}/5`;
+  $('cert-host-val').textContent   = `${hostCount}/3`;
+  $('cert-health-val').textContent = activeIssues === 0 ? '✓' : activeIssues;
+  $('cert-log-val').textContent    = `${Math.min(recentLogs,5)}/5`;
 
-  document.getElementById('water-stat').textContent = `${total.toFixed(1)} gal/wk`;
-  document.getElementById('water-sub').textContent  =
-    count > 0 ? `${count} watering session${count>1?'s':''} this week` : 'No watering logged this week';
-}
-
-// ══════════════════════════════════════════════
-//  DIAGNOSTIC INTAKE  (FIX BUG-02: wired up)
-// ══════════════════════════════════════════════
-function onDiagFile(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  _diagFile = file;
-
-  const preview = document.getElementById('diag-preview');
-  const submit  = document.getElementById('diag-submit');
-  const reader  = new FileReader();
-  reader.onload = e => {
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    submit.style.display  = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-
-// Drag and drop support for diagnostic
-const diagDrop = document.getElementById('diag-drop');
-diagDrop.addEventListener('dragover',  e => { e.preventDefault(); diagDrop.classList.add('dragover'); });
-diagDrop.addEventListener('dragleave', () => diagDrop.classList.remove('dragover'));
-diagDrop.addEventListener('drop', e => {
-  e.preventDefault();
-  diagDrop.classList.remove('dragover');
-  const file = e.dataTransfer.files?.[0];
-  if (file && file.type.startsWith('image/')) {
-    // Simulate the file input change
-    _diagFile = file;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      document.getElementById('diag-preview').src = ev.target.result;
-      document.getElementById('diag-preview').style.display = 'block';
-      document.getElementById('diag-submit').style.display  = 'block';
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-async function submitDiagnostic() {
-  if (!_diagFile || !_userId) return;
-
-  const btn = document.getElementById('diag-submit');
-  btn.textContent = 'Uploading…';
-  btn.disabled    = true;
-
-  try {
-    const ext  = _diagFile.name.split('.').pop();
-    const path = `diagnostics/${_userId}/${Date.now()}.${ext}`;
-
-    // Upload to Supabase Storage (bucket: "plant-scans")
-    const { error: upErr } = await sb.storage.from('plant-scans').upload(path, _diagFile);
-    if (upErr) throw upErr;
-
-    const { data: { publicUrl } } = sb.storage.from('plant-scans').getPublicUrl(path);
-
-    // Create a pending scan record in plant_health_scans
-    await sb.from('plant_health_scans').insert({
-      user_id:    _userId,
-      image_url:  publicUrl,
-      scan_date:  new Date().toISOString().slice(0,10),
-      status:     'pending',
-      severity:   'unknown',
+  [$('cert-native-val'), $('cert-host-val'), $('cert-health-val'), $('cert-log-val')]
+    .forEach((el, i) => {
+      const met = [nativeMet, hostMet, healthMet, logMet][i];
+      el.className = 'cert-req-val ' + (met ? 'met' : 'unmet');
     });
 
-    // Redirect to clinic for review
-    window.location.href = `clinic.html?scan=new`;
+  const certified = nativeMet && hostMet && healthMet && logMet;
+  const cert = $('monarch-cert');
+  if (certified) {
+    cert.classList.remove('cert-locked');
+    $('cert-earned-banner').style.display = 'block';
+  }
+}
+
+// ── Auth + boot ───────────────────────────────────
+document.getElementById('logout-btn').onclick = async () => {
+  await sb.auth.signOut(); location.reload();
+};
+
+async function boot() {
+  try {
+    const data = await loadData();
+    renderChallenges(data);
+    renderAchievements(data);
+    renderMonarchCert(data);
   } catch(e) {
-    btn.textContent = '→ Send to Clinic';
-    btn.disabled    = false;
-    alert('Upload failed: ' + e.message);
+    console.error('[Achievements] boot error:', e);
+    toast('Error loading data: ' + e.message);
   }
 }
 
-// ══════════════════════════════════════════════
-//  ADD PLANT MODAL  (FIX BUG-04: correct column names
-//                   FIX ISSUE-05: validation + error handling)
-// ══════════════════════════════════════════════
-function openModal() {
-  // Set today's date as default planted date
-  document.getElementById('p-planted').value = new Date().toISOString().slice(0,10);
-  document.getElementById('add-modal').classList.remove('hidden');
-  document.getElementById('modal-error').textContent = '';
-  document.getElementById('p-name').focus();
-}
-function closeModal() {
-  document.getElementById('add-modal').classList.add('hidden');
-  // Reset
-  ['p-name','p-scientific','p-days','p-emoji'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('p-native').checked = false;
-  document.getElementById('p-host').checked   = false;
-  document.getElementById('modal-error').textContent = '';
-  document.getElementById('btn-save-plant').disabled = false;
-}
+// Session-aware boot: works logged in or out (anon read)
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  boot();
+})();
 
-async function saveNewPlant() {
-  const nameEl  = document.getElementById('p-name');
-  const daysEl  = document.getElementById('p-days');
-  const errEl   = document.getElementById('modal-error');
-  const saveBtn = document.getElementById('btn-save-plant');
-  errEl.textContent = '';
-  errEl.classList.remove('modal-success');
-
-  // FIX ISSUE-05: validation
-  if (!nameEl.value.trim()) { errEl.textContent = 'Plant name is required.'; return; }
-  if (!daysEl.value || parseInt(daysEl.value) < 1) { errEl.textContent = 'Valid maturity days required.'; return; }
-
-  saveBtn.disabled    = true;
-  saveBtn.textContent = 'Recording…';
-
-  // FIX BUG-04: correct column names matching Supabase schema
-  const { error } = await sb.from('garden_library').insert({
-    user_id:        _userId,
-    common_name:    nameEl.value.trim(),                             // was: name
-    scientific_name:document.getElementById('p-scientific').value.trim() || null,
-    emoji:          document.getElementById('p-emoji').value.trim() || null,
-    maturity_days:  parseInt(daysEl.value),                          // was: days_to_mature
-    recovery_days:  0,                                               // new v10.6 column, default 0
-    planted_date:   document.getElementById('p-planted').value || new Date().toISOString().slice(0,10), // was: date_planted
-    is_native:      document.getElementById('p-native').checked,
-    is_host_plant:  document.getElementById('p-host').checked,       // was: is_host
-  });
-
-  saveBtn.disabled    = false;
-  saveBtn.textContent = 'Record Plant';
-
-  if (error) {
-    errEl.textContent = error.message;
-  } else {
-    errEl.classList.add('modal-success');
-    errEl.textContent = `✓ ${nameEl.value.trim()} recorded!`;
-    setTimeout(() => { closeModal(); renderDashboard(); }, 800);
-  }
-}
-
-// Close modals on backdrop click
-document.getElementById('add-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('add-modal')) closeModal();
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') boot();
 });
 </script>
 </body>
 </html>
-
