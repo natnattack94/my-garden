@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GardenHub OS | Companion Planting</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:          #0d160d;
+  --surface:     #111e11;
+  --surface2:    #162016;
+  --surface3:    #1c2a1c;
+  --border:      #1e321e;
+  --border2:     #254825;
+
+  --green:       #4a9a4a;
+  --green-lt:    #72c472;
+  --green-pale:  rgba(74,154,74,0.1);
+  --red:         #c44040;
+  --red-lt:      #e86060;
+  --red-pale:    rgba(196,64,64,0.1);
+  --amber:       #c8841a;
+  --amber-lt:    #e8a840;
+  --amber-pale:  rgba(200,132,26,0.1);
+  --cream:       #e8dfc4;
+  --cream2:      #c8b890;
+  --muted:       #4a6a4a;
+  --faint:       #2a3a2a;
+
+  --serif: 'Spectral', Georgia, serif;
+  --mono:  'DM Mono', monospace;
+  --sans:  'DM Sans', sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--sans);
+  min-height: 100vh;
+}
+
+/* Leaf-vein watermark pattern */
+body::before {
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(120deg, transparent 0, transparent 38px, rgba(74,154,74,0.025) 38px, rgba(74,154,74,0.025) 39px),
+    repeating-linear-gradient(60deg,  transparent 0, transparent 38px, rgba(74,154,74,0.018) 38px, rgba(74,154,74,0.018) 39px);
+}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── Nav ──────────────────────────────────── */
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(13,22,13,0.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.7rem 1.75rem;gap:1rem;
+}
+.logo-block{display:flex;align-items:baseline;gap:0.75rem;}
+.logo-eye{font-family:var(--mono);font-size:0.48rem;color:var(--muted);letter-spacing:0.22em;text-transform:uppercase;}
+.logo-name{font-family:var(--serif);font-size:1.15rem;color:var(--green-lt);font-style:italic;}
+
+nav{display:flex;gap:0.35rem;flex-wrap:wrap;}
+.nav-link{
+  font-family:var(--mono);font-size:0.52rem;letter-spacing:0.07em;text-transform:uppercase;
+  text-decoration:none;padding:0.28rem 0.55rem;
+  border:1px solid var(--border);color:var(--muted);
+  background:transparent;cursor:pointer;transition:all 0.15s;
+}
+.nav-link:hover{border-color:var(--border2);color:var(--cream);}
+.nav-link.active{border-color:var(--green);color:var(--green-lt);}
+.nav-link.danger:hover{border-color:#f08080;color:#f08080;}
+
+/* ── Layout ───────────────────────────────── */
+.layout{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:260px 1fr 340px;
+  min-height:calc(100vh - 48px);
+}
+
+/* ── Left panel — plant index ─────────────── */
+.plant-index{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:48px;height:calc(100vh - 48px);
+  overflow:hidden;
+}
+.pi-header{
+  padding:1rem;border-bottom:1px solid var(--border);
+  flex-shrink:0;display:flex;flex-direction:column;gap:0.5rem;
+}
+.pi-title{font-family:var(--serif);font-size:0.95rem;font-style:italic;color:var(--cream);}
+.pi-search{
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--cream);padding:0.4rem 0.65rem;
+  font-family:var(--mono);font-size:0.62rem;outline:none;
+  transition:border-color 0.15s;width:100%;
+}
+.pi-search:focus{border-color:var(--green);}
+.pi-search::placeholder{color:var(--faint);}
+
+.pi-tabs{display:flex;gap:0;flex-shrink:0;}
+.pi-tab{
+  flex:1;padding:0.35rem;text-align:center;
+  font-family:var(--mono);font-size:0.48rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s;
+}
+.pi-tab.on{color:var(--green-lt);border-color:var(--green);}
+.pi-tab:hover{color:var(--cream);}
+
+.pi-list{flex:1;overflow-y:auto;padding:0.5rem 0;}
+
+.pi-item{
+  display:flex;align-items:center;gap:0.6rem;
+  padding:0.55rem 1rem;cursor:pointer;transition:background 0.12s;
+  border-left:2px solid transparent;
+}
+.pi-item:hover{background:var(--surface2);}
+.pi-item.active{background:var(--surface3);border-left-color:var(--green);}
+.pi-item.has-conflict{border-left-color:var(--red);}
+.pi-item.has-opportunity{border-left-color:var(--amber);}
+
+.pi-emoji{font-size:1.1rem;flex-shrink:0;}
+.pi-name{font-family:var(--serif);font-size:0.82rem;font-style:italic;color:var(--cream);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pi-badges{display:flex;gap:2px;flex-shrink:0;}
+.pi-badge{
+  width:6px;height:6px;border-radius:50%;
+}
+.pi-badge.good{background:var(--green);}
+.pi-badge.bad{background:var(--red);}
+.pi-badge.new{background:var(--amber);}
+
+.pi-section-label{
+  font-family:var(--mono);font-size:0.44rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--faint);padding:0.6rem 1rem 0.25rem;
+}
+
+/* ── Centre — detail view ─────────────────── */
+.detail-view{
+  padding:1.5rem 2rem 5rem;
+  overflow-y:auto;
+}
+
+/* Welcome state */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:60vh;text-align:center;gap:1rem;padding:2rem;
+}
+.welcome-icon{font-size:4rem;opacity:0.5;}
+.welcome-title{font-family:var(--serif);font-size:1.8rem;font-style:italic;color:var(--cream);opacity:0.6;}
+.welcome-sub{font-family:var(--mono);font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+
+/* Plant detail header */
+.detail-header{
+  display:flex;align-items:flex-start;gap:1.5rem;
+  margin-bottom:1.75rem;padding-bottom:1.25rem;
+  border-bottom:1px solid var(--border);
+}
+.detail-emoji{
+  font-size:3.5rem;flex-shrink:0;
+  width:72px;height:72px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface2);border:1px solid var(--border2);
+}
+.detail-meta{flex:1;}
+.detail-name{font-family:var(--serif);font-size:2rem;font-style:italic;font-weight:600;color:var(--cream);line-height:1.1;margin-bottom:0.25rem;}
+.detail-sci{font-family:var(--serif);font-size:0.85rem;font-style:italic;color:var(--cream2);margin-bottom:0.5rem;}
+.detail-tags{display:flex;gap:0.4rem;flex-wrap:wrap;}
+.detail-tag{
+  font-family:var(--mono);font-size:0.45rem;letter-spacing:0.12em;text-transform:uppercase;
+  padding:0.18rem 0.5rem;border:1px solid;
+}
+.tag-native{color:var(--green-lt);border-color:var(--green);}
+.tag-host{color:var(--amber-lt);border-color:var(--amber);}
+.tag-family{color:var(--cream2);border-color:var(--border2);}
+.tag-in-library{color:var(--green-lt);border-color:var(--green);background:var(--green-pale);}
+.tag-not-library{color:var(--faint);border-color:var(--faint);}
+
+/* Status strip */
+.status-strip{
+  display:flex;gap:1px;margin-bottom:1.5rem;
+}
+.status-block{
+  flex:1;padding:0.65rem 0.85rem;background:var(--surface2);
+  border:1px solid var(--border);text-align:center;
+}
+.sb-num{font-family:var(--serif);font-size:1.4rem;font-style:italic;line-height:1;}
+.sb-num.green{color:var(--green-lt);}
+.sb-num.red{color:var(--red-lt);}
+.sb-num.amber{color:var(--amber-lt);}
+.sb-lbl{font-family:var(--mono);font-size:0.43rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+/* ── Constellation diagram ────────────────── */
+.constellation-wrap{
+  background:var(--surface2);border:1px solid var(--border);
+  margin-bottom:1.5rem;padding:1rem;
+}
+.constellation-eye{font-family:var(--mono);font-size:0.46rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;}
+#constellation-svg{display:block;width:100%;height:240px;}
+
+/* ── Companion lists ──────────────────────── */
+.companion-section{margin-bottom:1.5rem;}
+.cs-head{
+  display:flex;align-items:center;gap:0.75rem;
+  margin-bottom:0.75rem;
+}
+.cs-head::after{content:'';flex:1;height:1px;background:var(--border);}
+.cs-label{
+  font-family:var(--mono);font-size:0.5rem;letter-spacing:0.18em;text-transform:uppercase;
+  display:flex;align-items:center;gap:0.4rem;white-space:nowrap;
+}
+.cs-label.good{color:var(--green-lt);}
+.cs-label.bad{color:var(--red-lt);}
+.cs-label.suggest{color:var(--amber-lt);}
+
+.companion-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:0.6rem;
+}
+
+.companion-card{
+  background:var(--surface2);border:1px solid var(--border);
+  padding:0.75rem 0.85rem;
+  cursor:pointer;transition:all 0.15s;
+  position:relative;overflow:hidden;
+}
+.companion-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+}
+.companion-card.good::before{background:var(--green);}
+.companion-card.bad::before{background:var(--red);}
+.companion-card.suggest::before{background:var(--amber);opacity:0.6;}
+.companion-card.in-library.good{border-color:rgba(74,154,74,0.4);}
+.companion-card.in-library.bad{border-color:rgba(196,64,64,0.4);}
+.companion-card:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,0.4);}
+
+.cc-top{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;}
+.cc-emoji{font-size:1rem;}
+.cc-name{font-family:var(--serif);font-size:0.85rem;font-style:italic;color:var(--cream);flex:1;}
+.cc-lib{font-family:var(--mono);font-size:0.42rem;letter-spacing:0.1em;text-transform:uppercase;}
+.cc-lib.in{color:var(--green);} 
+.cc-lib.out{color:var(--faint);}
+.cc-reason{font-family:var(--sans);font-size:0.67rem;color:var(--cream2);line-height:1.5;}
+
+.empty-companions{
+  font-family:var(--mono);font-size:0.58rem;color:var(--muted);
+  padding:1rem;text-align:center;border:1px dashed var(--border);
+  letter-spacing:0.06em;
+}
+
+/* Notes block */
+.detail-notes{
+  background:var(--surface2);border:1px solid var(--border);
+  border-left:3px solid var(--green);
+  padding:0.85rem 1rem;
+  font-family:var(--serif);font-size:0.82rem;font-style:italic;
+  color:var(--cream2);line-height:1.7;
+  margin-bottom:1.5rem;
+}
+
+/* ── Right panel — garden analysis ───────── */
+.garden-analysis{
+  background:var(--surface);
+  border-left:1px solid var(--border);
+  position:sticky;top:48px;height:calc(100vh - 48px);
+  overflow-y:auto;
+  padding:1.25rem 1rem;
+  display:flex;flex-direction:column;gap:1.25rem;
+}
+.ga-title{
+  font-family:var(--mono);font-size:0.48rem;letter-spacing:0.2em;
+  text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);padding-bottom:0.5rem;
+  margin-bottom:0;
+}
+
+/* Conflict / opportunity rows */
+.analysis-section{display:flex;flex-direction:column;gap:0.5rem;}
+.as-head{font-family:var(--mono);font-size:0.46rem;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:0.25rem;}
+.as-head.conflicts{color:var(--red-lt);}
+.as-head.opps{color:var(--amber-lt);}
+.as-head.wins{color:var(--green-lt);}
+
+.analysis-row{
+  background:var(--surface2);border:1px solid var(--border);
+  padding:0.55rem 0.65rem;
+  display:flex;align-items:flex-start;gap:0.5rem;
+  border-left:3px solid;
+  cursor:pointer;transition:background 0.12s;
+  animation:fadeUp 0.25s ease both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.analysis-row:hover{background:var(--surface3);}
+.analysis-row.conflict{border-left-color:var(--red);}
+.analysis-row.opportunity{border-left-color:var(--amber);}
+.analysis-row.win{border-left-color:var(--green);}
+.ar-emoji{font-size:0.9rem;flex-shrink:0;margin-top:1px;}
+.ar-body{flex:1;min-width:0;}
+.ar-pair{font-family:var(--serif);font-size:0.75rem;font-style:italic;color:var(--cream);line-height:1.2;}
+.ar-reason{font-family:var(--sans);font-size:0.62rem;color:var(--muted);line-height:1.4;margin-top:1px;}
+
+.ga-score{
+  text-align:center;padding:0.85rem;
+  background:var(--surface2);border:1px solid var(--border);
+}
+.ga-score-num{font-family:var(--serif);font-size:2.5rem;font-style:italic;font-weight:600;line-height:1;}
+.ga-score-lbl{font-family:var(--mono);font-size:0.45rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+.ga-score-sub{font-family:var(--serif);font-size:0.72rem;font-style:italic;color:var(--cream2);margin-top:4px;}
+
+.ga-empty{font-family:var(--mono);font-size:0.55rem;color:var(--faint);text-align:center;padding:1.5rem;letter-spacing:0.06em;}
+
+/* ── Skeletons ────────────────────────────── */
+.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:400%;animation:sk 1.4s ease infinite;}
+@keyframes sk{0%{background-position:100%}100%{background-position:-100%}}
+
+/* ── Toast ────────────────────────────────── */
+#toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:800;
+  background:var(--surface2);color:var(--green-lt);
+  border:1px solid var(--green);padding:0.65rem 1rem;
+  font-family:var(--mono);font-size:0.6rem;letter-spacing:0.08em;
+  opacity:0;transform:translateY(6px);
+  transition:opacity 0.2s,transform 0.2s;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:1100px){
+  .layout{grid-template-columns:220px 1fr;}
+  .garden-analysis{display:none;}
+}
+@media(max-width:700px){
+  .layout{grid-template-columns:1fr;}
+  .plant-index{display:none;}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ═══ NAV ═══ -->
+<div class="top-bar">
+  <div class="logo-block">
+    <div class="logo-eye">GardenHub OS // v10.6</div>
+    <div class="logo-name">Companion Planting</div>
+  </div>
+  <nav>
+    <a href="index.html"        class="nav-link">Dashboard</a>
+    <a href="map.html"          class="nav-link">Map</a>
+    <a href="insights.html"     class="nav-link">Insights</a>
+    <a href="clinic.html"       class="nav-link">Clinic</a>
+    <a href="library.html"      class="nav-link">Library</a>
+    <a href="calendar.html"     class="nav-link">Calendar</a>
+    <a href="achievements.html" class="nav-link">Medals</a>
+    <a href="journal.html"      class="nav-link">Journal</a>
+    <a href="snapshot.html"     class="nav-link">Snapshot</a>
+    <a href="weather.html"      class="nav-link">Weather</a>
+    <a href="companions.html"   class="nav-link active">Companions</a>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
+</div>
+
+<!-- ═══ LAYOUT ═══ -->
+<div class="layout">
+
+  <!-- LEFT: plant index -->
+  <div class="plant-index">
+    <div class="pi-header">
+      <div class="pi-title">Plant Reference</div>
+      <input type="text" class="pi-search" id="pi-search" placeholder="Search plants…" oninput="filterIndex()"/>
+    </div>
+    <div class="pi-tabs">
+      <div class="pi-tab on" data-tab="library" onclick="switchTab(this)">My Library</div>
+      <div class="pi-tab"    data-tab="all"     onclick="switchTab(this)">All Plants</div>
+    </div>
+    <div class="pi-list" id="pi-list">
+      <div class="skel" style="height:44px;margin:4px 8px;"></div>
+      <div class="skel" style="height:44px;margin:4px 8px;animation-delay:0.08s"></div>
+      <div class="skel" style="height:44px;margin:4px 8px;animation-delay:0.16s"></div>
+      <div class="skel" style="height:44px;margin:4px 8px;animation-delay:0.24s"></div>
+    </div>
+  </div>
+
+  <!-- CENTRE: detail -->
+  <div class="detail-view" id="detail-view">
+    <div class="welcome" id="welcome-state">
+      <div class="welcome-icon">🌿</div>
+      <div class="welcome-title">Companion Planting Reference</div>
+      <div class="welcome-sub">Select a plant to see good &amp; bad pairings</div>
+    </div>
+    <div id="detail-content" style="display:none;"></div>
+  </div>
+
+  <!-- RIGHT: garden analysis -->
+  <div class="garden-analysis">
+    <div class="ga-title">Your Garden Analysis</div>
+    <div id="ga-score" class="ga-score">
+      <div class="ga-score-num" id="ga-score-num" style="color:var(--green-lt)">—</div>
+      <div class="ga-score-lbl">Companion Score</div>
+      <div class="ga-score-sub" id="ga-score-sub">Loading…</div>
+    </div>
+    <div class="analysis-section">
+      <div class="as-head conflicts">⚠ Conflicts in Your Garden</div>
+      <div id="ga-conflicts"><div class="ga-empty">Loading…</div></div>
+    </div>
+    <div class="analysis-section">
+      <div class="as-head wins">✓ Active Good Pairings</div>
+      <div id="ga-wins"><div class="ga-empty">Loading…</div></div>
+    </div>
+    <div class="analysis-section">
+      <div class="as-head opps">+ Opportunities</div>
+      <div id="ga-opps"><div class="ga-empty">Loading…</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  GardenHub OS — Companion Planting Reference v10.6
+//
+//  COMPANION_DB: built-in knowledge base of ~45 plants
+//  with good/bad pairings + reasons, cross-referenced
+//  against your actual garden_library at runtime.
+// ══════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+
+// ══════════════════════════════════════════════════
+//  COMPANION DATABASE
+//  Each entry: { emoji, scientific, family, notes,
+//    good: [{name, reason}],
+//    bad:  [{name, reason}] }
+// ══════════════════════════════════════════════════
+const COMPANION_DB = {
+  'Tomato': {
+    emoji:'🍅', scientific:'Solanum lycopersicum', family:'Solanaceae',
+    notes:'Heavy feeder; benefits from aromatic neighbors that confuse or repel pest insects. Avoid alliums — they stunt root development.',
+    good:[
+      {name:'Basil',    reason:'Repels aphids, whiteflies, and tomato hornworm. May improve flavor.'},
+      {name:'Marigold', reason:'Root secretions deter nematodes; flowers attract beneficial insects.'},
+      {name:'Carrot',   reason:'Loosens soil around tomato roots; compatible root zones.'},
+      {name:'Parsley',  reason:'Attracts predatory wasps that prey on tomato hornworm.'},
+      {name:'Borage',   reason:'Repels tomato hornworm; attracts pollinators; adds trace minerals.'},
+      {name:'Zinnia',   reason:'Attracts ladybugs and other aphid predators.'},
+      {name:'Nasturtium',reason:'Trap crop for aphids; draws aphids away from tomatoes.'},
+    ],
+    bad:[
+      {name:'Fennel',    reason:'Allelopathic — root secretions inhibit tomato growth.'},
+      {name:'Kohlrabi',  reason:'Stunts tomato growth when planted in close proximity.'},
+      {name:'Cabbage',   reason:'Heavy brassica competition; both are large feeders.'},
+      {name:'Corn',      reason:'Both attract the same earworm species; amplifies pest pressure.'},
+    ],
+  },
+  'Basil': {
+    emoji:'🌿', scientific:'Ocimum basilicum', family:'Lamiaceae',
+    notes:'Aromatic volatile oils act as a broad-spectrum insect deterrent. Very sensitive to cold; plant after last frost.',
+    good:[
+      {name:'Tomato',   reason:'Classic pairing — repels pests and may improve tomato flavor.'},
+      {name:'Pepper',   reason:'Deters aphids and spider mites from pepper plants.'},
+      {name:'Asparagus',reason:'Repels asparagus beetle when interplanted.'},
+    ],
+    bad:[
+      {name:'Sage',     reason:'Competing aromatics inhibit each other\'s growth.'},
+      {name:'Thyme',    reason:'Allelopathic relationship reduces yield of both.'},
+    ],
+  },
+  'Marigold': {
+    emoji:'🌼', scientific:'Tagetes spp.', family:'Asteraceae',
+    notes:'One of the most universally beneficial companion plants. French marigold (T. patula) is most effective against nematodes — requires at least a 3-month planting.',
+    good:[
+      {name:'Tomato',   reason:'Nematode deterrent in soil; attracts beneficial insects above ground.'},
+      {name:'Pepper',   reason:'Deters whiteflies and aphids.'},
+      {name:'Eggplant', reason:'Repels Colorado potato beetle.'},
+      {name:'Squash',   reason:'Deters squash vine borer and cucumber beetles.'},
+      {name:'Rose',     reason:'Controls aphid populations on rose bushes.'},
+    ],
+    bad:[
+      {name:'Bean',     reason:'Marigold root secretions inhibit bean germination.'},
+    ],
+  },
+  'Carrot': {
+    emoji:'🥕', scientific:'Daucus carota', family:'Apiaceae',
+    notes:'Tap root aerates soil for shallow-rooted neighbors. Flowers attract beneficial wasps and hoverflies when allowed to bolt.',
+    good:[
+      {name:'Tomato',   reason:'Loosens soil; root zones are complementary.'},
+      {name:'Lettuce',  reason:'Shade from lettuce keeps carrot soil cool and moist.'},
+      {name:'Onion',    reason:'Onion scent repels carrot fly.'},
+      {name:'Rosemary', reason:'Repels carrot fly with strong aromatic oils.'},
+      {name:'Chives',   reason:'Deters aphids and carrot rust fly.'},
+      {name:'Leek',     reason:'Mutual pest deterrence — carrot fly / leek moth.'},
+    ],
+    bad:[
+      {name:'Dill',     reason:'Dill, when mature, inhibits carrot germination and growth.'},
+      {name:'Parsnip',  reason:'Compete heavily and share the same pests.'},
+    ],
+  },
+  'Bean': {
+    emoji:'🫘', scientific:'Phaseolus vulgaris', family:'Fabaceae',
+    notes:'Nitrogen fixer — improves soil for subsequent crops. Grows well vertically on corn stalks in the classic Three Sisters combination.',
+    good:[
+      {name:'Corn',     reason:'Three Sisters: bean fixes nitrogen that corn consumes.'},
+      {name:'Squash',   reason:'Three Sisters: squash ground cover shades weeds, retains moisture.'},
+      {name:'Carrot',   reason:'Bean nitrogen benefits carrot growth.'},
+      {name:'Cucumber', reason:'Compatible nitrogen sharing.'},
+      {name:'Strawberry',reason:'Bean fixes nitrogen that improves strawberry fruiting.'},
+    ],
+    bad:[
+      {name:'Onion',    reason:'Onion family inhibits bean growth.'},
+      {name:'Garlic',   reason:'Stunts bean development.'},
+      {name:'Fennel',   reason:'Allelopathic — inhibits bean germination.'},
+      {name:'Kohlrabi', reason:'Brassica chemicals suppress bean growth.'},
+    ],
+  },
+  'Corn': {
+    emoji:'🌽', scientific:'Zea mays', family:'Poaceae',
+    notes:'Wind pollinator — needs to be planted in blocks not rows. Tall stalks provide physical support for climbing beans.',
+    good:[
+      {name:'Bean',     reason:'Beans fix nitrogen; use corn stalks to climb.'},
+      {name:'Squash',   reason:'Squash leaves shade ground, reducing corn weed competition.'},
+      {name:'Cucumber', reason:'Cucumber can climb corn stalks; compatible root zones.'},
+      {name:'Melon',    reason:'Sprawling melon vines suppress weeds around corn.'},
+    ],
+    bad:[
+      {name:'Tomato',   reason:'Both attract corn earworm / tomato fruitworm — same pest.'},
+      {name:'Celery',   reason:'Compete for the same soil nutrients aggressively.'},
+    ],
+  },
+  'Squash': {
+    emoji:'🎃', scientific:'Cucurbita spp.', family:'Cucurbitaceae',
+    notes:'Large ground-covering leaves suppress weeds effectively. Requires robust pollinator presence — interplant with flowers.',
+    good:[
+      {name:'Corn',     reason:'Three Sisters: shades weeds, retains soil moisture.'},
+      {name:'Bean',     reason:'Three Sisters nitrogen cycle complement.'},
+      {name:'Nasturtium',reason:'Trap crop for aphids and squash bugs.'},
+      {name:'Marigold', reason:'Repels squash vine borer and cucumber beetles.'},
+      {name:'Borage',   reason:'Deters tomato hornworm; attracts pollinators for fruiting.'},
+    ],
+    bad:[
+      {name:'Potato',   reason:'Both susceptible to blight; amplifies pathogen pressure.'},
+    ],
+  },
+  'Lettuce': {
+    emoji:'🥬', scientific:'Lactuca sativa', family:'Asteraceae',
+    notes:'Shade tolerant — thrives under taller plants in summer. Quick crop; fill spaces between slower plants.',
+    good:[
+      {name:'Carrot',   reason:'Carrot roots loosen soil; compatible water needs.'},
+      {name:'Radish',   reason:'Radish acts as trap crop for flea beetles.'},
+      {name:'Strawberry',reason:'Compatible moisture needs; strawberry mulch retains water.'},
+      {name:'Chives',   reason:'Repels aphids from lettuce.'},
+      {name:'Spinach',  reason:'Similar needs; grow together as a cut-and-come-again bed.'},
+    ],
+    bad:[
+      {name:'Celery',   reason:'Celery secretions inhibit lettuce germination.'},
+      {name:'Fennel',   reason:'Inhibitory allelopathic effect on lettuce.'},
+    ],
+  },
+  'Pepper': {
+    emoji:'🌶', scientific:'Capsicum annuum', family:'Solanaceae',
+    notes:'Slow starter; start indoors 8–10 weeks before last frost. Benefits strongly from warm companions that deter early-season insects.',
+    good:[
+      {name:'Basil',    reason:'Repels aphids and spider mites.'},
+      {name:'Carrot',   reason:'Root zone compatibility; carrot loosens soil.'},
+      {name:'Marigold', reason:'Broad spectrum insect deterrent.'},
+      {name:'Onion',    reason:'Onion scent deters aphids and pepper weevil.'},
+      {name:'Parsley',  reason:'Attracts beneficial predatory wasps.'},
+    ],
+    bad:[
+      {name:'Fennel',   reason:'Allelopathic — suppresses pepper growth.'},
+      {name:'Kohlrabi', reason:'Inhibits pepper development in close planting.'},
+    ],
+  },
+  'Onion': {
+    emoji:'🧅', scientific:'Allium cepa', family:'Amaryllidaceae',
+    notes:'Sulfur compounds act as broad-spectrum pest deterrent. Do not plant near beans or peas — inhibits nodule formation.',
+    good:[
+      {name:'Carrot',   reason:'Mutual pest deterrence: onion repels carrot fly, carrot deters onion fly.'},
+      {name:'Tomato',   reason:'Onion scent deters many tomato pests.'},
+      {name:'Pepper',   reason:'Broad aphid deterrence.'},
+      {name:'Lettuce',  reason:'Compatible; onion scent deters lettuce pests.'},
+      {name:'Strawberry',reason:'Repels many berry pests.'},
+      {name:'Rose',     reason:'Planted nearby repels aphids and black spot.'},
+    ],
+    bad:[
+      {name:'Bean',     reason:'Onion sulfur compounds inhibit bean nitrogen fixation.'},
+      {name:'Pea',      reason:'Same inhibition mechanism as with beans.'},
+      {name:'Asparagus',reason:'Compete for nutrients; allelopathic relationship.'},
+    ],
+  },
+  'Garlic': {
+    emoji:'🧄', scientific:'Allium sativum', family:'Amaryllidaceae',
+    notes:'Potent sulfur compounds deter a broad range of fungal pathogens and insects. Plant in fall for summer harvest.',
+    good:[
+      {name:'Rose',      reason:'Classic pairing — garlic planted around roses repels aphids and black spot fungus.'},
+      {name:'Tomato',    reason:'Deters spider mites and aphids.'},
+      {name:'Fruit trees',reason:'Planted at drip line deters borers and fungal disease.'},
+      {name:'Raspberry', reason:'Deters Japanese beetle and aphids.'},
+    ],
+    bad:[
+      {name:'Bean',      reason:'Stunts bean growth significantly.'},
+      {name:'Pea',       reason:'Same allium inhibition as onion.'},
+      {name:'Asparagus', reason:'Competition and allelopathy.'},
+      {name:'Strawberry',reason:'Inhibits strawberry development.'},
+    ],
+  },
+  'Cucumber': {
+    emoji:'🥒', scientific:'Cucumis sativus', family:'Cucurbitaceae',
+    notes:'Climber — train vertically to save space and improve air circulation, reducing fungal risk.',
+    good:[
+      {name:'Bean',      reason:'Nitrogen from beans benefits cucumbers.'},
+      {name:'Corn',      reason:'Can climb corn stalks; compatible.'},
+      {name:'Nasturtium',reason:'Trap crop for aphids; attracts pollinators.'},
+      {name:'Sunflower', reason:'Provides structure for cucumber to climb.'},
+      {name:'Radish',    reason:'Deters cucumber beetle.'},
+    ],
+    bad:[
+      {name:'Potato',    reason:'Potatoes harbor blight that can spread to cucumbers.'},
+      {name:'Aromatic herbs',reason:'Strong aromatics like sage and rosemary inhibit cucumber.'},
+      {name:'Melon',     reason:'Compete aggressively; share same pests and diseases.'},
+    ],
+  },
+  'Radish': {
+    emoji:'🌱', scientific:'Raphanus sativus', family:'Brassicaceae',
+    notes:'Fast-growing trap crop. Excellent gap filler between slow-growing plants. Mature in 25–30 days.',
+    good:[
+      {name:'Lettuce',   reason:'Acts as trap crop for flea beetles that would attack lettuce.'},
+      {name:'Cucumber',  reason:'Repels cucumber beetle.'},
+      {name:'Carrot',    reason:'Loosens soil as it grows; marks carrot rows.'},
+      {name:'Spinach',   reason:'Compatible; radish shades spinach roots.'},
+      {name:'Squash',    reason:'Deters squash vine borer.'},
+    ],
+    bad:[
+      {name:'Hyssop',    reason:'Inhibits radish development.'},
+    ],
+  },
+  'Spinach': {
+    emoji:'🥬', scientific:'Spinacia oleracea', family:'Amaranthaceae',
+    notes:'Cool season crop; bolts in heat. Ideal companion for tall plants that provide afternoon shade in summer.',
+    good:[
+      {name:'Strawberry',reason:'Compatible needs; strawberry mulch benefits both.'},
+      {name:'Pea',       reason:'Pea nitrogen improves spinach growth; both are cool season.'},
+      {name:'Radish',    reason:'Root zone compatibility.'},
+      {name:'Lettuce',   reason:'Compatible mixed greens bed.'},
+    ],
+    bad:[
+      {name:'Fennel',    reason:'Allelopathic inhibition.'},
+    ],
+  },
+  'Pea': {
+    emoji:'🫛', scientific:'Pisum sativum', family:'Fabaceae',
+    notes:'Nitrogen fixer like beans. Cool season — plant as early as 6 weeks before last frost. Great trellis companion.',
+    good:[
+      {name:'Carrot',    reason:'Classic combination; pea fixes nitrogen, carrot benefits.'},
+      {name:'Turnip',    reason:'Compatible root zones.'},
+      {name:'Spinach',   reason:'Both cool season; compatible needs.'},
+      {name:'Radish',    reason:'Radish deters aphids common on peas.'},
+    ],
+    bad:[
+      {name:'Onion',     reason:'Allium compounds inhibit pea growth.'},
+      {name:'Garlic',    reason:'Same allium inhibition.'},
+    ],
+  },
+  'Potato': {
+    emoji:'🥔', scientific:'Solanum tuberosum', family:'Solanaceae',
+    notes:'Heavy feeder; needs hilling as tubers develop. Susceptible to blight — avoid prolonged wet periods and crowding.',
+    good:[
+      {name:'Horseradish',reason:'Planted at corners repels Colorado potato beetle.'},
+      {name:'Bean',       reason:'Beans fix nitrogen; both benefit.'},
+      {name:'Marigold',   reason:'Repels Colorado potato beetle.'},
+      {name:'Nasturtium', reason:'Trap crop for aphids on potato.'},
+    ],
+    bad:[
+      {name:'Tomato',     reason:'Same family; share blight and other pathogens.'},
+      {name:'Squash',     reason:'Share blight susceptibility; compete heavily.'},
+      {name:'Cucumber',   reason:'Potatoes harbor blight that spreads to cucumbers.'},
+      {name:'Sunflower',  reason:'Allelopathic — sunflower inhibits potato growth.'},
+      {name:'Fennel',     reason:'Allelopathic inhibition.'},
+    ],
+  },
+  'Fennel': {
+    emoji:'🌿', scientific:'Foeniculum vulgare', family:'Apiaceae',
+    notes:'⚠️ Allelopathic to most vegetables — isolate in its own bed or container. The exception: dill (compatible when young), and most brassicas.',
+    good:[
+      {name:'Dill',      reason:'Compatible when both are young; competitive when mature.'},
+    ],
+    bad:[
+      {name:'Tomato',    reason:'Root secretions severely inhibit tomato growth.'},
+      {name:'Pepper',    reason:'Inhibitory allelopathy.'},
+      {name:'Bean',      reason:'Inhibits bean germination.'},
+      {name:'Lettuce',   reason:'Inhibits lettuce germination.'},
+      {name:'Kohlrabi',  reason:'Mutual inhibition.'},
+      {name:'Basil',     reason:'Competing aromatic; fennel dominates.'},
+    ],
+  },
+  'Dill': {
+    emoji:'🌿', scientific:'Anethum graveolens', family:'Apiaceae',
+    notes:'Flowers attract beneficial insects — especially predatory wasps and hoverflies. Allow to bolt for maximum beneficial insect attraction. Keep away from carrots and mature fennel.',
+    good:[
+      {name:'Cabbage',   reason:'Repels cabbage looper and imported cabbageworm.'},
+      {name:'Lettuce',   reason:'Attracts beneficial insects that prey on lettuce aphids.'},
+      {name:'Onion',     reason:'Compatible; onion repels dill pests.'},
+      {name:'Cucumber',  reason:'Attracts pollinators; compatible when young.'},
+    ],
+    bad:[
+      {name:'Carrot',    reason:'Mature dill inhibits carrot growth; same family competition.'},
+      {name:'Tomato',    reason:'Mature dill inhibits tomato growth.'},
+      {name:'Fennel',    reason:'Competitive when mature; cross-pollinate and hybridize.'},
+    ],
+  },
+  'Borage': {
+    emoji:'⭐', scientific:'Borago officinalis', family:'Boraginaceae',
+    notes:'Self-seeding annual; once established it will return year after year. One of the most valuable pollinator attractors in the kitchen garden.',
+    good:[
+      {name:'Tomato',    reason:'Repels tomato hornworm; attracts pollinators and predatory insects.'},
+      {name:'Squash',    reason:'Attracts pollinators critical for squash fruit set.'},
+      {name:'Strawberry',reason:'Long companion tradition — may improve strawberry flavor and vigor.'},
+      {name:'Cucumber',  reason:'Attracts pollinators; compatible growth habit.'},
+    ],
+    bad:[],
+  },
+  'Nasturtium': {
+    emoji:'🌸', scientific:'Tropaeolum majus', family:'Tropaeolaceae',
+    notes:'Edible trap crop — sacrificial plant that draws aphids away from vegetables. Leaves and flowers are edible with a peppery flavor.',
+    good:[
+      {name:'Tomato',    reason:'Trap crop for aphids; draws them away from tomatoes.'},
+      {name:'Squash',    reason:'Trap crop for squash bugs and aphids.'},
+      {name:'Cucumber',  reason:'Trap crop; attracts pollinators.'},
+      {name:'Radish',    reason:'Both act as trap crops; compatible.'},
+      {name:'Brassicas', reason:'Trap crop for aphids, caterpillars, and whiteflies.'},
+    ],
+    bad:[],
+  },
+  'Rosemary': {
+    emoji:'🌿', scientific:'Salvia rosmarinus', family:'Lamiaceae',
+    notes:'Woody perennial; drought tolerant once established. Powerful aromatic deterrent for many flying insects.',
+    good:[
+      {name:'Carrot',    reason:'Strong scent repels carrot fly.'},
+      {name:'Cabbage',   reason:'Repels cabbage moth and bean beetles.'},
+      {name:'Bean',      reason:'Deters bean beetles.'},
+      {name:'Sage',      reason:'Compatible Mediterranean herbs — same water/sun needs.'},
+    ],
+    bad:[
+      {name:'Cucumber',  reason:'Strong aromatics inhibit cucumber growth.'},
+      {name:'Pumpkin',   reason:'Allelopathic relationship.'},
+    ],
+  },
+  'Sage': {
+    emoji:'🌿', scientific:'Salvia officinalis', family:'Lamiaceae',
+    notes:'Perennial aromatic; repels a broad range of flying insects. Avoid planting near cucumbers or onions.',
+    good:[
+      {name:'Rosemary',  reason:'Compatible; same Mediterranean water and sun needs.'},
+      {name:'Cabbage',   reason:'Repels cabbage moths and butterfly larvae.'},
+      {name:'Carrot',    reason:'Deters carrot fly.'},
+      {name:'Tomato',    reason:'Minor pest deterrence.'},
+    ],
+    bad:[
+      {name:'Basil',     reason:'Competing aromatics reduce effectiveness of both.'},
+      {name:'Onion',     reason:'Mutual inhibition when in close contact.'},
+      {name:'Cucumber',  reason:'Sage aromatics inhibit cucumber growth.'},
+    ],
+  },
+  'Chives': {
+    emoji:'🌱', scientific:'Allium schoenoprasum', family:'Amaryllidaceae',
+    notes:'Perennial allium — lowest maintenance companion plant. Edge plantings around beds work excellently.',
+    good:[
+      {name:'Carrot',    reason:'Repels carrot rust fly; mild allium deterrence.'},
+      {name:'Tomato',    reason:'Minor pest deterrence; compatible.'},
+      {name:'Rose',      reason:'Repels aphids and black spot fungus around roses.'},
+      {name:'Apple',     reason:'Planted at base deters apple scab fungus.'},
+      {name:'Parsley',   reason:'Compatible herbs; similar growing conditions.'},
+    ],
+    bad:[
+      {name:'Bean',      reason:'Allium compounds inhibit bean growth.'},
+      {name:'Pea',       reason:'Same allium inhibition.'},
+    ],
+  },
+  'Parsley': {
+    emoji:'🌿', scientific:'Petroselinum crispum', family:'Apiaceae',
+    notes:'Biennial — flowers in second year. Flowering parsley is a major attractor of beneficial parasitic wasps.',
+    good:[
+      {name:'Tomato',    reason:'Attracts predatory wasps that control hornworm.'},
+      {name:'Asparagus', reason:'Classic pairing — parsley and asparagus are mutually beneficial.'},
+      {name:'Rose',      reason:'Repels rose beetles and aphids.'},
+      {name:'Corn',      reason:'Attracts predatory insects; compatible.'},
+    ],
+    bad:[
+      {name:'Mint',      reason:'Mint aggressively outcompetes parsley.'},
+      {name:'Lettuce',   reason:'Minor inhibitory relationship when crowded.'},
+    ],
+  },
+  'Mint': {
+    emoji:'🌿', scientific:'Mentha spp.', family:'Lamiaceae',
+    notes:'⚠️ Extremely invasive — always grow in containers or with root barriers. Aggressive spreader that will dominate a bed if unconstrained.',
+    good:[
+      {name:'Cabbage',   reason:'Repels cabbage moths, aphids, and flea beetles.'},
+      {name:'Tomato',    reason:'Repels aphids; strong scent deters pests.'},
+      {name:'Pea',       reason:'Deters aphids common to peas.'},
+    ],
+    bad:[
+      {name:'Parsley',   reason:'Mint outcompetes parsley rapidly.'},
+    ],
+  },
+  'Strawberry': {
+    emoji:'🍓', scientific:'Fragaria × ananassa', family:'Rosaceae',
+    notes:'Perennial ground cover; runners spread each season. Benefits from companions that deter slugs and improve pollination.',
+    good:[
+      {name:'Borage',    reason:'Traditional companion — improves flavor and vigor.'},
+      {name:'Lettuce',   reason:'Lettuce fills gaps between runners; similar water needs.'},
+      {name:'Spinach',   reason:'Compatible ground cover neighbors.'},
+      {name:'Bean',      reason:'Nitrogen fixing benefits strawberry production.'},
+      {name:'Onion',     reason:'Onion repels many berry pests.'},
+    ],
+    bad:[
+      {name:'Cabbage',   reason:'Heavy feeder that competes with strawberries.'},
+      {name:'Fennel',    reason:'Allelopathic inhibition of strawberry runners.'},
+      {name:'Garlic',    reason:'Inhibits strawberry development.'},
+    ],
+  },
+  'Sunflower': {
+    emoji:'🌻', scientific:'Helianthus annuus', family:'Asteraceae',
+    notes:'Allelopathic — produces chemicals inhibiting some neighboring plants, but provides excellent structure and pollinator attraction.',
+    good:[
+      {name:'Cucumber',  reason:'Provides climbing structure; shade in hot climates.'},
+      {name:'Corn',      reason:'Compatible; attracts similar pollinators.'},
+      {name:'Squash',    reason:'Squash uses sunflower for shade; compatible.'},
+    ],
+    bad:[
+      {name:'Potato',    reason:'Sunflower allelopathy inhibits potato growth.'},
+      {name:'Bean',      reason:'Tall sunflower shades beans; allelopathic competition.'},
+    ],
+  },
+  'Zinnia': {
+    emoji:'🌺', scientific:'Zinnia elegans', family:'Asteraceae',
+    notes:'Prolific flower that attracts an enormous range of beneficial insects including ladybugs, lacewings, and parasitic wasps.',
+    good:[
+      {name:'Tomato',    reason:'Attracts ladybugs, lacewings, and other aphid predators.'},
+      {name:'Cucumber',  reason:'Powerful pollinator attractor.'},
+      {name:'Squash',    reason:'Critical for squash pollination.'},
+      {name:'Melon',     reason:'Improves pollination rates.'},
+      {name:'Most vegetables',reason:'General beneficial insect attractor.'},
+    ],
+    bad:[],
+  },
+  'Lavender': {
+    emoji:'💜', scientific:'Lavandula spp.', family:'Lamiaceae',
+    notes:'Perennial Mediterranean herb; drought tolerant. Powerful pollinator magnet and general pest deterrent.',
+    good:[
+      {name:'Rose',      reason:'Deters aphids and attracts pollinators.'},
+      {name:'Brassicas', reason:'Repels cabbage moths and whiteflies.'},
+      {name:'Tomato',    reason:'Aromatic deterrent for many flying pests.'},
+      {name:'Fruit trees',reason:'Planted underneath attracts pollinators during bloom.'},
+    ],
+    bad:[
+      {name:'Mint',      reason:'Competing invasive aromatic; mint dominates.'},
+    ],
+  },
+  'Eggplant': {
+    emoji:'🍆', scientific:'Solanum melongena', family:'Solanaceae',
+    notes:'Warm-season heavy feeder in the nightshade family. Particularly susceptible to Colorado potato beetle and flea beetle.',
+    good:[
+      {name:'Marigold',  reason:'Repels Colorado potato beetle; broad pest deterrence.'},
+      {name:'Basil',     reason:'Repels aphids and spider mites.'},
+      {name:'Tarragon',  reason:'General pest deterrence.'},
+      {name:'Spinach',   reason:'Ground cover reduces moisture loss; compatible.'},
+    ],
+    bad:[
+      {name:'Fennel',    reason:'Allelopathic inhibition.'},
+      {name:'Potato',    reason:'Share diseases; competition between heavy feeders.'},
+    ],
+  },
+  'Cabbage': {
+    emoji:'🥦', scientific:'Brassica oleracea', family:'Brassicaceae',
+    notes:'Heavy feeder needing well-amended soil. Entire brassica family benefits from aromatic companions and suffers from allelopathic plants.',
+    good:[
+      {name:'Dill',      reason:'Attracts wasps that prey on cabbage caterpillars.'},
+      {name:'Rosemary',  reason:'Repels cabbage moth and white butterfly.'},
+      {name:'Sage',      reason:'Repels cabbage moth larvae.'},
+      {name:'Mint',      reason:'Repels aphids and flea beetles.'},
+      {name:'Nasturtium',reason:'Trap crop for aphids, caterpillars, whitefly.'},
+      {name:'Celery',    reason:'Traditional pairing; celery repels cabbage white butterfly.'},
+    ],
+    bad:[
+      {name:'Tomato',    reason:'Heavy feeders; competition and shared solanine-sensitive pests.'},
+      {name:'Strawberry',reason:'Heavy feeder competition.'},
+      {name:'Fennel',    reason:'Allelopathic inhibition.'},
+    ],
+  },
+  'Asparagus': {
+    emoji:'🌱', scientific:'Asparagus officinalis', family:'Asparagaceae',
+    notes:'Long-lived perennial — takes 3 years to mature but produces for 20+ years. Plant tomatoes and parsley as permanent companions.',
+    good:[
+      {name:'Tomato',    reason:'Classic long-term pairing; tomatoes repel asparagus beetle.'},
+      {name:'Parsley',   reason:'Traditional companion; mutual benefit.'},
+      {name:'Basil',     reason:'Repels asparagus beetle.'},
+      {name:'Marigold',  reason:'General pest deterrence.'},
+    ],
+    bad:[
+      {name:'Onion',     reason:'Competition and allelopathy.'},
+      {name:'Garlic',    reason:'Allium compounds inhibit asparagus.'},
+    ],
+  },
+  'Rose': {
+    emoji:'🌹', scientific:'Rosa spp.', family:'Rosaceae',
+    notes:'Benefits enormously from aromatic herb companions. Garlic and chives planted at the base are the classic rose companion.',
+    good:[
+      {name:'Garlic',    reason:'Prevents black spot and repels aphids from roses.'},
+      {name:'Chives',    reason:'Repels aphids; prevents black spot.'},
+      {name:'Lavender',  reason:'Deters aphids; companion pollinators.'},
+      {name:'Marigold',  reason:'Controls aphid population.'},
+      {name:'Parsley',   reason:'Repels rose beetles.'},
+    ],
+    bad:[
+      {name:'Fennel',    reason:'Allelopathic — inhibits rose growth.'},
+    ],
+  },
+};
+
+// ── State ──────────────────────────────────────────
+let _libraryPlants = [];   // plants from user's garden_library
+let _libraryNames  = new Set(); // normalised common names
+let _currentTab    = 'library';
+let _selectedPlant = null;
+let _searchTerm    = '';
+
+// ── Helpers ────────────────────────────────────────
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function normName(n) { return (n||'').toLowerCase().trim(); }
+
+// Does our library contain a plant whose name includes or is included by `target`?
+function inLibrary(target) {
+  const t = normName(target);
+  return [..._libraryNames].some(n => n.includes(t) || t.includes(n));
+}
+
+function getLibraryEmoji(name) {
+  const t = normName(name);
+  const lp = _libraryPlants.find(p => normName(p.common_name).includes(t) || t.includes(normName(p.common_name)));
+  return lp?.emoji || COMPANION_DB[name]?.emoji || '🌱';
+}
+
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.className = 'show';
+  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3000);
+}
+
+// ── Auth + boot ────────────────────────────────────
+$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+(async () => { await sb.auth.getSession(); await boot(); })();
+
+async function boot() {
+  const { data } = await sb.from('garden_library')
+    .select('id,common_name,emoji,plant_family,is_native,is_host_plant')
+    .order('common_name');
+
+  _libraryPlants = data || [];
+  _libraryNames  = new Set(_libraryPlants.map(p => normName(p.common_name)));
+
+  buildIndex();
+  buildGardenAnalysis();
+}
+
+// ══════════════════════════════════════════════════
+//  LEFT PANEL — Plant Index
+// ══════════════════════════════════════════════════
+function switchTab(el) {
+  document.querySelectorAll('.pi-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  _currentTab = el.dataset.tab;
+  buildIndex();
+}
+
+function filterIndex() {
+  _searchTerm = $('pi-search').value.toLowerCase();
+  buildIndex();
+}
+
+function buildIndex() {
+  // Decide which plant names to show
+  let names;
+  if (_currentTab === 'library') {
+    // Library tab: plants in garden_library that exist in COMPANION_DB, plus any library plants not in DB
+    const dbNames = new Set(Object.keys(COMPANION_DB).map(normName));
+    const matched = _libraryPlants.filter(p => [...dbNames].some(n => n.includes(normName(p.common_name)) || normName(p.common_name).includes(n)));
+    const unmatched = _libraryPlants.filter(p => !matched.includes(p));
+    names = [
+      ...matched.map(p => ({ name: p.common_name, emoji: p.emoji, inLib: true, fromLib: true })),
+      ...unmatched.map(p => ({ name: p.common_name, emoji: p.emoji, inLib: true, fromLib: true, noData: true })),
+    ];
+  } else {
+    // All tab: everything in COMPANION_DB
+    names = Object.keys(COMPANION_DB).map(n => ({
+      name: n, emoji: COMPANION_DB[n].emoji, inLib: inLibrary(n), fromLib: false,
+    }));
+  }
+
+  // Search filter
+  if (_searchTerm) {
+    names = names.filter(p => normName(p.name).includes(_searchTerm));
+  }
+
+  if (!names.length) {
+    $('pi-list').innerHTML = '<div style="font-family:var(--mono);font-size:0.55rem;color:var(--faint);padding:1rem;text-align:center;">No plants found</div>';
+    return;
+  }
+
+  // Compute conflict/opportunity status for each
+  const html = [];
+  if (_currentTab === 'library' && _libraryPlants.length === 0) {
+    html.push('<div class="pi-section-label">Add plants to your Library to see companion analysis</div>');
+  }
+
+  const grouped = { conflict:[], opportunity:[], clean:[] };
+  names.forEach(item => {
+    const db = findInDB(item.name);
+    if (!db) { grouped.clean.push(item); return; }
+    const hasConflict = db.bad.some(b => inLibrary(b.name));
+    const hasMissedGood = db.good.some(g => !inLibrary(g.name));
+    const hasActiveGood = db.good.some(g => inLibrary(g.name));
+    if (hasConflict)    grouped.conflict.push(item);
+    else if (hasMissedGood && !hasActiveGood) grouped.opportunity.push(item);
+    else                grouped.clean.push(item);
+  });
+
+  const renderItem = (item, i) => {
+    const db = findInDB(item.name);
+    const isActive = _selectedPlant === item.name;
+    const hasConflict = db?.bad.some(b => inLibrary(b.name));
+    const hasOpportunity = db?.good.some(g => !inLibrary(g.name));
+    const hasActiveGood  = db?.good.some(g => inLibrary(g.name));
+    const extraClass = hasConflict ? 'has-conflict' : '';
+
+    const badges = [
+      hasActiveGood  ? '<div class="pi-badge good"></div>'  : '',
+      hasConflict    ? '<div class="pi-badge bad"></div>'   : '',
+      hasOpportunity ? '<div class="pi-badge new"></div>'   : '',
+    ].join('');
+
+    return `<div class="pi-item ${extraClass}${isActive?' active':''}" onclick="selectPlant('${esc(item.name)}')" style="animation-delay:${i*0.03}s">
+      <div class="pi-emoji">${item.emoji||'🌱'}</div>
+      <div class="pi-name">${esc(item.name)}</div>
+      <div class="pi-badges">${badges}</div>
+    </div>`;
+  };
+
+  if (grouped.conflict.length) {
+    html.push('<div class="pi-section-label">⚠ Conflicts Detected</div>');
+    grouped.conflict.forEach((p,i) => html.push(renderItem(p, i)));
+  }
+  if (grouped.opportunity.length) {
+    html.push('<div class="pi-section-label">+ Opportunities</div>');
+    grouped.opportunity.forEach((p,i) => html.push(renderItem(p, grouped.conflict.length+i)));
+  }
+  if (grouped.clean.length) {
+    html.push('<div class="pi-section-label">✓ Good Standing</div>');
+    grouped.clean.forEach((p,i) => html.push(renderItem(p, grouped.conflict.length+grouped.opportunity.length+i)));
+  }
+
+  $('pi-list').innerHTML = html.join('');
+}
+
+// ── Find a plant in COMPANION_DB by fuzzy name ─────
+function findInDB(name) {
+  if (COMPANION_DB[name]) return COMPANION_DB[name];
+  const n = normName(name);
+  const key = Object.keys(COMPANION_DB).find(k => normName(k).includes(n) || n.includes(normName(k)));
+  return key ? COMPANION_DB[key] : null;
+}
+
+// ══════════════════════════════════════════════════
+//  CENTRE — Detail view
+// ══════════════════════════════════════════════════
+function selectPlant(name) {
+  _selectedPlant = name;
+
+  // Highlight in index
+  document.querySelectorAll('.pi-item').forEach(el => {
+    el.classList.toggle('active', el.querySelector('.pi-name')?.textContent === name);
+  });
+
+  $('welcome-state').style.display  = 'none';
+  $('detail-content').style.display = 'block';
+
+  const db = findInDB(name);
+  const libPlant = _libraryPlants.find(p =>
+    normName(p.common_name) === normName(name) ||
+    normName(p.common_name).includes(normName(name)) ||
+    normName(name).includes(normName(p.common_name))
+  );
+  const emoji      = libPlant?.emoji || db?.emoji || '🌱';
+  const isInLib    = !!libPlant || inLibrary(name);
+  const scientific = db?.scientific || '';
+  const family     = libPlant?.plant_family || db?.family || '';
+  const notes      = db?.notes || 'No detailed companion data available for this plant. Refer to the general companion planting principles.';
+
+  const good    = db?.good || [];
+  const bad     = db?.bad  || [];
+
+  // Status counts
+  const activeGood    = good.filter(g => inLibrary(g.name));
+  const activeConflicts = bad.filter(b => inLibrary(b.name));
+  const missedGood    = good.filter(g => !inLibrary(g.name));
+
+  const scoreColor = activeConflicts.length > 0 ? 'var(--red-lt)' : activeGood.length > 0 ? 'var(--green-lt)' : 'var(--cream2)';
+
+  $('detail-content').innerHTML = `
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="detail-emoji">${emoji}</div>
+      <div class="detail-meta">
+        <div class="detail-name">${esc(name)}</div>
+        ${scientific ? `<div class="detail-sci">${esc(scientific)}</div>` : ''}
+        <div class="detail-tags">
+          <span class="detail-tag ${isInLib?'tag-in-library':'tag-not-library'}">${isInLib?'✓ In your library':'Not in library'}</span>
+          ${family ? `<span class="detail-tag tag-family">${esc(family)}</span>` : ''}
+          ${libPlant?.is_native   ? '<span class="detail-tag tag-native">Native</span>' : ''}
+          ${libPlant?.is_host_plant?'<span class="detail-tag tag-host">Host plant</span>':''}
+        </div>
+      </div>
+    </div>
+
+    <!-- Status strip -->
+    <div class="status-strip">
+      <div class="status-block">
+        <div class="sb-num green">${activeGood.length}</div>
+        <div class="sb-lbl">Active Good Pairings</div>
+      </div>
+      <div class="status-block">
+        <div class="sb-num red">${activeConflicts.length}</div>
+        <div class="sb-lbl">Active Conflicts</div>
+      </div>
+      <div class="status-block">
+        <div class="sb-num amber">${missedGood.length}</div>
+        <div class="sb-lbl">Opportunities</div>
+      </div>
+      <div class="status-block">
+        <div class="sb-num" style="color:var(--cream2)">${good.length + bad.length}</div>
+        <div class="sb-lbl">Total Known Pairings</div>
+      </div>
+    </div>
+
+    <!-- Constellation -->
+    <div class="constellation-wrap">
+      <div class="constellation-eye">Companion Constellation — ${esc(name)}</div>
+      <svg id="constellation-svg" viewBox="0 0 560 240" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <!-- Notes -->
+    <div class="detail-notes">${esc(notes)}</div>
+
+    <!-- Good companions already in library -->
+    ${activeGood.length ? `
+    <div class="companion-section">
+      <div class="cs-head"><div class="cs-label good">✓ Active good pairings — already in your library (${activeGood.length})</div></div>
+      <div class="companion-grid">
+        ${activeGood.map(g => companionCard(g, 'good', true)).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Bad companions in library -->
+    ${activeConflicts.length ? `
+    <div class="companion-section">
+      <div class="cs-head"><div class="cs-label bad">⚠ Conflicts — these plants are in your library (${activeConflicts.length})</div></div>
+      <div class="companion-grid">
+        ${activeConflicts.map(b => companionCard(b, 'bad', true)).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Suggested additions -->
+    ${missedGood.length ? `
+    <div class="companion-section">
+      <div class="cs-head"><div class="cs-label suggest">+ Consider adding these companions (${missedGood.length})</div></div>
+      <div class="companion-grid">
+        ${missedGood.map(g => companionCard(g, 'suggest', false)).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- All bad companions not in library (reference) -->
+    ${bad.filter(b => !inLibrary(b.name)).length ? `
+    <div class="companion-section">
+      <div class="cs-head"><div class="cs-label bad" style="opacity:0.5">✕ Avoid — not currently in your library</div></div>
+      <div class="companion-grid">
+        ${bad.filter(b=>!inLibrary(b.name)).map(b=>companionCard(b,'bad',false)).join('')}
+      </div>
+    </div>` : ''}
+
+    ${!db ? `<div class="empty-companions">No companion data available for this plant yet.</div>` : ''}
+  `;
+
+  // Draw constellation after DOM is ready
+  requestAnimationFrame(() => drawConstellation(name, good, bad));
+}
+
+function companionCard(item, type, isInLib) {
+  const dbEntry = findInDB(item.name);
+  const emoji = getLibraryEmoji(item.name) || dbEntry?.emoji || '🌱';
+  const libLabel = isInLib
+    ? '<span class="cc-lib in">In library</span>'
+    : '<span class="cc-lib out">Not in library</span>';
+  return `
+    <div class="companion-card ${type}${isInLib?' in-library':''}" onclick="selectPlant('${esc(item.name)}')">
+      <div class="cc-top">
+        <span class="cc-emoji">${emoji}</span>
+        <span class="cc-name">${esc(item.name)}</span>
+        ${libLabel}
+      </div>
+      <div class="cc-reason">${esc(item.reason)}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════
+//  CONSTELLATION DIAGRAM
+//  Centre node = selected plant
+//  Good companions orbit in green arcs
+//  Bad companions orbit in red arcs
+//  In-library nodes are filled; others are hollow
+// ══════════════════════════════════════════════════
+function drawConstellation(name, good, bad) {
+  const svg = $('constellation-svg');
+  if (!svg) return;
+  svg.innerHTML = '';
+
+  const W = 560, H = 240;
+  const cx = W/2, cy = H/2;
+  const R_GOOD = 95, R_BAD = 90;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    const e = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k,v));
+    return e;
+  }
+  function text(content, attrs) {
+    const e = document.createElementNS(ns, 'text');
+    Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k,v));
+    e.textContent = content;
+    return e;
+  }
+
+  // Background rings
+  [R_GOOD+18, R_BAD+24].forEach(r => {
+    svg.appendChild(el('circle',{cx,cy,r,fill:'none',stroke:'rgba(255,255,255,0.04)',
+      'stroke-dasharray':'3,6','stroke-width':'1'}));
+  });
+
+  // Place good companions on right semicircle, bad on left
+  const allNodes = [];
+
+  // Good: distribute across right side (angles -80 to +80 degrees from right)
+  good.forEach((g, i) => {
+    const spread = Math.min(160, good.length * 28);
+    const startAngle = -spread/2;
+    const angle = good.length === 1 ? 0 : startAngle + (spread/(good.length-1||1))*i;
+    const rad = (angle * Math.PI) / 180;
+    const x = cx + R_GOOD * Math.cos(rad);
+    const y = cy + R_GOOD * Math.sin(rad);
+    allNodes.push({ ...g, x, y, type:'good', inLib: inLibrary(g.name) });
+  });
+
+  // Bad: distribute across left side
+  bad.forEach((b, i) => {
+    const spread = Math.min(140, bad.length * 36);
+    const startAngle = 180 - spread/2;
+    const angle = bad.length === 1 ? 180 : startAngle + (spread/(bad.length-1||1))*i;
+    const rad = (angle * Math.PI) / 180;
+    const x = cx + R_BAD * Math.cos(rad);
+    const y = cy + R_BAD * Math.sin(rad);
+    allNodes.push({ ...b, x, y, type:'bad', inLib: inLibrary(b.name) });
+  });
+
+  // Draw edges first (behind nodes)
+  allNodes.forEach(node => {
+    const isGood = node.type === 'good';
+    const color  = isGood
+      ? (node.inLib ? 'rgba(114,196,114,0.55)' : 'rgba(74,154,74,0.2)')
+      : (node.inLib ? 'rgba(232,96,96,0.55)'  : 'rgba(196,64,64,0.18)');
+    const dash = node.inLib ? '0' : '4,4';
+    svg.appendChild(el('line',{
+      x1:cx, y1:cy, x2:node.x, y2:node.y,
+      stroke:color, 'stroke-width': node.inLib ? '1.5' : '1',
+      'stroke-dasharray': dash,
+    }));
+  });
+
+  // Centre node
+  const centreGroup = document.createElementNS(ns, 'g');
+  const db = findInDB(name);
+  const centreEmoji = _libraryPlants.find(p=>normName(p.common_name)===normName(name))?.emoji || db?.emoji || '🌱';
+
+  centreGroup.appendChild(el('circle',{cx,cy,r:'26',fill:'var(--surface3)',
+    stroke:'var(--green)','stroke-width':'1.5'}));
+  // Outer glow ring
+  centreGroup.appendChild(el('circle',{cx,cy,r:'30',fill:'none',
+    stroke:'rgba(74,154,74,0.25)','stroke-width':'1'}));
+
+  const centreLabel = document.createElementNS(ns, 'text');
+  centreLabel.textContent = centreEmoji;
+  centreLabel.setAttribute('x', cx); centreLabel.setAttribute('y', cy+6);
+  centreLabel.setAttribute('text-anchor','middle');
+  centreLabel.setAttribute('font-size','18');
+  centreGroup.appendChild(centreLabel);
+
+  const nameLbl = document.createElementNS(ns,'text');
+  nameLbl.textContent = name.length > 10 ? name.slice(0,9)+'…' : name;
+  nameLbl.setAttribute('x',cx); nameLbl.setAttribute('y',cy+42);
+  nameLbl.setAttribute('text-anchor','middle');
+  nameLbl.setAttribute('font-size','9');
+  nameLbl.setAttribute('fill','rgba(232,223,196,0.7)');
+  nameLbl.setAttribute('font-family','DM Mono, monospace');
+  centreGroup.appendChild(nameLbl);
+  svg.appendChild(centreGroup);
+
+  // Companion nodes
+  allNodes.forEach(node => {
+    const isGood   = node.type === 'good';
+    const stroke   = isGood ? 'var(--green)'  : 'var(--red)';
+    const fill     = node.inLib
+      ? (isGood ? 'rgba(74,154,74,0.25)' : 'rgba(196,64,64,0.25)')
+      : 'var(--surface3)';
+    const r        = node.inLib ? 18 : 14;
+    const nodeEmoji= getLibraryEmoji(node.name) || findInDB(node.name)?.emoji || '🌱';
+
+    const g = document.createElementNS(ns,'g');
+    g.style.cursor = 'pointer';
+    g.setAttribute('onclick', `selectPlant('${node.name.replace(/'/g,"\\'")}')`);
+
+    g.appendChild(el('circle',{cx:node.x,cy:node.y,r,fill,stroke,
+      'stroke-width':node.inLib?'1.5':'1',
+      opacity: node.inLib?'1':'0.65'}));
+
+    const emojiEl = document.createElementNS(ns,'text');
+    emojiEl.textContent = nodeEmoji;
+    emojiEl.setAttribute('x',node.x); emojiEl.setAttribute('y',node.y+4);
+    emojiEl.setAttribute('text-anchor','middle');
+    emojiEl.setAttribute('font-size', node.inLib ? '13' : '10');
+    g.appendChild(emojiEl);
+
+    // Label — position away from centre
+    const labelAngle = Math.atan2(node.y - cy, node.x - cx);
+    const lx = node.x + (r+10) * Math.cos(labelAngle);
+    const ly = node.y + (r+10) * Math.sin(labelAngle);
+    const anchor = node.x > cx ? 'start' : 'end';
+
+    const lbl = document.createElementNS(ns,'text');
+    const shortName = node.name.length > 11 ? node.name.slice(0,10)+'…' : node.name;
+    lbl.textContent = shortName;
+    lbl.setAttribute('x',lx); lbl.setAttribute('y',ly+3);
+    lbl.setAttribute('text-anchor',anchor);
+    lbl.setAttribute('font-size','8');
+    lbl.setAttribute('fill', node.inLib
+      ? (isGood?'rgba(114,196,114,0.9)':'rgba(232,96,96,0.9)')
+      : 'rgba(200,184,144,0.45)');
+    lbl.setAttribute('font-family','DM Mono, monospace');
+    g.appendChild(lbl);
+
+    svg.appendChild(g);
+  });
+
+  // Legend
+  const legendY = H - 14;
+  [
+    {x:W*0.25, color:'rgba(114,196,114,0.8)', label:'Good companion (in library)'},
+    {x:W*0.58, color:'rgba(232,96,96,0.8)',   label:'Conflict (in library)'},
+  ].forEach(({x,color,label})=>{
+    svg.appendChild(el('circle',{cx:x,cy:legendY,r:'4',fill:color}));
+    const lt=document.createElementNS(ns,'text');
+    lt.textContent=label;
+    lt.setAttribute('x',x+8);lt.setAttribute('y',legendY+3.5);
+    lt.setAttribute('font-size','7');lt.setAttribute('fill','rgba(200,184,144,0.45)');
+    lt.setAttribute('font-family','DM Mono, monospace');
+    svg.appendChild(lt);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  RIGHT PANEL — Garden Analysis
+// ══════════════════════════════════════════════════
+function buildGardenAnalysis() {
+  if (!_libraryPlants.length) {
+    $('ga-conflicts').innerHTML = '<div class="ga-empty">Add plants to your Library to see analysis.</div>';
+    $('ga-wins').innerHTML      = '<div class="ga-empty">—</div>';
+    $('ga-opps').innerHTML      = '<div class="ga-empty">—</div>';
+    $('ga-score-num').textContent = '—';
+    $('ga-score-sub').textContent = 'No library plants';
+    return;
+  }
+
+  const conflicts = [], wins = [], opps = [];
+  const seen = new Set();
+
+  _libraryPlants.forEach(plant => {
+    const db = findInDB(plant.common_name);
+    if (!db) return;
+
+    db.bad.forEach(b => {
+      if (!inLibrary(b.name)) return;
+      const key = [normName(plant.common_name), normName(b.name)].sort().join('|');
+      if (seen.has(key)) return;
+      seen.add(key);
+      conflicts.push({ a: plant.common_name, b: b.name, reason: b.reason,
+        emojiA: plant.emoji||'🌱', emojiB: getLibraryEmoji(b.name) });
+    });
+
+    db.good.forEach(g => {
+      if (inLibrary(g.name)) {
+        const key = [normName(plant.common_name), normName(g.name)].sort().join('|');
+        if (seen.has(key+'_win')) return;
+        seen.add(key+'_win');
+        wins.push({ a: plant.common_name, b: g.name, reason: g.reason,
+          emojiA: plant.emoji||'🌱', emojiB: getLibraryEmoji(g.name) });
+      } else {
+        const key = normName(plant.common_name) + '|+|' + normName(g.name);
+        if (seen.has(key)) return;
+        seen.add(key);
+        opps.push({ a: plant.common_name, b: g.name, reason: g.reason,
+          emojiA: plant.emoji||'🌱', emojiB: getLibraryEmoji(g.name) });
+      }
+    });
+  });
+
+  // Companion score: starts at 100, -15 per conflict, +5 per win, capped 0-100
+  const score = Math.max(0, Math.min(100, 50 + wins.length*5 - conflicts.length*15));
+  const scoreColor = score >= 70 ? 'var(--green-lt)' : score >= 40 ? 'var(--amber-lt)' : 'var(--red-lt)';
+  const scoreSub   = score >= 70 ? 'Harmonious planting' : score >= 40 ? 'Some conflicts present' : 'Conflicts need attention';
+
+  $('ga-score-num').textContent  = score;
+  $('ga-score-num').style.color  = scoreColor;
+  $('ga-score-sub').textContent  = scoreSub;
+
+  const renderRow = (item, type, i) => `
+    <div class="analysis-row ${type}" style="animation-delay:${i*0.05}s"
+         onclick="selectPlant('${esc(item.a)}')">
+      <div class="ar-emoji">${item.emojiA}${type==='conflict'?'×':'↔'}${item.emojiB}</div>
+      <div class="ar-body">
+        <div class="ar-pair">${esc(item.a)} + ${esc(item.b)}</div>
+        <div class="ar-reason">${esc(item.reason)}</div>
+      </div>
+    </div>`;
+
+  $('ga-conflicts').innerHTML = conflicts.length
+    ? conflicts.slice(0,6).map((c,i)=>renderRow(c,'conflict',i)).join('')
+    : '<div class="ga-empty">No conflicts detected — great planting!</div>';
+
+  $('ga-wins').innerHTML = wins.length
+    ? wins.slice(0,6).map((w,i)=>renderRow(w,'win',i)).join('')
+    : '<div class="ga-empty">No active good pairings yet.</div>';
+
+  $('ga-opps').innerHTML = opps.length
+    ? opps.slice(0,5).map((o,i)=>renderRow(o,'opportunity',i)).join('')
+    : '<div class="ga-empty">All known good companions are already planted!</div>';
+}
+</script>
+</body>
+</html>
