@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GardenHub OS | Garden Snapshot</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Page chrome ─────────────────────────────── */
+:root {
+  --forest:    #1e3d20;
+  --forest-lt: #2d5c30;
+  --gold:      #c8922a;
+  --gold-lt:   #e8c060;
+  --cream:     #f5eed8;
+  --ink:       #0e1f10;
+  --muted:     #5a7a5c;
+  --border:    #2d4a2e;
+  --serif:     'Playfair Display', Georgia, serif;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0e1a0f;
+  color: var(--cream);
+  font-family: var(--sans);
+  min-height: 100vh;
+}
+
+/* ── Top bar ─────────────────────────────────── */
+.top-bar {
+  background: var(--forest);
+  border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 1.75rem; gap: 1rem;
+}
+.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
+.logo-eye  { font-family: var(--mono); font-size: 0.48rem; color: rgba(255,255,255,0.4); letter-spacing: 0.22em; text-transform: uppercase; }
+.logo-name { font-family: var(--serif); font-size: 1.1rem; color: #d8ead0; font-style: italic; }
+
+nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.07em; text-transform: uppercase;
+  text-decoration: none; padding: 0.28rem 0.55rem;
+  border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5);
+  background: transparent; cursor: pointer; transition: all 0.15s;
+}
+.nav-link:hover  { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.85); }
+.nav-link.active { border-color: #a0d890; color: #a0d890; }
+.nav-link.danger:hover { border-color: #f08080; color: #f08080; }
+
+/* ── Page wrapper ────────────────────────────── */
+.page {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 2.5rem 1.5rem 5rem;
+  gap: 1.5rem;
+}
+
+/* ── Controls bar ────────────────────────────── */
+.controls {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  max-width: 900px; width: 100%;
+}
+.ctrl-label {
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ctrl-input {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--cream); padding: 0.4rem 0.75rem;
+  font-family: var(--serif); font-size: 0.85rem; font-style: italic; outline: none;
+  transition: border-color 0.15s; min-width: 220px;
+}
+.ctrl-input:focus { border-color: var(--gold); }
+.ctrl-select {
+  background: var(--forest); border: 1px solid var(--border);
+  color: var(--cream); padding: 0.4rem 0.65rem;
+  font-family: var(--mono); font-size: 0.6rem; outline: none; cursor: pointer;
+}
+
+.action-btn {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.5rem 1.1rem; border: 1px solid; cursor: pointer; transition: all 0.15s;
+  background: transparent;
+}
+.action-btn.primary { border-color: var(--gold); color: var(--gold-lt); }
+.action-btn.primary:hover { background: var(--gold); color: var(--ink); }
+.action-btn.secondary { border-color: var(--border); color: var(--muted); }
+.action-btn.secondary:hover { border-color: var(--muted); color: var(--cream); }
+.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.ctrl-sep { width: 1px; height: 1.5rem; background: var(--border); margin: 0 0.25rem; }
+
+/* ── Loading state ───────────────────────────── */
+#loading-msg {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  color: var(--muted); text-transform: uppercase; text-align: center;
+  padding: 3rem;
+}
+
+/* ══════════════════════════════════════════════
+   THE SNAPSHOT CARD
+   Fixed 1200×630 — optimised for screenshots
+   and social sharing (OG image ratio 1.9:1)
+══════════════════════════════════════════════ */
+#snapshot-card {
+  width: 1200px; height: 630px;
+  background: var(--forest);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 8px 60px rgba(0,0,0,0.6);
+  /* Scale down so it fits on smaller screens */
+  transform-origin: top center;
+}
+
+/* ── Background texture layers ──────────────── */
+.card-bg-grain {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-size: 256px; opacity: 0.8;
+}
+.card-bg-vignette {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(45,92,48,0.3) 0%, transparent 60%),
+              radial-gradient(ellipse at 50% 100%, rgba(10,20,10,0.5) 0%, transparent 60%);
+}
+/* Subtle diagonal hatch pattern */
+.card-bg-hatch {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent, transparent 28px,
+    rgba(255,255,255,0.012) 28px, rgba(255,255,255,0.012) 29px
+  );
+}
+
+/* ── Botanical border SVG ────────────────────── */
+.card-border {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+}
+
+/* ── Inner content area ──────────────────────── */
+.card-inner {
+  position: relative; z-index: 2;
+  width: 100%; height: 100%;
+  padding: 42px 56px 36px;
+  display: grid;
+  grid-template-columns: 1fr 2px 1fr 2px 1fr;
+  grid-template-rows: auto 1fr auto;
+  gap: 0;
+}
+
+/* ── Header row ──────────────────────────────── */
+.card-header {
+  grid-column: 1 / -1;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  border-bottom: 1px solid rgba(200,146,42,0.3);
+  padding-bottom: 14px; margin-bottom: 20px;
+}
+.card-garden-name {
+  font-family: var(--serif); font-size: 2rem; font-weight: 700; font-style: italic;
+  color: var(--cream); line-height: 1; letter-spacing: -0.01em;
+}
+.card-garden-name em { color: var(--gold-lt); }
+.card-tagline {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--muted); margin-top: 5px;
+}
+.card-header-right {
+  text-align: right;
+}
+.card-season-seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 2px solid rgba(200,146,42,0.5);
+  background: rgba(200,146,42,0.08);
+  font-size: 1.8rem;
+  position: relative;
+}
+.card-season-seal::before {
+  content: attr(data-label);
+  position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 0.38rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--gold); white-space: nowrap;
+}
+.card-date-block {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  text-align: right; line-height: 1.8;
+}
+
+/* ── Dividers ────────────────────────────────── */
+.card-divider {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(200,146,42,0.25) 20%, rgba(200,146,42,0.25) 80%, transparent);
+  margin: 0 24px;
+  align-self: stretch;
+}
+
+/* ── Stat columns ────────────────────────────── */
+.card-col {
+  display: flex; flex-direction: column; gap: 16px;
+  justify-content: flex-start;
+}
+
+/* ── Primary stat (Resilience Score) ─────────── */
+.card-resilience {
+  grid-column: 1 / -1;
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 4px;
+}
+.resilience-num {
+  font-family: var(--serif); font-size: 5.5rem; font-weight: 900;
+  line-height: 0.85; color: var(--gold-lt);
+  text-shadow: 0 0 40px rgba(232,192,96,0.3);
+}
+.resilience-meta {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.resilience-label {
+  font-family: var(--serif); font-size: 1.4rem; font-style: italic;
+  color: var(--cream); line-height: 1;
+}
+.resilience-sub {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* ── Regular stat block ──────────────────────── */
+.stat-block { display: flex; flex-direction: column; gap: 2px; }
+.stat-num {
+  font-family: var(--serif); font-size: 2rem; font-weight: 700;
+  color: var(--cream); line-height: 1;
+}
+.stat-num.accent { color: var(--gold-lt); }
+.stat-num.green  { color: #7ad870; }
+.stat-num.amber  { color: #e8b040; }
+.stat-label {
+  font-family: var(--mono); font-size: 0.45rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--muted); line-height: 1;
+}
+.stat-detail {
+  font-family: var(--sans); font-size: 0.62rem; color: rgba(245,238,216,0.5);
+  margin-top: 2px; line-height: 1.4;
+}
+
+/* ── Harvest list ────────────────────────────── */
+.harvest-list { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.harvest-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;
+}
+.harvest-name { color: var(--cream); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.harvest-days { color: var(--gold); white-space: nowrap; }
+
+/* ── Plant family strip ──────────────────────── */
+.family-strip {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;
+}
+.family-pip {
+  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.08em;
+  padding: 2px 7px; border: 1px solid rgba(200,146,42,0.3);
+  color: var(--muted); text-transform: uppercase;
+}
+.family-pip.top { border-color: var(--gold); color: var(--gold-lt); }
+
+/* ── Footer row ──────────────────────────────── */
+.card-footer {
+  grid-column: 1 / -1;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-top: 1px solid rgba(200,146,42,0.2);
+  padding-top: 12px; margin-top: 14px;
+}
+.card-field-note {
+  font-family: var(--serif); font-size: 0.72rem; font-style: italic;
+  color: rgba(245,238,216,0.55); max-width: 580px; line-height: 1.5;
+}
+.card-watermark {
+  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: rgba(200,146,42,0.35);
+  text-align: right; line-height: 1.8;
+}
+
+/* ── Toast ───────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999;
+  background: var(--forest-lt); color: var(--cream);
+  border: 1px solid var(--gold); padding: 0.65rem 1rem;
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em;
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 0.2s, transform 0.2s; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Print stylesheet ────────────────────────── */
+@media print {
+  body { background: white; }
+  .top-bar, .controls, #loading-msg, #toast { display: none !important; }
+  .page { padding: 0; align-items: flex-start; }
+  #snapshot-card {
+    transform: none !important;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="top-bar">
+  <div class="logo-block">
+    <div class="logo-eye">GardenHub OS // v10.6</div>
+    <div class="logo-name">Garden Snapshot</div>
+  </div>
+  <nav>
+    <a href="index.html"        class="nav-link">Dashboard</a>
+    <a href="map.html"          class="nav-link">Map</a>
+    <a href="insights.html"     class="nav-link">Insights</a>
+    <a href="clinic.html"       class="nav-link">Clinic</a>
+    <a href="library.html"      class="nav-link">Library</a>
+    <a href="calendar.html"     class="nav-link">Calendar</a>
+    <a href="achievements.html" class="nav-link">Medals</a>
+    <a href="journal.html"      class="nav-link">Journal</a>
+    <a href="snapshot.html"     class="nav-link active">Snapshot</a>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
+</div>
+
+<!-- ═══ PAGE ═══ -->
+<div class="page">
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl-label">Garden Name</div>
+    <input type="text" class="ctrl-input" id="garden-name-input"
+      value="My Garden" oninput="updateGardenName(this.value)" placeholder="Name your garden…"/>
+
+    <div class="ctrl-sep"></div>
+
+    <div class="ctrl-label">Theme</div>
+    <select class="ctrl-select" id="theme-select" onchange="applyTheme(this.value)">
+      <option value="forest">Forest Night</option>
+      <option value="slate">Slate & Gold</option>
+      <option value="soil">Rich Soil</option>
+      <option value="dawn">Garden Dawn</option>
+    </select>
+
+    <div class="ctrl-sep"></div>
+
+    <button class="action-btn secondary" onclick="refreshData()">↻ Refresh</button>
+    <button class="action-btn primary"   id="download-btn" onclick="downloadSnapshot()">↓ Download PNG</button>
+    <button class="action-btn secondary" onclick="window.print()">⎙ Print / PDF</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-msg">Loading your garden data…</div>
+
+  <!-- ═══ THE SNAPSHOT CARD ═══ -->
+  <div id="snapshot-card" style="display:none;">
+
+    <!-- Background layers -->
+    <div class="card-bg-grain"></div>
+    <div class="card-bg-vignette"></div>
+    <div class="card-bg-hatch"></div>
+
+    <!-- Botanical border SVG -->
+    <svg class="card-border" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <!-- Outer double rule -->
+      <rect x="18" y="18" width="1164" height="594" fill="none" stroke="rgba(200,146,42,0.35)" stroke-width="1"/>
+      <rect x="24" y="24" width="1152" height="582" fill="none" stroke="rgba(200,146,42,0.18)" stroke-width="0.5"/>
+
+      <!-- Corner botanical ornaments — top left -->
+      <g transform="translate(18,18)" stroke="rgba(200,146,42,0.5)" fill="none" stroke-width="0.8">
+        <path d="M0,0 L50,0"/>
+        <path d="M0,0 L0,50"/>
+        <circle cx="0" cy="0" r="3" fill="rgba(200,146,42,0.4)" stroke="none"/>
+        <!-- Leaf sprig -->
+        <path d="M8,2 Q18,12 12,22 Q6,12 8,2Z" fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <path d="M2,8 Q12,18 22,12 Q12,6 2,8Z"  fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <line x1="8" y1="2" x2="22" y2="22" stroke="rgba(200,146,42,0.25)" stroke-dasharray="2,2"/>
+      </g>
+      <!-- top right -->
+      <g transform="translate(1182,18) scale(-1,1)" stroke="rgba(200,146,42,0.5)" fill="none" stroke-width="0.8">
+        <path d="M0,0 L50,0"/>
+        <path d="M0,0 L0,50"/>
+        <circle cx="0" cy="0" r="3" fill="rgba(200,146,42,0.4)" stroke="none"/>
+        <path d="M8,2 Q18,12 12,22 Q6,12 8,2Z" fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <path d="M2,8 Q12,18 22,12 Q12,6 2,8Z"  fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <line x1="8" y1="2" x2="22" y2="22" stroke="rgba(200,146,42,0.25)" stroke-dasharray="2,2"/>
+      </g>
+      <!-- bottom left -->
+      <g transform="translate(18,612) scale(1,-1)" stroke="rgba(200,146,42,0.5)" fill="none" stroke-width="0.8">
+        <path d="M0,0 L50,0"/>
+        <path d="M0,0 L0,50"/>
+        <circle cx="0" cy="0" r="3" fill="rgba(200,146,42,0.4)" stroke="none"/>
+        <path d="M8,2 Q18,12 12,22 Q6,12 8,2Z" fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <path d="M2,8 Q12,18 22,12 Q12,6 2,8Z"  fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <line x1="8" y1="2" x2="22" y2="22" stroke="rgba(200,146,42,0.25)" stroke-dasharray="2,2"/>
+      </g>
+      <!-- bottom right -->
+      <g transform="translate(1182,612) scale(-1,-1)" stroke="rgba(200,146,42,0.5)" fill="none" stroke-width="0.8">
+        <path d="M0,0 L50,0"/>
+        <path d="M0,0 L0,50"/>
+        <circle cx="0" cy="0" r="3" fill="rgba(200,146,42,0.4)" stroke="none"/>
+        <path d="M8,2 Q18,12 12,22 Q6,12 8,2Z" fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <path d="M2,8 Q12,18 22,12 Q12,6 2,8Z"  fill="rgba(200,146,42,0.15)" stroke="rgba(200,146,42,0.4)" stroke-width="0.6"/>
+        <line x1="8" y1="2" x2="22" y2="22" stroke="rgba(200,146,42,0.25)" stroke-dasharray="2,2"/>
+      </g>
+
+      <!-- Top center ornament -->
+      <g transform="translate(600,18)" stroke="rgba(200,146,42,0.4)" fill="none">
+        <line x1="-80" y1="0" x2="-18" y2="0" stroke-width="0.6"/>
+        <line x1="18"  y1="0" x2="80"  y2="0" stroke-width="0.6"/>
+        <circle cx="0" cy="6" r="5" stroke-width="0.8" fill="rgba(200,146,42,0.12)"/>
+        <path d="M-6,6 Q0,-2 6,6" stroke-width="0.6" fill="rgba(200,146,42,0.1)"/>
+        <line x1="-12" y1="0" x2="-12" y2="8" stroke-width="0.5" stroke-dasharray="1,2"/>
+        <line x1="12"  y1="0" x2="12"  y2="8" stroke-width="0.5" stroke-dasharray="1,2"/>
+      </g>
+
+      <!-- Side vine accents — left -->
+      <g transform="translate(18,315)" stroke="rgba(200,146,42,0.2)" fill="none" stroke-width="0.6">
+        <path d="M0,-80 Q8,-60 4,-40 Q-4,-20 0,0 Q4,20 -4,40 Q8,60 0,80"/>
+        <ellipse cx="6" cy="-55" rx="5" ry="3" transform="rotate(-20,6,-55)" fill="rgba(200,146,42,0.08)"/>
+        <ellipse cx="-2" cy="0"   rx="5" ry="3" transform="rotate(15,-2,0)"   fill="rgba(200,146,42,0.08)"/>
+        <ellipse cx="6" cy="55"   rx="5" ry="3" transform="rotate(-20,6,55)"  fill="rgba(200,146,42,0.08)"/>
+      </g>
+      <!-- right -->
+      <g transform="translate(1182,315) scale(-1,1)" stroke="rgba(200,146,42,0.2)" fill="none" stroke-width="0.6">
+        <path d="M0,-80 Q8,-60 4,-40 Q-4,-20 0,0 Q4,20 -4,40 Q8,60 0,80"/>
+        <ellipse cx="6" cy="-55" rx="5" ry="3" transform="rotate(-20,6,-55)" fill="rgba(200,146,42,0.08)"/>
+        <ellipse cx="-2" cy="0"   rx="5" ry="3" transform="rotate(15,-2,0)"   fill="rgba(200,146,42,0.08)"/>
+        <ellipse cx="6" cy="55"   rx="5" ry="3" transform="rotate(-20,6,55)"  fill="rgba(200,146,42,0.08)"/>
+      </g>
+    </svg>
+
+    <!-- Content -->
+    <div class="card-inner">
+
+      <!-- Header -->
+      <div class="card-header">
+        <div>
+          <div class="card-garden-name" id="card-name">My <em>Garden</em></div>
+          <div class="card-tagline" id="card-tagline">Fairfield, CT · Zone 6b · Seasonal Field Report</div>
+        </div>
+        <div class="card-header-right">
+          <div class="card-date-block" id="card-date">—</div>
+          <div class="card-season-seal" id="card-season-seal" data-label="SEASON">🌱</div>
+        </div>
+      </div>
+
+      <!-- Left column -->
+      <div class="card-col">
+
+        <!-- Resilience Score — the headline stat -->
+        <div class="card-resilience">
+          <div class="resilience-num" id="c-resilience">—</div>
+          <div class="resilience-meta">
+            <div class="resilience-label" id="c-resilience-label">—</div>
+            <div class="resilience-sub">Resilience Score / 100</div>
+          </div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-num" id="c-plants">—</div>
+          <div class="stat-label">Plants in Library</div>
+          <div class="stat-detail" id="c-plants-detail">—</div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-num green" id="c-natives">—</div>
+          <div class="stat-label">Native Species</div>
+          <div class="stat-detail" id="c-natives-detail">—</div>
+        </div>
+
+      </div>
+
+      <!-- Divider -->
+      <div class="card-divider"></div>
+
+      <!-- Center column -->
+      <div class="card-col">
+
+        <div class="stat-block">
+          <div class="stat-num accent" id="c-iq">—</div>
+          <div class="stat-label">Pollinator IQ</div>
+          <div class="stat-detail" id="c-iq-detail">—</div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-label" style="margin-bottom:6px;">Upcoming Harvests</div>
+          <div class="harvest-list" id="c-harvests">
+            <div class="harvest-row"><span class="harvest-name" style="color:var(--muted)">—</span></div>
+          </div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-num" id="c-journal">—</div>
+          <div class="stat-label">Journal Entries</div>
+          <div class="stat-detail" id="c-journal-detail">—</div>
+        </div>
+
+      </div>
+
+      <!-- Divider -->
+      <div class="card-divider"></div>
+
+      <!-- Right column -->
+      <div class="card-col">
+
+        <div class="stat-block">
+          <div class="stat-num amber" id="c-health">—</div>
+          <div class="stat-label">Active Health Issues</div>
+          <div class="stat-detail" id="c-health-detail">—</div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-num" id="c-resolved">—</div>
+          <div class="stat-label">Issues Resolved</div>
+          <div class="stat-detail">Via Feedback Loop</div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-label" style="margin-bottom:6px;">Plant Families</div>
+          <div class="family-strip" id="c-families"></div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-num" id="c-achievements">—</div>
+          <div class="stat-label">Medals Earned</div>
+          <div class="stat-detail" id="c-achievements-detail">—</div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <div class="card-field-note" id="c-field-note">—</div>
+        <div class="card-watermark">
+          GardenHub OS · v10.6<br/>
+          natnattack94.github.io
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  GardenHub OS — Garden Snapshot v10.6
+//  Generates a shareable 1200×630 garden field
+//  report card from live Supabase data.
+//  Download as PNG via html2canvas.
+// ══════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $  = id => document.getElementById(id);
+
+// ── Themes ────────────────────────────────────────
+const THEMES = {
+  forest: { bg:'#1e3d20', header:'rgba(200,146,42,0.3)', accent:'#c8922a' },
+  slate:  { bg:'#1a2030', header:'rgba(160,180,220,0.3)', accent:'#8ab0e0' },
+  soil:   { bg:'#2a1a0e', header:'rgba(180,120,60,0.3)',  accent:'#c07030' },
+  dawn:   { bg:'#1e2830', header:'rgba(200,160,100,0.3)', accent:'#e0a848' },
+};
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.forest;
+  const card = $('snapshot-card');
+  card.style.background = t.bg;
+}
+
+// ── Seasons ───────────────────────────────────────
+const MONTH = new Date().getMonth();
+function getSeason() {
+  if (MONTH <= 1 || MONTH === 11) return { label:'Winter', icon:'❄️' };
+  if (MONTH <= 4)                  return { label:'Spring', icon:'🌱' };
+  if (MONTH <= 7)                  return { label:'Summer', icon:'☀️' };
+  return                                  { label:'Fall',   icon:'🍂' };
+}
+
+// ── Helpers ───────────────────────────────────────
+function today() { return new Date().toISOString().slice(0,10); }
+function daysAgo(n) { const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+function toast(msg, err=false) {
+  const el = $('toast'); el.textContent = msg;
+  el.style.background = err ? '#3a1010' : 'var(--forest-lt)';
+  el.style.color      = err ? '#f8a0a0' : 'var(--cream)';
+  el.className = 'show';
+  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3000);
+}
+
+// ── Scale card to fit viewport ────────────────────
+function scaleCard() {
+  const card = $('snapshot-card');
+  const available = Math.min(window.innerWidth - 48, 1200);
+  const scale = available / 1200;
+  card.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  // Adjust container height so page doesn't leave huge gap
+  card.style.marginBottom = scale < 1 ? `${-(630 * (1-scale))}px` : '0';
+}
+
+window.addEventListener('resize', scaleCard);
+
+// ── Resilience score computation ──────────────────
+function computeResilience(plants, scans, logs) {
+  if (!plants.length) return 0;
+  const past90 = daysAgo(90);
+  const recentScans = scans.filter(s => (s.scan_date||'') >= past90);
+  const activeHigh  = recentScans.filter(s => s.status !== 'resolved' && ['high','critical'].includes(s.severity)).length;
+  const healthPts   = Math.round(Math.max(0, 1 - activeHigh / Math.max(plants.length,1)) * 30);
+  const avgPenalty  = plants.reduce((a,p) => a + ((p.recovery_days||0)/Math.max(p.maturity_days||60,1)), 0) / plants.length;
+  const recoveryPts = Math.round(Math.max(0, 1 - Math.min(1, avgPenalty*3)) * 25);
+  const ecoCount    = plants.filter(p => p.is_native||p.is_host_plant).length;
+  const ecoPts      = Math.round(Math.min(1, (ecoCount/plants.length)*1.5) * 25);
+  const recentLogs  = new Set(logs.filter(l => (l.log_date||'') >= past90).map(l => l.log_date)).size;
+  const activityPts = Math.round(Math.min(1, recentLogs/30) * 20);
+  return healthPts + recoveryPts + ecoPts + activityPts;
+}
+
+// ── Achievement count (mirrors achievements.html logic) ──
+function countAchievements(plants, scans, logs) {
+  const totalScans    = scans.length;
+  const resolvedScans = scans.filter(s => s.status === 'resolved').length;
+  const activeScans   = scans.filter(s => s.status !== 'resolved').length;
+  const totalLogs     = logs.length;
+
+  const logDays = new Set(logs.map(l => l.log_date));
+  let streak = 0;
+  const d = new Date();
+  while (logDays.has(d.toISOString().slice(0,10))) { streak++; d.setDate(d.getDate()-1); }
+
+  const data = { plants, scans, logs, resolvedScans, activeScans, totalScans, totalLogs, streak };
+
+  const checks = [
+    plants.some(p => p.is_native),
+    plants.some(p => p.is_host_plant),
+    plants.filter(p => p.is_native).length >= 5,
+    plants.filter(p => p.is_native).length >= 10,
+    totalScans > 0,
+    resolvedScans > 0,
+    resolvedScans >= 3,
+    activeScans === 0 && totalScans > 0,
+    plants.some(p => { if (!p.planted_date||!p.maturity_days) return false; const eff=(p.maturity_days)+(p.recovery_days||0); return ((Date.now()-new Date(p.planted_date+'T12:00:00'))/86400000)>=eff; }),
+    plants.some(p => { if (!p.planted_date||!p.is_native) return false; return ((Date.now()-new Date(p.planted_date+'T12:00:00'))/(86400000*365.25))>=3; }),
+    new Set(plants.map(p=>p.plant_family).filter(Boolean)).size >= 5,
+    totalLogs > 0,
+    streak >= 7,
+    totalLogs >= 50,
+    logs.some(l => (l.activity_type||'').toLowerCase().includes('seed')),
+  ];
+  return checks.filter(Boolean).length;
+}
+
+// ── Field note generator ──────────────────────────
+function generateFieldNote(plants, scans, score, nativeCount, journalCount) {
+  const season = getSeason().label.toLowerCase();
+  const activeIssues = scans.filter(s => s.status !== 'resolved').length;
+  const soon = plants.filter(p => {
+    if (!p.planted_date||!p.maturity_days) return false;
+    const eff = p.maturity_days + (p.recovery_days||0);
+    const grown = (Date.now()-new Date(p.planted_date+'T12:00:00'))/86400000;
+    return grown >= eff*0.85 && grown < eff;
+  });
+
+  if (score >= 85) return `A thriving ${season} garden — ${nativeCount} native species supporting the local ecosystem, with ${plants.length} plants under cultivation and the Resilience Score at its highest.`;
+  if (score >= 70 && soon.length > 0) return `Harvest season approaches for ${soon.slice(0,2).map(p=>p.common_name).join(' and ')}. The garden is in strong health this ${season} with a Resilience Score of ${score}.`;
+  if (activeIssues > 0) return `${activeIssues} active health issue${activeIssues>1?'s':''} noted this ${season}. The Feedback Loop has been engaged — recovery is underway.`;
+  if (journalCount > 5) return `${journalCount} field notes recorded this season, each one a small act of witness. The garden remembers.`;
+  if (nativeCount >= 5) return `${nativeCount} native species in cultivation — a meaningful contribution to the local pollinator corridor this ${season}.`;
+  return `A garden in progress. ${plants.length} plants, ${score}/100 Resilience Score, and the season still unfolding.`;
+}
+
+// ── Main data load ────────────────────────────────
+async function loadData() {
+  $('loading-msg').style.display = 'block';
+  $('snapshot-card').style.display = 'none';
+
+  const [plantRes, scanRes, logRes, journalRes] = await Promise.all([
+    sb.from('garden_library').select('id,common_name,emoji,plant_family,is_native,is_host_plant,maturity_days,recovery_days,planted_date'),
+    sb.from('plant_health_scans').select('id,status,severity,scan_date,plant_name'),
+    sb.from('garden_logs').select('id,activity_type,log_date').order('log_date',{ascending:false}).limit(200),
+    sb.from('journal_entries').select('id,entry_date').then(r => r).catch(()=>({data:[]})),
+  ]);
+
+  const plants  = plantRes.data  || [];
+  const scans   = scanRes.data   || [];
+  const logs    = logRes.data    || [];
+  const journal = journalRes.data || [];
+
+  // ── Populate the card ──
+  const score   = computeResilience(plants, scans, logs);
+  const season  = getSeason();
+  const natives = plants.filter(p => p.is_native);
+  const hosts   = plants.filter(p => p.is_host_plant);
+  const active  = scans.filter(s => s.status !== 'resolved');
+  const resolved= scans.filter(s => s.status === 'resolved');
+  const nativeRatio = plants.length ? Math.round((natives.length/plants.length)*100) : 0;
+  const pollIQ  = Math.min(100, Math.round((natives.length*1.5 + hosts.length) / Math.max(plants.length,1) * 50));
+  const families = [...new Set(plants.map(p=>p.plant_family).filter(Boolean))].sort();
+  const topFamily = families.reduce((best, f) => {
+    const cnt = plants.filter(p=>p.plant_family===f).length;
+    return cnt > (best.cnt||0) ? {f,cnt} : best;
+  }, {});
+  const achievements = countAchievements(plants, scans, logs);
+
+  // Upcoming harvests (next 60 days)
+  const now = Date.now();
+  const upcoming = plants
+    .filter(p => p.planted_date && p.maturity_days)
+    .map(p => {
+      const eff = p.maturity_days + (p.recovery_days||0);
+      const harvest = new Date(p.planted_date+'T12:00:00').getTime() + eff*86400000;
+      const daysLeft = Math.round((harvest - now)/86400000);
+      return { ...p, daysLeft };
+    })
+    .filter(p => p.daysLeft >= 0 && p.daysLeft <= 60)
+    .sort((a,b) => a.daysLeft - b.daysLeft)
+    .slice(0, 4);
+
+  // Date + season
+  $('card-date').innerHTML = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + '<br/>Zone 6b · Fairfield CT';
+  const seal = $('card-season-seal');
+  seal.textContent = season.icon;
+  seal.dataset.label = season.label.toUpperCase();
+
+  // Score
+  const scoreLabel = score>=85?'Thriving Ecosystem':score>=70?'Healthy Garden':score>=50?'Developing Resilience':score>=30?'Needs Attention':'Under Stress';
+  $('c-resilience').textContent = score;
+  $('c-resilience-label').textContent = scoreLabel;
+
+  // Plants
+  $('c-plants').textContent = plants.length;
+  $('c-plants-detail').textContent = families.length + ' botanical famil' + (families.length===1?'y':'ies');
+
+  // Natives
+  $('c-natives').textContent = natives.length;
+  $('c-natives-detail').textContent = nativeRatio + '% of library · ' + hosts.length + ' host plant' + (hosts.length!==1?'s':'');
+
+  // Pollinator IQ
+  $('c-iq').textContent = pollIQ;
+  $('c-iq-detail').textContent = pollIQ >= 70 ? 'Strong habitat value' : pollIQ >= 40 ? 'Growing habitat' : 'Add native species';
+
+  // Harvests
+  $('c-harvests').innerHTML = upcoming.length
+    ? upcoming.map(p => `<div class="harvest-row"><span class="harvest-name">${p.emoji||'🌱'} ${p.common_name}</span><span class="harvest-days">${p.daysLeft === 0 ? 'Today' : p.daysLeft + 'd'}</span></div>`).join('')
+    : '<div class="harvest-row"><span class="harvest-name" style="color:var(--muted);font-style:italic;">None in next 60 days</span></div>';
+
+  // Journal
+  $('c-journal').textContent = journal.length;
+  const thisMonth = today().slice(0,7);
+  const monthEntries = journal.filter(e => (e.entry_date||'').startsWith(thisMonth)).length;
+  $('c-journal-detail').textContent = monthEntries + ' this month';
+
+  // Health
+  $('c-health').textContent  = active.length;
+  $('c-health').style.color  = active.length === 0 ? '#7ad870' : active.length >= 3 ? '#e05050' : '#e8b040';
+  $('c-health-detail').textContent = active.length === 0 ? 'Garden is clear' : active.filter(s=>['high','critical'].includes(s.severity)).length + ' high/critical';
+
+  // Resolved
+  $('c-resolved').textContent = resolved.length;
+
+  // Families
+  $('c-families').innerHTML = families.slice(0, 7).map(f =>
+    `<span class="family-pip${f===topFamily.f?' top':''}">${f}</span>`
+  ).join('') + (families.length > 7 ? `<span class="family-pip">+${families.length-7}</span>` : '');
+
+  // Achievements
+  $('c-achievements').textContent = achievements;
+  $('c-achievements-detail').textContent = `of 15 medals earned`;
+
+  // Field note
+  $('c-field-note').textContent = '"' + generateFieldNote(plants, scans, score, natives.length, journal.length) + '"';
+
+  // Garden name
+  updateGardenName($('garden-name-input').value);
+
+  $('loading-msg').style.display = 'none';
+  $('snapshot-card').style.display = 'block';
+  scaleCard();
+}
+
+// ── Garden name ───────────────────────────────────
+function updateGardenName(val) {
+  const name = val || 'My Garden';
+  const words = name.trim().split(' ');
+  const last  = words.pop();
+  const rest  = words.join(' ');
+  $('card-name').innerHTML = (rest ? rest + ' ' : '') + `<em>${last}</em>`;
+}
+
+// ── Refresh ───────────────────────────────────────
+async function refreshData() {
+  await loadData();
+  toast('Snapshot refreshed');
+}
+
+// ── Download PNG ──────────────────────────────────
+async function downloadSnapshot() {
+  const btn = $('download-btn');
+  btn.disabled = true; btn.textContent = '⌛ Generating…';
+  toast('Rendering snapshot…');
+
+  // Temporarily reset transform so html2canvas captures at full resolution
+  const card = $('snapshot-card');
+  const savedTransform = card.style.transform;
+  const savedMargin    = card.style.marginBottom;
+  card.style.transform    = 'none';
+  card.style.marginBottom = '0';
+
+  try {
+    const canvas = await html2canvas(card, {
+      scale: 2,           // 2x for retina quality
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      logging: false,
+      width: 1200,
+      height: 630,
+    });
+
+    const link = document.createElement('a');
+    link.download = `garden-snapshot-${today()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    toast('✓ Snapshot downloaded!');
+  } catch(e) {
+    toast('Download failed: ' + e.message, true);
+    console.error('[Snapshot]', e);
+  }
+
+  // Restore transform
+  card.style.transform    = savedTransform;
+  card.style.marginBottom = savedMargin;
+  btn.disabled = false; btn.textContent = '↓ Download PNG';
+}
+
+// ── Auth + boot ───────────────────────────────────
+$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+(async () => {
+  await sb.auth.getSession();
+  await loadData();
+})();
+</script>
+</body>
+</html>
