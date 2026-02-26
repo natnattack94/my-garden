@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GardenHub OS | Weather Log</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="weather-engine.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Tokens ──────────────────────────────────── */
+:root {
+  --bg:        #070d14;
+  --surface:   #0a1520;
+  --surface2:  #0e1c2a;
+  --surface3:  #122235;
+  --border:    #1a2e45;
+  --border2:   #203a56;
+
+  --sky:       #4a9fd4;
+  --sky-dim:   #2a5a7a;
+  --sky-pale:  rgba(74,159,212,0.1);
+  --frost:     #a0d8f0;
+  --frost-dim: #2a5070;
+  --heat:      #e86030;
+  --heat-dim:  #5a2010;
+  --rain:      #5090d0;
+  --rain-dim:  #1a3060;
+  --humid:     #50a070;
+  --humid-dim: #1a4030;
+  --sun:       #e8c040;
+  --sun-dim:   #4a3a10;
+
+  --text:      #c8dce8;
+  --muted:     #4a6a80;
+  --faint:     #2a4a60;
+
+  --serif:     'Syne', sans-serif;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Starfield bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 42% 8%,  rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 68% 35%, rgba(255,255,255,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 12%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5%  55%, rgba(255,255,255,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(2px 2px at 30% 80%, rgba(74,159,212,0.3)  0%, transparent 100%),
+    radial-gradient(2px 2px at 75% 90%, rgba(74,159,212,0.2)  0%, transparent 100%);
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Top bar ─────────────────────────────────── */
+.top-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(7,13,20,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 1.75rem; gap: 1rem;
+}
+.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
+.logo-eye  { font-family: var(--mono); font-size: 0.48rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; }
+.logo-name { font-family: var(--serif); font-size: 1.15rem; color: var(--sky); font-weight: 700; }
+
+nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.07em; text-transform: uppercase;
+  text-decoration: none; padding: 0.28rem 0.55rem;
+  border: 1px solid var(--border); color: var(--muted);
+  background: transparent; cursor: pointer; transition: all 0.15s;
+}
+.nav-link:hover  { border-color: var(--border2); color: var(--text); }
+.nav-link.active { border-color: var(--sky); color: var(--sky); }
+.nav-link.danger:hover { border-color: #f08080; color: #f08080; }
+
+/* ── Page layout ─────────────────────────────── */
+.page { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem 5rem; }
+
+/* ── Live conditions hero ────────────────────── */
+.conditions-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0; align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.hero-icon-col {
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
+  border-right: 1px solid var(--border);
+  font-size: 4rem;
+  min-width: 120px;
+}
+
+.hero-stats {
+  display: flex; align-items: center; gap: 0;
+  padding: 0; overflow-x: auto;
+}
+.hero-stat {
+  padding: 1.25rem 1.75rem;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.hero-stat:last-child { border-right: none; }
+.hs-num  { font-family: var(--serif); font-size: 2rem; font-weight: 800; color: var(--text); line-height: 1; }
+.hs-num.sky   { color: var(--sky); }
+.hs-num.frost { color: var(--frost); }
+.hs-num.heat  { color: var(--heat); }
+.hs-num.rain  { color: var(--rain); }
+.hs-lbl { font-family: var(--mono); font-size: 0.45rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+.hs-sub { font-family: var(--mono); font-size: 0.5rem; color: var(--faint); margin-top: 2px; }
+
+.hero-risk-col {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.25rem 1.75rem; min-width: 140px;
+  border-left: 1px solid var(--border);
+  text-align: center;
+}
+.risk-badge {
+  font-family: var(--serif); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 0.35rem 0.9rem; border: 1px solid; margin-bottom: 0.4rem;
+}
+.risk-LOW      { color: var(--sky);   border-color: var(--sky-dim);   background: var(--sky-pale); }
+.risk-MODERATE { color: var(--sun);   border-color: var(--sun-dim);   background: rgba(232,192,64,0.08); }
+.risk-FROST    { color: var(--frost); border-color: var(--frost-dim); background: rgba(160,216,240,0.08); }
+.risk-HEAT     { color: var(--heat);  border-color: var(--heat-dim);  background: rgba(232,96,48,0.08); }
+.risk-sub { font-family: var(--mono); font-size: 0.48rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ── Section layout ──────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+.full-col { margin-bottom: 1.25rem; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.25rem;
+}
+.panel-eye   { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+.panel-title { font-family: var(--serif); font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.85rem; }
+.chart-wrap  { position: relative; }
+
+/* ── Event timeline ──────────────────────────── */
+.event-timeline { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.event-row {
+  display: flex; align-items: flex-start; gap: 0.85rem;
+  padding: 0.75rem; border: 1px solid var(--border);
+  background: var(--surface2);
+  animation: fadeIn 0.3s ease both;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+.event-row.FROST    { border-left: 3px solid var(--frost); }
+.event-row.HEAT     { border-left: 3px solid var(--heat); }
+.event-row.HEAVY_RAIN { border-left: 3px solid var(--rain); }
+.event-row.HIGH_HUMIDITY { border-left: 3px solid var(--humid); }
+.event-row.DROUGHT  { border-left: 3px solid var(--sun); }
+
+.ev-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.ev-body  { flex: 1; min-width: 0; }
+.ev-head  { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
+.ev-type  { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; }
+.ev-date  { font-family: var(--mono); font-size: 0.5rem; color: var(--muted); }
+.ev-detail { font-family: var(--sans); font-size: 0.72rem; color: var(--text); line-height: 1.5; }
+.ev-scans  { margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.ev-scan-tag {
+  font-family: var(--mono); font-size: 0.46rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.12rem 0.4rem; background: var(--surface3); border: 1px solid var(--border2); color: var(--muted);
+}
+.ev-scan-tag.linked { border-color: var(--heat-dim); color: #e08060; }
+.ev-no-scans { font-family: var(--mono); font-size: 0.48rem; color: var(--faint); font-style: italic; }
+.ev-ack-btn {
+  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.2rem 0.5rem; border: 1px solid var(--border2); color: var(--muted);
+  background: transparent; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.ev-ack-btn:hover { border-color: var(--sky); color: var(--sky); }
+.ev-ack-btn.acked { color: var(--faint); border-color: var(--faint); cursor: default; }
+
+/* ── Condition color chips for event types ───── */
+.type-FROST        { color: var(--frost); }
+.type-HEAT         { color: var(--heat); }
+.type-HEAVY_RAIN   { color: var(--rain); }
+.type-HIGH_HUMIDITY{ color: var(--humid); }
+.type-DROUGHT      { color: var(--sun); }
+
+/* ── Weather history table ───────────────────── */
+.wx-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.58rem; }
+.wx-table th {
+  padding: 0.4rem 0.6rem; text-align: left;
+  font-size: 0.45rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border2); font-weight: 400;
+}
+.wx-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--faint); color: var(--text); }
+.wx-table tr:hover td { background: var(--surface2); }
+.wx-table .risk-pill {
+  padding: 0.08rem 0.4rem; font-size: 0.42rem; letter-spacing: 0.1em; text-transform: uppercase;
+  border: 1px solid; display: inline-block;
+}
+
+/* ── Backfill panel ──────────────────────────── */
+.backfill-form { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.bf-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.bf-label { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.bf-input {
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); padding: 0.45rem 0.65rem;
+  font-family: var(--mono); font-size: 0.65rem; outline: none; transition: border-color 0.15s;
+}
+.bf-input:focus { border-color: var(--sky); }
+.bf-btn {
+  padding: 0.5rem 1.1rem; font-family: var(--mono); font-size: 0.58rem;
+  letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--sky);
+  color: var(--sky); background: transparent; cursor: pointer; transition: all 0.15s;
+}
+.bf-btn:hover { background: var(--sky); color: var(--bg); }
+.bf-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.bf-result { font-family: var(--mono); font-size: 0.58rem; color: var(--sky); letter-spacing: 0.06em; }
+
+/* ── Correlation callout ─────────────────────── */
+.correlation-box {
+  border: 1px solid; padding: 0.85rem 1rem; margin-top: 0.85rem;
+  font-family: var(--sans); font-size: 0.75rem; line-height: 1.6;
+}
+.correlation-box.warn { border-color: var(--heat-dim); background: rgba(232,96,48,0.05); color: var(--text); }
+.correlation-box.info { border-color: var(--sky-dim);  background: rgba(74,159,212,0.05); color: var(--text); }
+.correlation-box.good { border-color: var(--humid-dim); background: rgba(80,160,112,0.05); color: var(--text); }
+
+/* ── Summary chips ───────────────────────────── */
+.event-summary { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.sum-chip {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.7rem; border: 1px solid var(--border2);
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.sum-chip-num { font-family: var(--serif); font-size: 1rem; font-weight: 700; color: var(--text); }
+
+/* ── Empty state ─────────────────────────────── */
+.empty { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 0.08em; padding: 1.5rem; text-align: center; }
+
+/* ── Loading skeleton ────────────────────────── */
+.skel { background: linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%); background-size:400%; animation:sk 1.4s ease infinite; border-radius:2px; }
+@keyframes sk { 0%{background-position:100%}100%{background-position:-100%} }
+
+/* ── Toast ───────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 800;
+  background: var(--surface2); color: var(--sky);
+  border: 1px solid var(--sky); padding: 0.65rem 1rem;
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em;
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 0.2s, transform 0.2s; pointer-events: none; max-width: 320px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .conditions-hero { grid-template-columns: 1fr; }
+  .hero-icon-col { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ═══ TOP BAR ═══ -->
+<div class="top-bar">
+  <div class="logo-block">
+    <div class="logo-eye">GardenHub OS // v10.6</div>
+    <div class="logo-name">Weather Log</div>
+  </div>
+  <nav>
+    <a href="index.html"        class="nav-link">Dashboard</a>
+    <a href="map.html"          class="nav-link">Map</a>
+    <a href="insights.html"     class="nav-link">Insights</a>
+    <a href="clinic.html"       class="nav-link">Clinic</a>
+    <a href="library.html"      class="nav-link">Library</a>
+    <a href="calendar.html"     class="nav-link">Calendar</a>
+    <a href="achievements.html" class="nav-link">Medals</a>
+    <a href="journal.html"      class="nav-link">Journal</a>
+    <a href="snapshot.html"     class="nav-link">Snapshot</a>
+    <a href="weather.html"      class="nav-link active">Weather</a>
+    <button class="nav-link danger" id="logout-btn">Logout</button>
+  </nav>
+</div>
+
+<div class="page">
+
+  <!-- ═══ LIVE CONDITIONS ═══ -->
+  <div class="conditions-hero" id="conditions-hero">
+    <div class="hero-icon-col" id="hero-icon">⌛</div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hs-num sky" id="hs-temp">--</div>
+        <div class="hs-lbl">Current Temp</div>
+        <div class="hs-sub" id="hs-feels">Feels like --</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-num" id="hs-range">-- / --</div>
+        <div class="hs-lbl">High / Low Today</div>
+        <div class="hs-sub" id="hs-desc">Loading…</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-num" id="hs-humidity">--%</div>
+        <div class="hs-lbl">Humidity</div>
+        <div class="hs-sub" id="hs-wind">-- mph</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-num rain" id="hs-precip">--"</div>
+        <div class="hs-lbl">Precipitation</div>
+        <div class="hs-sub" id="hs-solar">-- solar hrs</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-num" id="hs-event-count" style="color:var(--heat)">--</div>
+        <div class="hs-lbl">Events (30d)</div>
+        <div class="hs-sub" id="hs-event-sub">-- frost · -- heat</div>
+      </div>
+    </div>
+    <div class="hero-risk-col">
+      <div class="risk-badge risk-LOW" id="risk-badge">LOW</div>
+      <div class="risk-sub">Today's Risk</div>
+    </div>
+  </div>
+
+  <!-- ═══ CHARTS ROW ═══ -->
+  <div class="two-col">
+
+    <!-- Temperature + events chart -->
+    <div class="panel">
+      <div class="panel-eye">90-Day Record // Temperature & Events</div>
+      <div class="panel-title">Temp Range with Weather Events Annotated</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-temp"></canvas></div>
+      <div id="temp-correlation" class="correlation-box info" style="display:none;"></div>
+    </div>
+
+    <!-- Precipitation chart -->
+    <div class="panel">
+      <div class="panel-eye">90-Day Record // Precipitation & Humidity</div>
+      <div class="panel-title">Rainfall + Humidity Pressure</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chart-precip"></canvas></div>
+      <div id="precip-correlation" class="correlation-box info" style="display:none;"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══ DISEASE × WEATHER CORRELATION ═══ -->
+  <div class="full-col panel">
+    <div class="panel-eye">Consultant View // Cross-Reference Analysis</div>
+    <div class="panel-title">Disease Incidents × Weather Events — Annotated Timeline</div>
+    <div class="chart-wrap" style="height:300px"><canvas id="chart-disease-wx"></canvas></div>
+    <div id="disease-correlation" class="correlation-box" style="display:none;margin-top:0.85rem;"></div>
+  </div>
+
+  <!-- ═══ EVENT TIMELINE + HISTORY ═══ -->
+  <div class="two-col">
+
+    <!-- Event timeline -->
+    <div class="panel">
+      <div class="panel-eye">Weather Events // Last 30 Days</div>
+      <div class="panel-title">Frost · Heat · Rain · Humidity Events</div>
+      <div class="event-summary" id="event-summary"></div>
+      <div id="event-timeline">
+        <div class="skel" style="height:60px;margin-bottom:0.5rem;"></div>
+        <div class="skel" style="height:60px;margin-bottom:0.5rem;animation-delay:0.1s"></div>
+        <div class="skel" style="height:60px;animation-delay:0.2s"></div>
+      </div>
+    </div>
+
+    <!-- Backfill + recent history -->
+    <div class="panel" style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      <!-- Backfill -->
+      <div>
+        <div class="panel-eye">Historical Data // Backfill</div>
+        <div class="panel-title">Import Past Weather</div>
+        <p style="font-family:var(--sans);font-size:0.7rem;color:var(--muted);line-height:1.6;margin-bottom:0.85rem;">
+          Pull historical weather data from Open-Meteo's archive API to populate your weather log
+          retroactively. This makes the Disease × Temperature chart meaningful from day one.
+        </p>
+        <div class="backfill-form">
+          <div class="bf-group">
+            <div class="bf-label">Start Date</div>
+            <input type="date" class="bf-input" id="bf-start"/>
+          </div>
+          <div class="bf-group">
+            <div class="bf-label">End Date</div>
+            <input type="date" class="bf-input" id="bf-end"/>
+          </div>
+          <button class="bf-btn" id="bf-btn" onclick="runBackfill()">Import</button>
+        </div>
+        <div id="bf-result" class="bf-result" style="margin-top:0.5rem;display:none;"></div>
+      </div>
+
+      <!-- Recent log table -->
+      <div>
+        <div class="panel-eye">Weather Log // Recent</div>
+        <div class="panel-title">Last 14 Days</div>
+        <div id="wx-table-wrap" style="overflow-x:auto;max-height:280px;overflow-y:auto;">
+          <div class="skel" style="height:180px;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  GardenHub OS — Weather Log v10.6
+//  Full weather event log with disease correlation.
+// ══════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+
+Chart.defaults.color       = '#4a6a80';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size   = 10;
+Chart.defaults.borderColor = '#1a2e45';
+
+const charts = {};
+function mkChart(id, cfg) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id), cfg);
+}
+
+// ── Event type config ─────────────────────────────
+const EV_CFG = {
+  FROST:        { icon:'❄️', label:'Frost',    color: '#a0d8f0', class:'type-FROST' },
+  HEAT:         { icon:'🌡', label:'Heat',     color: '#e86030', class:'type-HEAT' },
+  HEAVY_RAIN:   { icon:'🌧', label:'Rain',     color: '#5090d0', class:'type-HEAVY_RAIN' },
+  HIGH_HUMIDITY:{ icon:'💧', label:'Humidity', color: '#50a070', class:'type-HIGH_HUMIDITY' },
+  DROUGHT:      { icon:'☀️', label:'Dry',      color: '#e8c040', class:'type-DROUGHT' },
+};
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(msg, err=false) {
+  const el = $('toast'); el.textContent = msg;
+  el.style.color       = err ? '#f08080' : 'var(--sky)';
+  el.style.borderColor = err ? '#802020' : 'var(--sky)';
+  el.className = 'show';
+  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3500);
+}
+
+function daysAgo(n) {
+  const d = new Date(); d.setDate(d.getDate()-n);
+  return d.toISOString().slice(0,10);
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+// ── Boot ──────────────────────────────────────────
+async function boot() {
+  // Set backfill date defaults (last 90 days)
+  $('bf-end').value   = new Date().toISOString().slice(0,10);
+  $('bf-start').value = daysAgo(90);
+
+  // Run weather engine (fetches today + detects events)
+  let wx;
+  try {
+    wx = await WeatherEngine.run(sb);
+    populateHero(wx);
+  } catch(e) {
+    console.error('[Weather] engine error:', e);
+    $('hero-icon').textContent = '⚠️';
+    toast('Weather fetch failed — showing cached data', true);
+  }
+
+  // Load all data in parallel
+  await Promise.all([
+    loadCharts(),
+    loadEventTimeline(),
+    loadHistoryTable(),
+  ]);
+}
+
+// ── Populate hero bar ─────────────────────────────
+function populateHero(wx) {
+  if (!wx || wx.error) return;
+  $('hero-icon').textContent = wx.icon || '🌡';
+  $('hs-temp').textContent   = wx.tempF + '°F';
+  $('hs-feels').textContent  = 'Feels like ' + wx.feelsLikeF + '°F';
+  $('hs-range').textContent  = wx.highF + '° / ' + wx.lowF + '°';
+  $('hs-desc').textContent   = wx.desc || '—';
+  $('hs-humidity').textContent = wx.humidity + '%';
+  $('hs-wind').textContent   = wx.windMph + ' mph wind';
+  $('hs-precip').textContent = (wx.precipIn || 0).toFixed(2) + '"';
+  $('hs-solar').textContent  = (wx.solarHours || 0).toFixed(1) + ' solar hrs';
+
+  const riskEl = $('risk-badge');
+  riskEl.textContent  = wx.risk;
+  riskEl.className    = 'risk-badge risk-' + wx.risk;
+
+  // Temp color
+  const tempEl = $('hs-temp');
+  if (wx.risk === 'FROST')    tempEl.style.color = 'var(--frost)';
+  else if (wx.risk === 'HEAT') tempEl.style.color = 'var(--heat)';
+  else                         tempEl.style.color = 'var(--sky)';
+}
+
+// ── Load charts ───────────────────────────────────
+async function loadCharts() {
+  const [history, events, scans] = await Promise.all([
+    WeatherEngine.loadHistory(sb, 90),
+    sb.from('weather_events').select('*').gte('event_date', daysAgo(90)).order('event_date').then(r=>r.data||[]),
+    sb.from('plant_health_scans').select('scan_date,severity,status,issue_type').gte('scan_date', daysAgo(90)).order('scan_date').then(r=>r.data||[]),
+  ]);
+
+  buildTempChart(history, events);
+  buildPrecipChart(history, events);
+  buildDiseaseWxChart(history, events, scans);
+  buildEventSummary(events);
+  updateEventCountHero(events);
+}
+
+// ── Temperature chart with event annotations ──────
+function buildTempChart(history, events) {
+  if (!history.length) return;
+
+  // Sample to ~30 points for readability
+  const step = Math.max(1, Math.floor(history.length / 30));
+  const sampled = history.filter((_,i) => i % step === 0);
+
+  const labels = sampled.map(d => fmtDate(d.log_date));
+  const highs  = sampled.map(d => d.temp_high_f);
+  const lows   = sampled.map(d => d.temp_low_f);
+
+  // Build annotations for frost/heat events
+  const annotations = {};
+  events.forEach((ev, i) => {
+    const idx = sampled.findIndex(d => d.log_date === ev.event_date);
+    if (idx < 0) return;
+    const cfg = EV_CFG[ev.event_type];
+    if (!cfg) return;
+    annotations['ev_' + i] = {
+      type: 'line',
+      scaleID: 'x',
+      value: idx,
+      borderColor: cfg.color + '80',
+      borderWidth: 1.5,
+      borderDash: ev.event_type === 'FROST' ? [] : [4,3],
+      label: {
+        display: true,
+        content: cfg.icon,
+        position: 'start',
+        font: { size: 11 },
+        backgroundColor: 'transparent',
+        color: cfg.color,
+        yAdjust: -12,
+      },
+    };
+  });
+
+  // Frost threshold line
+  annotations['frost_line'] = {
+    type: 'line', scaleID: 'y', value: 36,
+    borderColor: 'rgba(160,216,240,0.3)', borderWidth: 1, borderDash: [6,3],
+    label: { display: true, content: '36° Frost', position: 'end', font:{size:9}, backgroundColor:'transparent', color:'rgba(160,216,240,0.5)' },
+  };
+  annotations['heat_line'] = {
+    type: 'line', scaleID: 'y', value: 90,
+    borderColor: 'rgba(232,96,48,0.3)', borderWidth: 1, borderDash: [6,3],
+    label: { display: true, content: '90° Heat', position: 'end', font:{size:9}, backgroundColor:'transparent', color:'rgba(232,96,48,0.5)' },
+  };
+
+  mkChart('chart-temp', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'High °F', data:highs, borderColor:'#e86030', backgroundColor:'rgba(232,96,48,0.08)', tension:0.4, pointRadius:0, borderWidth:1.5, fill:'+1' },
+        { label:'Low °F',  data:lows,  borderColor:'#5090d0', backgroundColor:'rgba(80,144,208,0.08)', tension:0.4, pointRadius:0, borderWidth:1.5 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x:{ grid:{color:'#1a2e45'}, ticks:{maxTicksLimit:8, maxRotation:0} },
+        y:{ grid:{color:'#1a2e45'}, title:{display:true,text:'°F',color:'#4a6a80'} },
+      },
+      plugins:{
+        legend:{ labels:{boxWidth:10} },
+        annotation:{ annotations },
+      },
+    },
+  });
+
+  // Temperature correlation callout
+  const frostEvents = events.filter(e=>e.event_type==='FROST').length;
+  const heatEvents  = events.filter(e=>e.event_type==='HEAT').length;
+  const el = $('temp-correlation');
+  if (frostEvents + heatEvents > 0) {
+    el.style.display='block';
+    el.className='correlation-box warn';
+    el.innerHTML = `⚠️ <strong>${frostEvents} frost event${frostEvents!==1?'s':''}</strong> and <strong>${heatEvents} heat event${heatEvents!==1?'s':''}</strong> detected in the past 90 days. Annotated above as ❄️ and 🌡 markers. These are the most likely triggers for plant stress and disease susceptibility.`;
+  } else {
+    el.style.display='block';
+    el.className='correlation-box good';
+    el.textContent='✅ No frost or heat events detected in the past 90 days. Temperature conditions have been within normal growing range.';
+  }
+}
+
+// ── Precipitation + humidity chart ────────────────
+function buildPrecipChart(history, events) {
+  if (!history.length) return;
+
+  const step = Math.max(1, Math.floor(history.length / 30));
+  const sampled = history.filter((_,i) => i % step === 0);
+  const labels = sampled.map(d => fmtDate(d.log_date));
+  const precip  = sampled.map(d => d.precipitation_in || 0);
+  const humidity= sampled.map(d => d.humidity_pct || 0);
+
+  // Annotations for heavy rain / high humidity events
+  const annotations = {};
+  events.filter(e=>['HEAVY_RAIN','HIGH_HUMIDITY'].includes(e.event_type)).forEach((ev,i) => {
+    const idx = sampled.findIndex(d => d.log_date === ev.event_date);
+    if (idx < 0) return;
+    annotations['pev_'+i] = {
+      type:'line', scaleID:'x', value:idx,
+      borderColor: ev.event_type==='HEAVY_RAIN' ? 'rgba(80,144,208,0.5)' : 'rgba(80,160,112,0.5)',
+      borderWidth:1.5, borderDash:[4,3],
+      label:{ display:true, content: ev.event_type==='HEAVY_RAIN'?'🌧':'💧', position:'start',
+              font:{size:11}, backgroundColor:'transparent', yAdjust:-12,
+              color: ev.event_type==='HEAVY_RAIN'?'#5090d0':'#50a070' },
+    };
+  });
+
+  // Fungal risk threshold (humidity > 85%)
+  annotations['humidity_thresh'] = {
+    type:'line', scaleID:'y1', value:85,
+    borderColor:'rgba(80,160,112,0.35)', borderWidth:1, borderDash:[6,3],
+    label:{ display:true, content:'85% Fungal Risk', position:'end', font:{size:9},
+            backgroundColor:'transparent', color:'rgba(80,160,112,0.5)' },
+  };
+
+  mkChart('chart-precip', {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { type:'bar',  label:'Precip (in)', data:precip,  backgroundColor:'rgba(80,144,208,0.55)', borderColor:'#5090d0', borderWidth:1, yAxisID:'y' },
+        { type:'line', label:'Humidity %',  data:humidity, borderColor:'#50a070', backgroundColor:'rgba(80,160,112,0.08)', tension:0.4, pointRadius:0, borderWidth:1.5, yAxisID:'y1' },
+      ],
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x:{ grid:{color:'#1a2e45'}, ticks:{maxTicksLimit:8, maxRotation:0} },
+        y:{ position:'left',  grid:{color:'#1a2e45'}, title:{display:true,text:'Inches',color:'#5090d0'}, min:0 },
+        y1:{ position:'right', grid:{drawOnChartArea:false}, title:{display:true,text:'%',color:'#50a070'}, min:0, max:100 },
+      },
+      plugins:{ legend:{labels:{boxWidth:10}}, annotation:{annotations} },
+    },
+  });
+
+  // Precip correlation
+  const wetEvents = events.filter(e=>e.event_type==='HEAVY_RAIN').length;
+  const humidEvents = events.filter(e=>e.event_type==='HIGH_HUMIDITY').length;
+  const el = $('precip-correlation');
+  el.style.display='block';
+  if (wetEvents + humidEvents >= 3) {
+    el.className='correlation-box warn';
+    el.innerHTML=`⚠️ <strong>${wetEvents} heavy rain</strong> and <strong>${humidEvents} high-humidity</strong> events logged. Prolonged wet conditions are the primary driver of fungal disease. Cross-reference with Clinic scans on the chart below.`;
+  } else {
+    el.className='correlation-box info';
+    el.textContent=`📊 ${wetEvents} heavy rain event${wetEvents!==1?'s':''} and ${humidEvents} high-humidity day${humidEvents!==1?'s':''} in 90 days. Moisture conditions appear manageable.`;
+  }
+}
+
+// ── Disease × Weather correlation chart ───────────
+function buildDiseaseWxChart(history, events, scans) {
+  const step = Math.max(1, Math.floor(history.length / 45));
+  const sampled = history.filter((_,i) => i % step === 0);
+  const labels  = sampled.map(d => fmtDate(d.log_date));
+  const avgs    = sampled.map(d => Math.round(((d.temp_high_f||0)+(d.temp_low_f||0))/2));
+
+  // Map scan dates to counts
+  const scanMap = {};
+  scans.forEach(s => { scanMap[s.scan_date] = (scanMap[s.scan_date]||0)+1; });
+  const scanCounts = sampled.map(d => scanMap[d.log_date]||0);
+
+  // Annotations: all events
+  const annotations = {};
+  events.forEach((ev, i) => {
+    const idx = sampled.findIndex(d => d.log_date === ev.event_date);
+    if (idx < 0) return;
+    const cfg = EV_CFG[ev.event_type];
+    if (!cfg) return;
+    const hasLinkedScans = (ev.linked_scan_ids||[]).length > 0;
+    annotations['dev_'+i] = {
+      type:'line', scaleID:'x', value:idx,
+      borderColor: hasLinkedScans ? cfg.color : cfg.color+'50',
+      borderWidth: hasLinkedScans ? 2 : 1, borderDash:[4,3],
+      label:{
+        display:true, content: cfg.icon + (hasLinkedScans?' ⚠':''),
+        position:'start', font:{size:hasLinkedScans?12:10},
+        backgroundColor:'transparent', color:cfg.color, yAdjust:-14,
+      },
+    };
+  });
+
+  mkChart('chart-disease-wx', {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { type:'bar',  label:'Health Scans', data:scanCounts, backgroundColor:'rgba(232,96,48,0.5)', borderColor:'#e86030', borderWidth:1, yAxisID:'y' },
+        { type:'line', label:'Avg Temp °F',  data:avgs,       borderColor:'#e8c040', backgroundColor:'rgba(232,192,64,0.08)', tension:0.4, pointRadius:0, borderWidth:1.5, yAxisID:'y1', spanGaps:true },
+      ],
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x:{ grid:{color:'#1a2e45'}, ticks:{maxTicksLimit:10, maxRotation:0} },
+        y:{ position:'left', grid:{color:'#1a2e45'}, title:{display:true,text:'Scans',color:'#e86030'}, min:0, ticks:{stepSize:1} },
+        y1:{ position:'right', grid:{drawOnChartArea:false}, title:{display:true,text:'°F',color:'#e8c040'} },
+      },
+      plugins:{ legend:{labels:{boxWidth:10}}, annotation:{annotations} },
+    },
+  });
+
+  // Correlation analysis
+  const linkedEvents = events.filter(e=>(e.linked_scan_ids||[]).length>0).length;
+  const totalScans   = scans.length;
+  const el = $('disease-correlation');
+  el.style.display = 'block';
+
+  if (linkedEvents >= 2) {
+    el.className='correlation-box warn';
+    el.innerHTML=`⚠️ <strong>${linkedEvents} weather event${linkedEvents!==1?'s':''}</strong> are temporally linked to health scan records (within ±3 days). Weather markers with ⚠️ indicate events co-occurring with active clinic issues. This suggests a causal relationship between weather stress and plant disease in your garden.`;
+  } else if (totalScans === 0) {
+    el.className='correlation-box info';
+    el.textContent='📊 No health scans recorded yet. Log plant issues in the Clinic to begin building a disease–weather correlation for your garden.';
+  } else if (!history.length) {
+    el.className='correlation-box info';
+    el.textContent='📊 No weather history yet. Use the backfill tool to import past weather data, then this chart will show the full correlation.';
+  } else {
+    el.className='correlation-box good';
+    el.textContent=`✅ ${totalScans} health scan${totalScans!==1?'s':''} logged. No strong temporal correlation with weather events detected — good news for your growing conditions.`;
+  }
+}
+
+// ── Event summary chips ───────────────────────────
+function buildEventSummary(events) {
+  const counts = {};
+  events.forEach(e => { counts[e.event_type] = (counts[e.event_type]||0)+1; });
+  $('event-summary').innerHTML = Object.entries(EV_CFG).map(([type, cfg]) => `
+    <div class="sum-chip">
+      ${cfg.icon}
+      <span class="sum-chip-num ${counts[type]?'':''}' style="color:${counts[type]?cfg.color:'var(--faint)'}">${counts[type]||0}</span>
+      <span>${cfg.label}</span>
+    </div>`).join('');
+}
+
+function updateEventCountHero(events) {
+  const frost = events.filter(e=>e.event_type==='FROST').length;
+  const heat  = events.filter(e=>e.event_type==='HEAT').length;
+  $('hs-event-count').textContent = events.length;
+  $('hs-event-sub').textContent   = `${frost} frost · ${heat} heat`;
+}
+
+// ── Event timeline ────────────────────────────────
+async function loadEventTimeline() {
+  const { data } = await sb.from('weather_events')
+    .select('*')
+    .gte('event_date', daysAgo(30))
+    .order('event_date', { ascending: false });
+
+  const events = data || [];
+  if (!events.length) {
+    $('event-timeline').innerHTML = '<div class="empty">No weather events logged in the past 30 days. Visit the Dashboard to fetch today\'s weather and begin building the event log.</div>';
+    return;
+  }
+
+  // Fetch scan details for linked scans
+  const allScanIds = [...new Set(events.flatMap(e => e.linked_scan_ids||[]))];
+  let scanDetails = {};
+  if (allScanIds.length) {
+    const { data: sd } = await sb.from('plant_health_scans')
+      .select('id,plant_name,issue_type,severity').in('id', allScanIds);
+    (sd||[]).forEach(s => { scanDetails[s.id] = s; });
+  }
+
+  $('event-timeline').innerHTML = events.map((ev, i) => {
+    const cfg = EV_CFG[ev.event_type] || { icon:'🌡', label:ev.event_type, color:'var(--sky)' };
+    const linked = (ev.linked_scan_ids||[]).map(id => scanDetails[id]).filter(Boolean);
+
+    return `
+      <div class="event-row ${ev.event_type}" style="animation-delay:${i*0.05}s">
+        <div class="ev-icon">${cfg.icon}</div>
+        <div class="ev-body">
+          <div class="ev-head">
+            <span class="ev-type ${cfg.class}">${cfg.label}</span>
+            <span class="ev-date">${fmtDate(ev.event_date)}</span>
+          </div>
+          <div class="ev-detail">${esc(ev.detail||'')}</div>
+          ${linked.length ? `
+            <div class="ev-scans">
+              <span class="ev-scan-tag" style="margin-right:0.2rem;">⚠ Linked scans:</span>
+              ${linked.map(s=>`<span class="ev-scan-tag linked">${esc(s.plant_name||'?')} — ${esc(s.issue_type||'?')}</span>`).join('')}
+            </div>` :
+            `<div class="ev-scans"><span class="ev-no-scans">No clinic activity within ±3 days</span></div>`
+          }
+        </div>
+        <button class="ev-ack-btn${ev.acknowledged?' acked':''}" onclick="acknowledgeEvent('${ev.id}',this)">
+          ${ev.acknowledged?'✓ Noted':'Acknowledge'}
+        </button>
+      </div>`;
+  }).join('');
+}
+
+async function acknowledgeEvent(id, btn) {
+  btn.disabled = true;
+  await sb.from('weather_events').update({ acknowledged: true }).eq('id', id);
+  btn.className = 'ev-ack-btn acked';
+  btn.textContent = '✓ Noted';
+}
+
+// ── History table ──────────────────────────────────
+async function loadHistoryTable() {
+  const { data } = await sb.from('weather_logs')
+    .select('log_date,temp_high_f,temp_low_f,humidity_pct,precipitation_in,risk_level,weathercode,weather_code')
+    .gte('log_date', daysAgo(14))
+    .order('log_date', { ascending: false });
+
+  const rows = data || [];
+  if (!rows.length) {
+    $('wx-table-wrap').innerHTML = '<div class="empty">No weather history yet. Visit the Dashboard to start logging.</div>';
+    return;
+  }
+
+  const riskColor = { LOW:'var(--sky)', MODERATE:'var(--sun)', FROST:'var(--frost)', HEAT:'var(--heat)' };
+
+  $('wx-table-wrap').innerHTML = `
+    <table class="wx-table">
+      <thead><tr>
+        <th>Date</th><th>High</th><th>Low</th><th>Precip</th><th>Humidity</th><th>Risk</th>
+      </tr></thead>
+      <tbody>${rows.map(r => {
+        const code = r.weathercode || r.weather_code;
+        const icon = WeatherEngine.WMO_ICON[code] || '🌡';
+        const risk = r.risk_level || 'LOW';
+        return `<tr>
+          <td>${icon} ${r.log_date}</td>
+          <td>${r.temp_high_f??'—'}°</td>
+          <td>${r.temp_low_f??'—'}°</td>
+          <td>${r.precipitation_in??'—'}"</td>
+          <td>${r.humidity_pct??'—'}%</td>
+          <td><span class="risk-pill" style="color:${riskColor[risk]||'var(--sky)'};border-color:${riskColor[risk]||'var(--sky)'};">${risk}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+// ── Backfill ──────────────────────────────────────
+async function runBackfill() {
+  const start = $('bf-start').value;
+  const end   = $('bf-end').value;
+  if (!start || !end) { toast('Select start and end dates', true); return; }
+  if (start > end)    { toast('Start must be before end', true); return; }
+
+  // Max 1 year
+  const diffDays = (new Date(end) - new Date(start)) / 86400000;
+  if (diffDays > 366) { toast('Max range is 1 year', true); return; }
+
+  const btn = $('bf-btn');
+  btn.disabled = true; btn.textContent = 'Importing…';
+  const res = $('bf-result');
+  res.style.display = 'none';
+
+  try {
+    const { data:{session} } = await sb.auth.getSession();
+    const result = await WeatherEngine.backfill(sb, session?.user?.id, start, end);
+    res.style.display = 'block';
+    res.textContent = `✓ Imported ${result.days} days, detected ${result.events} weather events.`;
+    toast(`✓ Backfill complete — ${result.days} days imported`);
+    await loadCharts();
+    await loadEventTimeline();
+    await loadHistoryTable();
+  } catch(e) {
+    toast('Backfill failed: ' + e.message, true);
+    res.style.display = 'block';
+    res.textContent = 'Error: ' + e.message;
+    console.error('[Backfill]', e);
+  }
+
+  btn.disabled = false; btn.textContent = 'Import';
+}
+
+// ── Auth + boot ───────────────────────────────────
+$('logout-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+(async () => {
+  await sb.auth.getSession();
+  await boot();
+})();
+</script>
+</body>
+</html>
