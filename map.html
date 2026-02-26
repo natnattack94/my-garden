@@ -529,6 +529,7 @@ body {
 
   <!-- Companion Alerts -->
   <div id="alert-panel"></div>
+  <div style="padding:0 0 0.5rem;"><a href="companions.html" style="font-family:'DM Mono',monospace;font-size:0.48rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,166,35,0.55);text-decoration:none;padding:0.25rem 0;display:block;transition:color 0.15s;" onmouseover="this.style.color='rgba(245,166,35,0.9)'" onmouseout="this.style.color='rgba(245,166,35,0.55)'">↗ Companion Reference</a></div>
 
   <!-- Memory Insights -->
   <div class="sidebar-section">
@@ -672,24 +673,64 @@ const HEAVY_FEEDERS = new Set(['Solanaceae', 'Cucurbitaceae', 'Brassicaceae']);
 const N_FIXERS      = new Set(['Fabaceae']);
 
 // ── Companion planting matrix ──────────────────
+// Synced with companions.html COMPANION_DB.
 // good[A] = [B, C] → A benefits from B and C nearby
 const COMPANIONS_GOOD = {
-  Tomato:  ['Basil','Marigold','Zinnia','Carrot','Parsley'],
-  Basil:   ['Tomato','Pepper'],
-  Marigold:['Tomato','Pepper','Eggplant','Squash'],
-  Zinnia:  ['Tomato'],
-  Carrot:  ['Tomato','Lettuce','Onion'],
-  Squash:  ['Corn','Bean','Marigold'],
-  Bean:    ['Squash','Corn','Carrot'],
-  Corn:    ['Bean','Squash'],
-  Lettuce: ['Carrot','Strawberry','Radish'],
+  Tomato:     ['Basil','Marigold','Zinnia','Carrot','Parsley','Borage','Nasturtium'],
+  Basil:      ['Tomato','Pepper','Asparagus'],
+  Marigold:   ['Tomato','Pepper','Eggplant','Squash','Rose'],
+  Zinnia:     ['Tomato','Cucumber','Squash','Melon'],
+  Carrot:     ['Tomato','Lettuce','Onion','Rosemary','Chives','Leek'],
+  Squash:     ['Corn','Bean','Marigold','Nasturtium','Borage'],
+  Bean:       ['Squash','Corn','Carrot','Cucumber','Strawberry'],
+  Corn:       ['Bean','Squash','Cucumber','Melon'],
+  Lettuce:    ['Carrot','Strawberry','Radish','Chives','Spinach'],
+  Pepper:     ['Basil','Carrot','Marigold','Onion','Parsley'],
+  Onion:      ['Carrot','Tomato','Pepper','Lettuce','Strawberry','Rose'],
+  Garlic:     ['Rose','Tomato','Raspberry'],
+  Cucumber:   ['Bean','Corn','Nasturtium','Sunflower','Radish'],
+  Radish:     ['Lettuce','Cucumber','Carrot','Spinach','Squash'],
+  Spinach:    ['Strawberry','Pea','Radish','Lettuce'],
+  Pea:        ['Carrot','Spinach','Radish'],
+  Potato:     ['Horseradish','Bean','Marigold','Nasturtium'],
+  Eggplant:   ['Marigold','Basil','Spinach'],
+  Borage:     ['Tomato','Squash','Strawberry','Cucumber'],
+  Nasturtium: ['Tomato','Squash','Cucumber','Radish'],
+  Rosemary:   ['Carrot','Cabbage','Bean','Sage'],
+  Sage:       ['Rosemary','Cabbage','Carrot','Tomato'],
+  Chives:     ['Carrot','Tomato','Rose','Parsley'],
+  Parsley:    ['Tomato','Asparagus','Rose','Corn'],
+  Strawberry: ['Borage','Lettuce','Spinach','Bean','Onion'],
+  Sunflower:  ['Cucumber','Corn','Squash'],
+  Lavender:   ['Rose','Tomato'],
+  Cabbage:    ['Dill','Rosemary','Sage','Mint','Nasturtium','Celery'],
+  Asparagus:  ['Tomato','Parsley','Basil','Marigold'],
+  Rose:       ['Garlic','Chives','Lavender','Marigold','Parsley'],
+  Dill:       ['Cabbage','Lettuce','Onion','Cucumber'],
+  Mint:       ['Cabbage','Tomato','Pea'],
 };
 const COMPANIONS_BAD = {
-  Tomato:  ['Fennel','Kohlrabi','Brassica'],
-  Basil:   ['Sage'],
-  Bean:    ['Onion','Fennel'],
-  Onion:   ['Bean','Pea'],
-  Fennel:  ['Tomato','Bean','Pepper'],
+  Tomato:     ['Fennel','Kohlrabi','Cabbage','Corn'],
+  Basil:      ['Sage','Thyme'],
+  Bean:       ['Onion','Garlic','Fennel','Kohlrabi'],
+  Onion:      ['Bean','Pea','Asparagus'],
+  Fennel:     ['Tomato','Pepper','Bean','Lettuce','Kohlrabi','Basil'],
+  Garlic:     ['Bean','Pea','Asparagus','Strawberry'],
+  Cucumber:   ['Potato','Melon'],
+  Potato:     ['Tomato','Squash','Cucumber','Sunflower','Fennel'],
+  Dill:       ['Carrot','Tomato','Fennel'],
+  Sage:       ['Basil','Onion','Cucumber'],
+  Chives:     ['Bean','Pea'],
+  Rosemary:   ['Cucumber'],
+  Eggplant:   ['Fennel','Potato'],
+  Strawberry: ['Cabbage','Fennel','Garlic'],
+  Sunflower:  ['Potato','Bean'],
+  Lettuce:    ['Celery','Fennel'],
+  Cabbage:    ['Tomato','Strawberry','Fennel'],
+  Asparagus:  ['Onion','Garlic'],
+  Parsley:    ['Mint'],
+  Mint:       ['Parsley'],
+  Pea:        ['Onion','Garlic'],
 };
 
 // ── Sun/shade map: simulate solar by season ───
@@ -952,7 +993,7 @@ function updateInsights() {
     const unique = [...new Set(allConflicts.map(a => a.split(' ↔ ').sort().join(' ↔ ')))];
     alertEl.style.display = 'block';
     alertEl.className = 'companion';
-    alertEl.innerHTML = `<b>⚠️ Companion Conflicts</b><br/>${unique.join('<br/>')}`;
+    alertEl.innerHTML = `<b>⚠️ Companion Conflicts</b><br/>${unique.join('<br/>')}<br/><a href="companions.html" style="font-size:0.65rem;color:inherit;opacity:0.7;text-decoration:none;border-bottom:1px solid currentColor;margin-top:4px;display:inline-block;">↗ Full companion reference</a>`;
   } else if (rotationConflicts > 0) {
     alertEl.style.display = 'block';
     alertEl.className = '';
