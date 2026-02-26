@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GardenHub OS | Plant Clinic v10.6</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="weather-engine.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
@@ -410,6 +411,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
     <a href="achievements.html" class="nav-link">Medals</a>
     <a href="journal.html"       class="nav-link">Journal</a>
     <a href="snapshot.html"     class="nav-link">Snapshot</a>
+    <a href="weather.html"      class="nav-link">Weather</a>
     <a href="clinic.html"   class="nav-link active">Clinic</a>
     <button class="nav-link danger" id="logout-btn">Logout</button>
   </nav>
@@ -665,26 +667,18 @@ async function boot() {
   }
 }
 
-// ── Weather ───────────────────────────────────
+// ── Weather — delegates to shared WeatherEngine ──
 async function loadWeather() {
-  const WMO = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:'🌧',80:'🌦',95:'⛈'};
   try {
-    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2635&current=temperature_2m,apparent_temperature,weathercode,relative_humidity_2m&daily=sunshine_duration&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=1');
-    const d = await r.json(); const c = d.current;
-    const tempF  = Math.round(c.temperature_2m);
-    const feelsF = Math.round(c.apparent_temperature);
-    const solar  = ((d.daily.sunshine_duration?.[0]||0)/3600).toFixed(1);
-    const icon   = WMO[c.weathercode]||'🌡';
-    let rClass = 'ok', rLabel = '✅ LOW';
-    if (tempF<=36) { rLabel='❄️ FROST'; rClass='bad'; }
-    else if (tempF>=90) { rLabel='🔥 HEAT'; rClass='bad'; }
-    else if (tempF<50)  { rLabel='⚠️ MOD';  rClass='warn'; }
-    $('w-temp').textContent     = `${icon} ${tempF}°F`;
-    $('w-feels').textContent    = `${feelsF}°F`;
-    $('w-solar').textContent    = `${solar} hrs`;
-    $('w-humidity').textContent = `${c.relative_humidity_2m}%`;
-    $('w-risk').textContent     = rLabel;
-    $('w-risk').className       = `cv ${rClass}`;
+    const wx = await WeatherEngine.run(sb);
+    $('w-temp').textContent     = `${wx.icon} ${wx.tempF}°F`;
+    $('w-feels').textContent    = `${wx.feelsLikeF}°F`;
+    $('w-solar').textContent    = `${wx.solarHours} hrs`;
+    $('w-humidity').textContent = `${wx.humidity}%`;
+    const riskMap = { FROST:'❄️ FROST', HEAT:'🔥 HEAT', MODERATE:'⚠️ MODERATE', LOW:'✅ LOW' };
+    const clsMap  = { FROST:'bad',      HEAT:'bad',     MODERATE:'warn',          LOW:'ok'  };
+    $('w-risk').textContent = riskMap[wx.risk] || '✅ LOW';
+    $('w-risk').className   = `cv ${clsMap[wx.risk]||'ok'}`;
   } catch { $('w-temp').textContent = '⚠️ Offline'; }
 }
 
