@@ -8,41 +8,202 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="weather-engine.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* ── Tokens ──────────────────────────────── */
-:root {
-  --bg:        #020a04;
-  --surface:   #0b140d;
-  --surface2:  #111c13;
-  --surface3:  #172119;
-  --border:    #1a2e1c;
-  --border2:   #243628;
-  --green:     #3ddc6e;
-  --green-dim: #1a6b34;
-  --green-pale:#a8f5bc;
-  --amber:     #f5a623;
-  --red:       #f05252;
-  --blue:      #5ba4f5;
-  --purple:    #a78bfa;
-  --text:      #c8e0ca;
-  --muted:     #4d7050;
-  --mono:      'DM Mono', monospace;
-  --serif:     'Fraunces', serif;
-  --sans:      'DM Sans', sans-serif;
-}
+/* ════════════════════════════════════════════
+   GardenHub OS — Design System (inlined)
+   Warm cream palette · Fraunces serif
+   ════════════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  overflow-x: hidden;
+:root {
+  --bg:        #f0ead9;
+  --bg2:       #e8e0cc;
+  --surface:   #faf6ee;
+  --surface2:  #ede8dd;
+  --surface3:  #e4ddd0;
+  --border:    #d5ccb8;
+  --border2:   #bfb5a0;
+  --text:      #1c2419;
+  --text2:     #3a4a36;
+  --muted:     #7a7060;
+  --green:     #2d6a42;
+  --green-lt:  #e2ede6;
+  --green-mid: #4a8c62;
+  --green-dim: #4a7a5a;
+  --green-vv:  #1a9450;
+  --amber:     #a05c14;
+  --amber-lt:  #fcefd8;
+  --amber-mid: #c47820;
+  --red:       #b82018;
+  --red-lt:    #faeae8;
+  --blue:      #1a4d8c;
+  --blue-lt:   #e4edf8;
+  --pink:      #a01850;
+  --pink-lt:   #faeaf0;
+  --serif: 'Fraunces', Georgia, serif;
+  --mono:  'DM Mono', monospace;
+  --sans:  'DM Sans', sans-serif;
 }
+
+html { font-size: 16px; }
+
+body {
+  background:  var(--bg);
+  color:       var(--text);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.6;
+  min-height:  100vh;
+  overflow-x:  hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: var(--bg2); }
+::-webkit-scrollbar-thumb        { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--muted); }
+
+/* ── Top bar ──────────────────────────────────── */
+.top-bar {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(240,234,217,0.97);
+  border-bottom: 2px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  height: 54px;
+  gap: 1rem;
+}
+
+/* ── Logo ─────────────────────────────────────── */
+.logo-block {
+  display: flex; align-items: baseline;
+  gap: 0.55rem; flex-shrink: 0;
+}
+.logo-eye {
+  font-family: var(--mono);
+  font-size: 0.45rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.logo-name {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1;
+}
+.logo-name em { font-weight: 700; font-style: italic; color: var(--green); }
+
+/* ── Nav links ────────────────────────────────── */
+nav {
+  display: flex; align-items: center;
+  gap: 0.15rem; flex-wrap: wrap;
+}
+.nav-link {
+  font-family:     var(--mono);
+  font-size:       0.5rem;
+  letter-spacing:  0.07em;
+  text-transform:  uppercase;
+  text-decoration: none;
+  padding:         0.28rem 0.55rem;
+  border:          1px solid transparent;
+  color:           var(--muted);
+  background:      transparent;
+  cursor:          pointer;
+  transition:      color 0.12s, border-color 0.12s, background 0.12s;
+  white-space:     nowrap;
+  line-height:     1;
+  display:         inline-block;
+}
+.nav-link:hover {
+  color:        var(--green);
+  border-color: var(--green-lt);
+  background:   var(--green-lt);
+}
+.nav-link.active {
+  color:        var(--green);
+  border-color: var(--green);
+  font-weight:  500;
+}
+.nav-link.danger:hover {
+  color:        var(--red);
+  border-color: var(--red-lt);
+  background:   var(--red-lt);
+}
+
+/* ── Shared card base ─────────────────────────── */
+.card {
+  background: var(--surface);
+  border:     1px solid var(--border);
+  padding:    1rem 1.2rem;
+}
+
+/* ── Eyebrow label ────────────────────────────── */
+.card-eyebrow, .eyebrow {
+  font-family:     var(--mono);
+  font-size:       0.48rem;
+  letter-spacing:  0.18em;
+  text-transform:  uppercase;
+  color:           var(--muted);
+}
+
+/* ── Progress bar ─────────────────────────────── */
+.progress-track {
+  height: 4px; background: var(--surface3);
+  border-radius: 2px; overflow: hidden; margin: 0.4rem 0;
+}
+.progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+.progress-fill.fill-growing { background: var(--green); }
+.progress-fill.fill-harvest { background: var(--amber); }
+
+/* ── Badge ────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: 0.42rem;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 0.14rem 0.42rem; border: 1px solid; line-height: 1.4;
+}
+.badge-green  { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
+.badge-amber  { color: var(--amber); border-color: #e8c88a;         background: var(--amber-lt); }
+.badge-red    { color: var(--red);   border-color: #e8b4b0;         background: var(--red-lt);   }
+.badge-muted  { color: var(--muted); border-color: var(--border);   background: var(--surface2); }
+
+/* ── Skeleton loader ──────────────────────────── */
+.skel {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+  background-size: 400% 100%;
+  animation: skel-sweep 1.4s ease infinite;
+}
+@keyframes skel-sweep { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+@media (max-width: 900px) {
+  .top-bar { padding: 0 1rem; height: 48px; }
+}
+@media (max-width: 600px) {
+  .logo-eye { display: none; }
+  nav { gap: 0.1rem; }
+  .nav-link { font-size: 0.46rem; padding: 0.25rem 0.4rem; }
+}
+
+:root {
+  /* Insights-specific */
+  --purple: #7c5cc4;
+}
+
+/* ── Tokens ──────────────────────────────── */
+
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* scanline */
 body::after {
@@ -52,14 +213,10 @@ body::after {
   pointer-events: none; z-index: 9999;
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 2px; }
-
 /* ── Auth Overlay ─────────────────────────── */
 #auth-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(2,10,4,0.97);
+  background: rgba(242,237,228,0.97);
   display: flex; align-items: center; justify-content: center;
 }
 #auth-overlay.hidden { display: none; }
@@ -95,30 +252,9 @@ body::after {
 #auth-err { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
 
 /* ── Top Bar ──────────────────────────────── */
-.top-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.9rem 2rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  position: sticky; top: 0; z-index: 100;
-}
-.top-bar-left { display: flex; align-items: baseline; gap: 0.75rem; }
-.logo-eyebrow { font-family: var(--mono); font-size: 0.52rem; color: var(--green-dim); letter-spacing: 0.22em; text-transform: uppercase; }
-.page-title { font-family: var(--serif); font-size: 1.3rem; color: #e0f0e2; font-style: italic; }
+.page-title { font-family: var(--serif); font-size: 1.3rem; color: var(--text); font-style: italic; }
 .page-title em { color: var(--green); }
 
-nav { display: flex; gap: 0.5rem; align-items: center; }
-.nav-link {
-  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em;
-  text-transform: uppercase; text-decoration: none;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--border); color: var(--muted);
-  background: transparent; cursor: pointer;
-  transition: all 0.15s;
-}
-.nav-link:hover { border-color: var(--green-dim); color: var(--green-pale); }
-.nav-link.active { border-color: var(--green); color: var(--green); }
-.nav-link.danger:hover { border-color: var(--red); color: var(--red); }
 
 /* ── Climate Bar ──────────────────────────── */
 .climate-bar {
@@ -152,7 +288,7 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 
 /* ── Glass Card (from mockup) ─────────────── */
 .glass {
-  background: rgba(11,20,13,0.7);
+  background: rgba(242,237,228,0.85);
   border: 1px solid var(--border2);
   backdrop-filter: blur(8px);
 }
@@ -173,7 +309,7 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 .kpi-card.p::before { background: var(--purple); }
 .kpi-num {
   font-family: var(--serif); font-size: 2.6rem; font-style: italic;
-  line-height: 1; color: #e0f0e2; margin-bottom: 0.3rem;
+  line-height: 1; color: var(--text); margin-bottom: 0.3rem;
 }
 .kpi-label { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
 .kpi-delta { font-family: var(--mono); font-size: 0.58rem; margin-top: 0.5rem; }
@@ -195,7 +331,7 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 .spotlight.red-accent   { border-left: 3px solid var(--red); }
 .spotlight.blue-accent  { border-left: 3px solid var(--blue); }
 .sp-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
-.sp-name { font-family: var(--serif); font-size: 1.3rem; font-style: italic; color: #e0f0e2; line-height: 1.1; }
+.sp-name { font-family: var(--serif); font-size: 1.3rem; font-style: italic; color: var(--text); line-height: 1.1; }
 .sp-sub  { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; color: var(--muted); margin-top: 0.35rem; text-transform: uppercase; }
 .sp-icon { font-size: 1.8rem; }
 
@@ -205,7 +341,7 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
   padding: 1.25rem;
 }
 .cp-eye { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green-dim); margin-bottom: 0.2rem; }
-.cp-title { font-family: var(--serif); font-size: 1rem; font-style: italic; color: #d0e8d2; margin-bottom: 1rem; }
+.cp-title { font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--text2); margin-bottom: 1rem; }
 .chart-wrap { position: relative; }
 
 /* two-col chart grid */
@@ -255,7 +391,7 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 /* ── Scan table ───────────────────────────── */
 .data-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.65rem; }
 .data-table th { color: var(--muted); text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; }
-.data-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(26,46,28,0.5); }
+.data-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(200,192,178,0.6); }
 .data-table tr:last-child td { border-bottom: none; }
 .sev-tag { display: inline-block; padding: 0.1rem 0.4rem; font-size: 0.5rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
 .sev-high   { background: rgba(240,82,82,0.12);  color: var(--red); }
@@ -313,7 +449,7 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 .fb-step {
   display: flex; align-items: center; gap: 0.6rem;
   font-size: 0.72rem; color: var(--muted); padding: 0.3rem 0;
-  border-bottom: 1px solid rgba(26,46,28,0.5); cursor: default;
+  border-bottom: 1px solid rgba(200,192,178,0.6); cursor: default;
 }
 .fb-step:last-child { border-bottom: none; }
 .fb-step-check {
@@ -361,20 +497,20 @@ main { max-width: 1500px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 
 <!-- ═══ TOP BAR ═══ -->
 <div class="top-bar">
-  <div class="top-bar-left">
-    <div class="logo-eyebrow">GardenHub OS // v10.6</div>
-    <div class="page-title">Garden <em>Intelligence</em></div>
-  </div>
+  <div class="logo-block">
+      <div class="logo-eye">GardenHub OS // v10.6</div>
+      <div class="logo-name">Garden <em>Intelligence</em></div>
+    </div>
   <nav>
-    <a href="index.html"    class="nav-link">Dashboard</a>
-    <a href="map.html"      class="nav-link">Map View</a>
-    <a href="clinic.html"   class="nav-link">Clinic</a>
-    <a href="library.html"      class="nav-link">Library</a>
-    <a href="calendar.html"    class="nav-link">Calendar</a>
+    <a href="index.html" class="nav-link">Dashboard</a>
+    <a href="map.html" class="nav-link">Map View</a>
+    <a href="clinic.html" class="nav-link">Clinic</a>
+    <a href="library.html" class="nav-link">Library</a>
+    <a href="calendar.html" class="nav-link">Calendar</a>
     <a href="achievements.html" class="nav-link">Medals</a>
-    <a href="journal.html"       class="nav-link">Journal</a>
-    <a href="snapshot.html"     class="nav-link">Snapshot</a>
-    <a href="weather.html"      class="nav-link">Weather</a>
+    <a href="journal.html" class="nav-link">Journal</a>
+    <a href="snapshot.html" class="nav-link">Snapshot</a>
+    <a href="weather.html" class="nav-link">Weather</a>
     <a href="companions.html" class="nav-link">Companions</a>
     <a href="insights.html" class="nav-link active">Insights</a>
     <button class="export-btn" id="export-btn" onclick="exportReport()">↓ Export</button>
