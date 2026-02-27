@@ -530,6 +530,7 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
 .skel-entry { height: 140px; margin-bottom: 1.25rem; background: linear-gradient(90deg, var(--page2) 25%, var(--border) 50%, var(--page2) 75%); background-size: 400%; animation: skelly 1.4s ease infinite; }
 @keyframes skelly { 0%{background-position:100%} 100%{background-position:-100%} }
 </style>
+<script src="season-bar.js"></script>
 </head>
 <body>
 
@@ -674,6 +675,8 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
     <button class="nav-link danger" id="logout-btn">Logout</button>
   </nav>
 </div>
+
+<div id="season-bar-mount"></div>
 
 <!-- ═══ LAYOUT ═══ -->
 <div class="layout">
