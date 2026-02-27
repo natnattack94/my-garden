@@ -7,34 +7,14 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="weather-engine.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
 <style>
 /* ── Tokens ──────────────────────────────────── */
-:root {
-  --bg:        #f5f7f2;
-  --surface:   #ffffff;
-  --surface2:  #f0f4ee;
-  --border:    #e2e8df;
-  --border2:   #d0dace;
-  --text:      #1e2b1e;
-  --muted:     #7a9278;
-  --green:     #2d7a4f;
-  --green-lt:  #e8f5ee;
-  --green-vv:  #22c55e;
-  --amber:     #b45309;
-  --amber-lt:  #fef3c7;
-  --red:       #dc2626;
-  --red-lt:    #fef2f2;
-  --blue:      #1d4ed8;
-  --blue-lt:   #eff6ff;
-  --pink:      #be185d;
-  --pink-lt:   #fdf2f8;
-  --mono:      'DM Mono', monospace;
-  --serif:     'Instrument Serif', serif;
-  --sans:      'DM Sans', sans-serif;
-}
+/* :root — base tokens from theme.css */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -103,20 +83,8 @@ body::before {
 #auth-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1.2rem; margin-top: 0.6rem; }
 
 /* ── Header ──────────────────────────────────── */
-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-}
-.logo-block .wordmark {
-  font-family: var(--serif);
-  font-size: 2rem;
-  color: var(--text);
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
+/* → theme.css */
+.logo-block /* → theme.css */
 .logo-block .wordmark em { color: var(--green); font-style: italic; }
 .logo-block .datestamp {
   font-family: var(--mono);
@@ -128,17 +96,10 @@ header {
 }
 
 nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-.nav-link {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  padding: 0.45rem 0.85rem;
-  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em;
-  text-transform: uppercase; text-decoration: none;
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--muted); cursor: pointer; transition: all 0.15s;
-}
-.nav-link:hover { border-color: var(--green); color: var(--green); background: var(--green-lt); }
-.nav-link.active { background: var(--green); border-color: var(--green); color: white; }
-.nav-link.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-lt); }
+/* → theme.css */
+/* → theme.css */
+/* → theme.css */
+/* → theme.css */
 
 /* ── Top Stats Row ───────────────────────────── */
 .top-row {
@@ -154,10 +115,7 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
   border: 1px solid var(--border);
   padding: 1.1rem 1.25rem;
 }
-.climate-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 0.9rem;
-}
+.climate-/* → theme.css */
 .card-eyebrow {
   font-family: var(--mono); font-size: 0.55rem;
   letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
@@ -279,10 +237,7 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .poll-sub   { font-family: var(--mono); font-size: 0.55rem; color: #4a5a4a; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.3rem; }
 
 /* ── Center Column ───────────────────────────── */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.9rem;
-}
+.section-/* → theme.css */
 .section-title {
   font-family: var(--serif); font-size: 1.4rem; font-style: italic; color: var(--text);
 }
@@ -540,25 +495,26 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 <div class="page-wrap">
 
   <!-- Header -->
-  <header>
+  <div class="top-bar">
     <div class="logo-block">
-      <div class="wordmark">GardenHub <em>OS</em></div>
-      <div class="datestamp" id="current-date">Loading…</div>
+      <div class="logo-eye">GardenHub OS // v10.6</div>
+      <div class="logo-name">Mission <em>Control</em></div>
     </div>
+    <div class="datestamp" id="current-date" style="font-family:var(--mono);font-size:0.46rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);position:absolute;left:50%;transform:translateX(-50%);"></div>
     <nav>
-      <a href="map.html"      class="nav-link">🗺 Map View</a>
-      <a href="insights.html" class="nav-link">📊 Insights</a>
-      <a href="clinic.html"   class="nav-link">🏥 Plant Clinic</a>
-      <a href="library.html"  class="nav-link">📚 Library</a>
-      <a href="calendar.html" class="nav-link">📅 Calendar</a>
-      <a href="achievements.html" class="nav-link">🏅 Medals</a>
-      <a href="journal.html"      class="nav-link">📖 Journal</a>
-      <a href="snapshot.html"    class="nav-link">📸 Snapshot</a>
-      <a href="weather.html"     class="nav-link">🌦 Weather</a>
+      <a href="map.html" class="nav-link">Map View</a>
+      <a href="insights.html" class="nav-link">Insights</a>
+      <a href="clinic.html" class="nav-link">Plant Clinic</a>
+      <a href="library.html" class="nav-link">Library</a>
+      <a href="calendar.html" class="nav-link">Calendar</a>
+      <a href="achievements.html" class="nav-link">Medals</a>
+      <a href="journal.html" class="nav-link">Journal</a>
+      <a href="snapshot.html" class="nav-link">Snapshot</a>
+      <a href="weather.html" class="nav-link">Weather</a>
       <a href="companions.html" class="nav-link">Companions</a>
-      <button onclick="handleLogout()" class="nav-link danger">🚪 Logout</button>
+      <button onclick="handleLogout()" class="nav-link danger">Logout</button>
     </nav>
-  </header>
+  </div>
   <div id="season-bar-mount"></div>
 
   <!-- ═══ PREDICTIVE PULSE STRIP ═══ -->
