@@ -7,53 +7,131 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<style>
-/* ── Page chrome ─────────────────────────────── */
-:root {
-  --forest:    #1e3d20;
-  --forest-lt: #2d5c30;
-  --gold:      #c8922a;
-  --gold-lt:   #e8c060;
-  --cream:     #f5eed8;
-  --ink:       #0e1f10;
-  --muted:     #5a7a5c;
-  --border:    #2d4a2e;
-  --serif:     'Playfair Display', Georgia, serif;
-  --mono:      'DM Mono', monospace;
-  --sans:      'DM Sans', sans-serif;
-}
-
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>/* ════════════════════════════════════════════
+   GardenHub OS — Design System (inlined)
+   ════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: #0e1a0f;
-  color: var(--cream);
-  font-family: var(--sans);
-  min-height: 100vh;
+:root {
+  --bg:        #f0ead9;
+  --bg2:       #e8e0cc;
+  --surface:   #faf6ee;
+  --surface2:  #ede8dd;
+  --surface3:  #e4ddd0;
+  --border:    #d5ccb8;
+  --border2:   #bfb5a0;
+  --text:      #1c2419;
+  --text2:     #3a4a36;
+  --muted:     #7a7060;
+  --green:     #2d6a42;
+  --green-lt:  #e2ede6;
+  --green-mid: #4a8c62;
+  --green-dim: #4a7a5a;
+  --green-vv:  #1a9450;
+  --amber:     #a05c14;
+  --amber-lt:  #fcefd8;
+  --amber-mid: #c47820;
+  --red:       #b82018;
+  --red-lt:    #faeae8;
+  --blue:      #1a4d8c;
+  --blue-lt:   #e4edf8;
+  --pink:      #a01850;
+  --pink-lt:   #faeaf0;
+  --serif: 'Fraunces', Georgia, serif;
+  --mono:  'DM Mono', monospace;
+  --sans:  'DM Sans', sans-serif;
 }
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: var(--bg2); }
+::-webkit-scrollbar-thumb        { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--muted); }
 
 /* ── Top bar ─────────────────────────────────── */
 .top-bar {
-  background: var(--forest);
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(240,234,217,0.97);
   border-bottom: 2px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.7rem 1.75rem; gap: 1rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  height: 54px;
+  gap: 1rem;
 }
-.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
-.logo-eye  { font-family: var(--mono); font-size: 0.48rem; color: rgba(255,255,255,0.4); letter-spacing: 0.22em; text-transform: uppercase; }
-.logo-name { font-family: var(--serif); font-size: 1.1rem; color: #d8ead0; font-style: italic; }
+.logo-block { display: flex; align-items: baseline; gap: 0.55rem; flex-shrink: 0; }
+.logo-eye {
+  font-family: var(--mono); font-size: 0.45rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+}
+.logo-name {
+  font-family: var(--serif); font-size: 1.05rem;
+  font-weight: 300; font-style: italic; color: var(--text); line-height: 1;
+}
+.logo-name em { font-weight: 700; font-style: italic; color: var(--green); }
 
-nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
 .nav-link {
-  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.07em; text-transform: uppercase;
-  text-decoration: none; padding: 0.28rem 0.55rem;
-  border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5);
-  background: transparent; cursor: pointer; transition: all 0.15s;
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.07em;
+  text-transform: uppercase; text-decoration: none;
+  padding: 0.28rem 0.55rem; border: 1px solid transparent;
+  color: var(--muted); background: transparent;
+  cursor: pointer; transition: color 0.12s, border-color 0.12s, background 0.12s;
+  white-space: nowrap; line-height: 1; display: inline-block;
 }
-.nav-link:hover  { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.85); }
-.nav-link.active { border-color: #a0d890; color: #a0d890; }
-.nav-link.danger:hover { border-color: #f08080; color: #f08080; }
+.nav-link:hover  { color: var(--green); border-color: var(--green); background: var(--green-lt); }
+.nav-link.active { color: var(--green); border-color: var(--green); font-weight: 500; }
+.nav-link.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-lt); }
+
+.card { background: var(--surface); border: 1px solid var(--border); padding: 1rem 1.2rem; }
+.card-eyebrow, .eyebrow {
+  font-family: var(--mono); font-size: 0.48rem;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+}
+.progress-track { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin: 0.4rem 0; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+.progress-fill.fill-growing { background: var(--green); }
+.progress-fill.fill-harvest { background: var(--amber); }
+.badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.09em; text-transform: uppercase; padding: 0.14rem 0.42rem; border: 1px solid; line-height: 1.4; }
+.badge-green { color: var(--green); border-color: var(--green); background: var(--green-lt); }
+.badge-amber { color: var(--amber); border-color: #c8a060; background: var(--amber-lt); }
+.badge-red   { color: var(--red);   border-color: #c09090; background: var(--red-lt); }
+.badge-muted { color: var(--muted); border-color: var(--border); background: var(--surface2); }
+.skel { background: linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%); background-size:400% 100%; animation: skel-sweep 1.4s ease infinite; }
+@keyframes skel-sweep { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+@media (max-width:900px) { .top-bar { padding: 0 1rem; height: 48px; } }
+@media (max-width:600px) { .logo-eye { display:none; } .nav-link { font-size:0.46rem; padding:0.25rem 0.4rem; } }
+
+:root {
+/* Snapshot */
+  --forest:    var(--green);
+  --forest-lt: var(--green-mid);
+  --gold:      var(--amber);
+  --gold-lt:   var(--amber-mid);
+  --cream:     var(--surface);
+  --ink:       var(--text);
+}
+
+/* ── Page chrome ─────────────────────────────── */
+
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Top bar ─────────────────────────────────── */
 
 /* ── Page wrapper ────────────────────────────── */
 .page {
@@ -73,14 +151,14 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 }
 .ctrl-input {
   background: transparent; border: 1px solid var(--border);
-  color: var(--cream); padding: 0.4rem 0.75rem;
+  color: var(--text); padding: 0.4rem 0.75rem;
   font-family: var(--serif); font-size: 0.85rem; font-style: italic; outline: none;
   transition: border-color 0.15s; min-width: 220px;
 }
 .ctrl-input:focus { border-color: var(--gold); }
 .ctrl-select {
   background: var(--forest); border: 1px solid var(--border);
-  color: var(--cream); padding: 0.4rem 0.65rem;
+  color: var(--text); padding: 0.4rem 0.65rem;
   font-family: var(--mono); font-size: 0.6rem; outline: none; cursor: pointer;
 }
 
@@ -89,10 +167,10 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
   padding: 0.5rem 1.1rem; border: 1px solid; cursor: pointer; transition: all 0.15s;
   background: transparent;
 }
-.action-btn.primary { border-color: var(--gold); color: var(--gold-lt); }
+.action-btn.primary { border-color: var(--gold); color: var(--gold); }
 .action-btn.primary:hover { background: var(--gold); color: var(--ink); }
 .action-btn.secondary { border-color: var(--border); color: var(--muted); }
-.action-btn.secondary:hover { border-color: var(--muted); color: var(--cream); }
+.action-btn.secondary:hover { border-color: var(--muted); color: var(--text); }
 .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .ctrl-sep { width: 1px; height: 1.5rem; background: var(--border); margin: 0 0.25rem; }
@@ -166,9 +244,9 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 }
 .card-garden-name {
   font-family: var(--serif); font-size: 2rem; font-weight: 700; font-style: italic;
-  color: var(--cream); line-height: 1; letter-spacing: -0.01em;
+  color: var(--text); line-height: 1; letter-spacing: -0.01em;
 }
-.card-garden-name em { color: var(--gold-lt); }
+.card-garden-name em { color: var(--gold); }
 .card-tagline {
   font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--muted); margin-top: 5px;
@@ -218,7 +296,7 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 }
 .resilience-num {
   font-family: var(--serif); font-size: 5.5rem; font-weight: 900;
-  line-height: 0.85; color: var(--gold-lt);
+  line-height: 0.85; color: var(--gold);
   text-shadow: 0 0 40px rgba(232,192,96,0.3);
 }
 .resilience-meta {
@@ -226,7 +304,7 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 }
 .resilience-label {
   font-family: var(--serif); font-size: 1.4rem; font-style: italic;
-  color: var(--cream); line-height: 1;
+  color: var(--text); line-height: 1;
 }
 .resilience-sub {
   font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.2em;
@@ -237,9 +315,9 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .stat-block { display: flex; flex-direction: column; gap: 2px; }
 .stat-num {
   font-family: var(--serif); font-size: 2rem; font-weight: 700;
-  color: var(--cream); line-height: 1;
+  color: var(--text); line-height: 1;
 }
-.stat-num.accent { color: var(--gold-lt); }
+.stat-num.accent { color: var(--gold); }
 .stat-num.green  { color: #7ad870; }
 .stat-num.amber  { color: #e8b040; }
 .stat-label {
@@ -258,7 +336,7 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
   font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.06em;
   border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 4px;
 }
-.harvest-name { color: var(--cream); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.harvest-name { color: var(--text); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .harvest-days { color: var(--gold); white-space: nowrap; }
 
 /* ── Plant family strip ──────────────────────── */
@@ -270,7 +348,7 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
   padding: 2px 7px; border: 1px solid rgba(200,146,42,0.3);
   color: var(--muted); text-transform: uppercase;
 }
-.family-pip.top { border-color: var(--gold); color: var(--gold-lt); }
+.family-pip.top { border-color: var(--gold); color: var(--gold); }
 
 /* ── Footer row ──────────────────────────────── */
 .card-footer {
@@ -292,7 +370,7 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 /* ── Toast ───────────────────────────────────── */
 #toast {
   position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999;
-  background: var(--forest-lt); color: var(--cream);
+  background: var(--forest-lt); color: var(--text);
   border: 1px solid var(--gold); padding: 0.65rem 1rem;
   font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em;
   opacity: 0; transform: translateY(6px);
@@ -302,12 +380,15 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 
 /* ── Print stylesheet ────────────────────────── */
 @media print {
-  body { background: white; }
   .top-bar, .controls, #loading-msg, #toast { display: none !important; }
   .page { padding: 0; align-items: flex-start; }
   #snapshot-card {
     transform: none !important;
     box-shadow: none;
+    page-break-inside: avoid;
+  }
+}
+</style>none;
     page-break-inside: avoid;
   }
 }
@@ -322,24 +403,23 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 <div class="top-bar">
   <div class="logo-block">
     <div class="logo-eye">GardenHub OS // v10.6</div>
-    <div class="logo-name">Garden Snapshot</div>
+    <div class="logo-name">Garden <em>Snapshot</em></div>
   </div>
   <nav>
-    <a href="index.html"        class="nav-link">Dashboard</a>
-    <a href="map.html"          class="nav-link">Map</a>
-    <a href="insights.html"     class="nav-link">Insights</a>
-    <a href="clinic.html"       class="nav-link">Clinic</a>
-    <a href="library.html"      class="nav-link">Library</a>
-    <a href="calendar.html"     class="nav-link">Calendar</a>
-    <a href="achievements.html" class="nav-link">Medals</a>
-    <a href="journal.html"      class="nav-link">Journal</a>
-    <a href="snapshot.html"     class="nav-link active">Snapshot</a>
-    <a href="weather.html"      class="nav-link">Weather</a>
-    <a href="companions.html"   class="nav-link">Companions</a>
-    <button class="nav-link danger" id="logout-btn">Logout</button>
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="map.html" class="nav-link">Map</a>
+      <a href="insights.html" class="nav-link">Insights</a>
+      <a href="clinic.html" class="nav-link">Clinic</a>
+      <a href="library.html" class="nav-link">Library</a>
+      <a href="calendar.html" class="nav-link">Calendar</a>
+      <a href="achievements.html" class="nav-link">Medals</a>
+      <a href="journal.html" class="nav-link">Journal</a>
+      <a href="snapshot.html" class="nav-link active">Snapshot</a>
+      <a href="weather.html" class="nav-link">Weather</a>
+      <a href="companions.html" class="nav-link">Companions</a>
+      <button onclick="handleLogout()" class="nav-link danger">Logout</button>
   </nav>
 </div>
-
 <div id="season-bar-mount"></div>
 
 <!-- ═══ PAGE ═══ -->
@@ -577,7 +657,7 @@ const $  = id => document.getElementById(id);
 
 // ── Themes ────────────────────────────────────────
 const THEMES = {
-  forest: { bg:'#1e3d20', header:'rgba(200,146,42,0.3)', accent:'#c8922a' },
+  forest: { bg:'var(--green)', header:'rgba(200,146,42,0.3)', accent:'var(--amber)' },
   slate:  { bg:'#1a2030', header:'rgba(160,180,220,0.3)', accent:'#8ab0e0' },
   soil:   { bg:'#2a1a0e', header:'rgba(180,120,60,0.3)',  accent:'#c07030' },
   dawn:   { bg:'#1e2830', header:'rgba(200,160,100,0.3)', accent:'#e0a848' },
