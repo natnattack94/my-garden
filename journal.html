@@ -92,9 +92,9 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
   cursor: pointer; transition: color 0.12s, border-color 0.12s, background 0.12s;
   white-space: nowrap; line-height: 1; display: inline-block;
 }
-.nav-link:hover  { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
+.nav-link:hover  { color: var(--green); border-color: var(--green); background: var(--green-lt); }
 .nav-link.active { color: var(--green); border-color: var(--green); font-weight: 500; }
-.nav-link.danger:hover { color: var(--red); border-color: var(--red-lt); background: var(--red-lt); }
+.nav-link.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-lt); }
 
 .card { background: var(--surface); border: 1px solid var(--border); padding: 1rem 1.2rem; }
 .card-eyebrow, .eyebrow {
@@ -106,9 +106,9 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
 .progress-fill.fill-growing { background: var(--green); }
 .progress-fill.fill-harvest { background: var(--amber); }
 .badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.09em; text-transform: uppercase; padding: 0.14rem 0.42rem; border: 1px solid; line-height: 1.4; }
-.badge-green { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
-.badge-amber { color: var(--amber); border-color: #e8c88a; background: var(--amber-lt); }
-.badge-red   { color: var(--red);   border-color: #e8b4b0; background: var(--red-lt); }
+.badge-green { color: var(--green); border-color: var(--green); background: var(--green-lt); }
+.badge-amber { color: var(--amber); border-color: #c8a060; background: var(--amber-lt); }
+.badge-red   { color: var(--red);   border-color: #c09090; background: var(--red-lt); }
 .badge-muted { color: var(--muted); border-color: var(--border); background: var(--surface2); }
 .skel { background: linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%); background-size:400% 100%; animation: skel-sweep 1.4s ease infinite; }
 @keyframes skel-sweep { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
@@ -198,7 +198,7 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
 
 .new-entry-btn {
   width: 100%; padding: 0.65rem; margin-top: auto;
-  background: var(--forest); color: #d8ead0;
+  background: var(--forest); color: var(--text2);
   border: none; cursor: pointer;
   font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
   transition: background 0.15s;
@@ -396,10 +396,10 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
 }
 .composer-heading {
   font-family: var(--serif); font-size: 1rem; font-style: italic;
-  color: #d8ead0;
+  color: var(--text2);
 }
 .composer-close {
-  background: none; border: none; color: rgba(255,255,255,0.5);
+  background: none; border: none; color: var(--text2);
   cursor: pointer; font-size: 1.1rem; transition: color 0.15s; padding: 0;
 }
 .composer-close:hover { color: white; }
@@ -499,7 +499,7 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
   flex-shrink: 0; background: var(--page2);
 }
 .save-btn {
-  padding: 0.55rem 1.5rem; background: var(--forest); color: #d8ead0;
+  padding: 0.55rem 1.5rem; background: var(--forest); color: var(--text2);
   border: none; cursor: pointer;
   font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
   transition: background 0.15s;
@@ -565,7 +565,7 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
 /* ── Toast ────────────────────────────────────── */
 #toast {
   position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 800;
-  background: var(--forest); color: #d8ead0;
+  background: var(--forest); color: var(--text2);
   border: 1px solid var(--forest-lt); padding: 0.65rem 1rem;
   font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.08em;
   opacity: 0; transform: translateY(6px);
