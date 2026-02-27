@@ -410,8 +410,92 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
   .main-grid { grid-template-columns: 1fr; }
   .main-grid > :last-child { grid-column: span 1; }
   .plant-grid { grid-template-columns: 1fr; }
+  .pulse-strip { gap: 0.5rem; }
+  .bloom-grid  { grid-template-columns: repeat(13,1fr); }
 }
+
+/* ── Predictive pulse strip ───────────────────── */
+.pulse-strip {
+  display: flex; gap: 0.65rem; flex-wrap: wrap;
+  padding: 0.75rem 1.5rem 0;
+}
+.pulse-chip {
+  display: flex; align-items: center; gap: 0.55rem;
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 0.6rem 0.9rem; flex: 1; min-width: 130px; cursor: default;
+  transition: border-color 0.18s, transform 0.18s;
+  animation: chipIn 0.4s cubic-bezier(0.16,1,0.3,1) both;
+}
+.pulse-chip:hover { border-color: var(--green); transform: translateY(-1px); }
+@keyframes chipIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.chip-icon { font-size: 1.3rem; flex-shrink: 0; }
+.chip-body { display: flex; flex-direction: column; gap: 1px; }
+.chip-num  { font-family: var(--serif); font-size: 1.45rem; line-height: 1; font-style: italic; }
+.chip-lbl  { font-family: var(--mono); font-size: 0.43rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.chip-sub  { font-family: var(--sans); font-size: 0.6rem; color: var(--muted); }
+.pulse-chip.is-bloom   { border-color: var(--pink);  background: var(--pink-lt);  }
+.pulse-chip.is-harvest { border-color: var(--green); background: var(--green-lt); }
+.pulse-chip.is-urgent  { border-color: var(--amber); background: var(--amber-lt); }
+.pulse-chip.is-alert   { border-color: var(--red);   background: var(--red-lt);   }
+
+/* Predictive insight banner */
+.predict-banner {
+  margin: 0.6rem 1.5rem 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  padding: 0.65rem 0.9rem;
+  display: flex; align-items: flex-start; gap: 0.65rem;
+  animation: chipIn 0.45s 0.15s both;
+}
+.predict-icon { font-size: 1.1rem; flex-shrink: 0; padding-top: 1px; }
+.predict-body { flex: 1; }
+.predict-text { font-family: var(--serif); font-size: 0.84rem; font-style: italic; color: var(--text); line-height: 1.55; }
+.predict-meta { font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+
+/* ── Bloom gap detector ───────────────────────── */
+.bloom-card { background: var(--surface); border: 1px solid var(--border); margin-top: 0.75rem; }
+.bloom-card-head {
+  padding: 0.75rem 1rem 0.35rem;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.bloom-grid {
+  display: grid; grid-template-columns: repeat(26,1fr);
+  gap: 2px; padding: 0 1rem 0.35rem;
+}
+.bloom-week {
+  position: relative; height: 28px; border-radius: 2px;
+  transition: transform 0.1s;
+}
+.bloom-week:hover { transform: scaleY(1.25); z-index: 1; }
+.bloom-week.gap      { background: rgba(220,38,38,0.1);  border: 1px solid rgba(220,38,38,0.25); }
+.bloom-week.blooming { background: rgba(190,24,93,0.18); border: 1px solid rgba(190,24,93,0.3);  }
+.bloom-week.current  { outline: 2px solid var(--green); outline-offset: 1px; }
+.bloom-week.future   { background: rgba(122,146,120,0.07); border: 1px solid rgba(122,146,120,0.12); }
+.bloom-week-tip {
+  display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--text); color: var(--surface); z-index: 20; pointer-events: none;
+  font-family: var(--mono); font-size: 0.42rem; padding: 0.22rem 0.45rem; white-space: nowrap;
+}
+.bloom-week:hover .bloom-week-tip { display: block; }
+.bloom-legend {
+  display: flex; gap: 0.85rem; padding: 0 1rem 0.6rem; flex-wrap: wrap;
+}
+.bloom-legend-item {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-family: var(--mono); font-size: 0.43rem; letter-spacing: 0.08em; color: var(--muted);
+}
+.legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.bloom-gaps-list { padding: 0 1rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.gap-row {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  padding: 0.5rem 0.7rem; border: 1px solid rgba(220,38,38,0.18);
+  border-left: 3px solid var(--red); background: rgba(220,38,38,0.03);
+}
+.gap-date  { font-family: var(--mono); font-size: 0.47rem; color: var(--muted); white-space: nowrap; min-width: 58px; padding-top: 2px; }
+.gap-label { font-family: var(--serif); font-size: 0.8rem; font-style: italic; color: var(--text); }
+.gap-sugg  { font-family: var(--sans); font-size: 0.62rem; color: var(--muted); line-height: 1.45; margin-top: 2px; }
 </style>
+<script src="season-bar.js"></script>
 </head>
 
 <body>
@@ -475,6 +559,20 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
       <button onclick="handleLogout()" class="nav-link danger">🚪 Logout</button>
     </nav>
   </header>
+  <div id="season-bar-mount"></div>
+
+  <!-- ═══ PREDICTIVE PULSE STRIP ═══ -->
+  <div class="pulse-strip" id="pulse-strip">
+    <!-- populated by renderPulse() -->
+  </div>
+  <!-- ═══ PREDICTIVE INSIGHT BANNER ═══ -->
+  <div class="predict-banner" id="predict-banner" style="display:none;">
+    <div class="predict-icon" id="predict-icon">🌱</div>
+    <div class="predict-body">
+      <div class="predict-text" id="predict-text">Loading garden intelligence…</div>
+      <div class="predict-meta" id="predict-meta">Computed from your library</div>
+    </div>
+  </div>
 
   <!-- Top Row: Biological Pulse + Climate Engine -->
   <div class="top-row">
@@ -579,6 +677,22 @@ nav { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
         <div id="harvest-forecast">
           <div class="log-empty">Loading forecast…</div>
         </div>
+      </div>
+
+      <!-- ═══ BLOOM GAP DETECTOR ═══ -->
+      <div class="bloom-card" id="bloom-card">
+        <div class="bloom-card-head">
+          <div class="card-eyebrow">Bloom Gap Detector</div>
+          <a href="calendar.html" style="font-family:var(--mono);font-size:0.44rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);text-decoration:none;opacity:0.7;">↗ Calendar</a>
+        </div>
+        <div class="bloom-grid" id="bloom-grid"></div>
+        <div class="bloom-legend">
+          <div class="bloom-legend-item"><div class="legend-swatch" style="background:rgba(190,24,93,0.25);border:1px solid rgba(190,24,93,0.4);"></div>Blooming</div>
+          <div class="bloom-legend-item"><div class="legend-swatch" style="background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);"></div>Gap week</div>
+          <div class="bloom-legend-item"><div class="legend-swatch" style="background:rgba(122,146,120,0.1);border:1px solid rgba(122,146,120,0.15);"></div>No data</div>
+          <div class="bloom-legend-item"><div class="legend-swatch" style="outline:2px solid var(--green);"></div>This week</div>
+        </div>
+        <div class="bloom-gaps-list" id="bloom-gaps-list"></div>
       </div>
     </div>
 
@@ -740,6 +854,7 @@ async function init() {
     renderDashboard(),
     loadLogFeed(),
     loadWaterPulse(),
+    renderPulse(),      // predictive chip strip
   ]);
 }
 
@@ -1040,6 +1155,374 @@ async function saveNewPlant() {
     errEl.textContent = `✓ ${nameEl.value.trim()} recorded!`;
     setTimeout(() => { closeModal(); renderDashboard(); }, 800);
   }
+}
+
+
+// ══════════════════════════════════════════════
+//  PREDICTIVE PULSE STRIP
+//  5 live signals computed from garden_library
+//  and plant_health_scans. Fires on every load.
+// ══════════════════════════════════════════════
+async function renderPulse() {
+  const today = new Date();
+  const in14  = new Date(today.getTime() + 14 * 86400000);
+  const in7   = new Date(today.getTime() +  7 * 86400000);
+  const past3 = new Date(today.getTime() -  3 * 86400000).toISOString().slice(0,10);
+
+  const [libRes, scanRes] = await Promise.all([
+    sb.from('garden_library')
+      .select('id,common_name,emoji,maturity_days,recovery_days,planted_date,is_native,is_host_plant,plant_family'),
+    sb.from('plant_health_scans')
+      .select('id,status,severity,scan_date')
+      .in('status', ['active','monitoring'])
+      .gte('scan_date', new Date(today.getTime() - 30*86400000).toISOString().slice(0,10)),
+  ]);
+
+  const plants = libRes.data  || [];
+  const scans  = scanRes.data || [];
+
+  if (!plants.length) {
+    document.getElementById('pulse-strip').innerHTML =
+      '<div style="font-family:var(--mono);font-size:0.55rem;color:var(--muted);padding:0.5rem 0;letter-spacing:0.1em;">Add plants to your library to activate the pulse strip.</div>';
+    return;
+  }
+
+  // ── Compute signals ─────────────────────────
+  const activePlants   = plants.length;
+  const nativeCount    = plants.filter(p => p.is_native).length;
+  const hostCount      = plants.filter(p => p.is_host_plant).length;
+  const pollinatorIQ   = Math.min(100, Math.round(((nativeCount*1.5 + hostCount) / (activePlants||1)) * 50));
+
+  // Plants harvest-ready in next 14 days
+  const imminentHarvest = plants.filter(p => {
+    const hd = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
+    return hd && hd >= today && hd <= in14;
+  });
+
+  // Plants in bloom (Asteraceae, Lamiaceae, Rosaceae, ornamentals with harvest window now)
+  const bloomFamilies = ['Asteraceae','Lamiaceae','Rosaceae','Caprifoliaceae','Boraginaceae'];
+  const bloomKeywords = ['marigold','zinnia','borage','lavender','rose','nasturtium','sunflower','cosmos','echinacea','coneflower'];
+  const blooming = plants.filter(p => {
+    const fam = (p.plant_family||'').toLowerCase();
+    const nm  = (p.common_name||'').toLowerCase();
+    return bloomFamilies.some(f => fam.includes(f.toLowerCase())) ||
+           bloomKeywords.some(k => nm.includes(k));
+  });
+
+  // Active health issues (last 30d, active/monitoring)
+  const activeIssues  = scans.length;
+  const criticalCount = scans.filter(s => s.severity === 'high' || s.severity === 'critical').length;
+
+  // Days until first frost (Oct 15, Zone 6b)
+  const year       = today.getFullYear();
+  const firstFrost = new Date(year, 9, 15);
+  const daysToFrost= Math.ceil((firstFrost - today) / 86400000);
+  const lastFrost  = new Date(year, 3, 15);
+  const daysFromFrost = Math.ceil((today - lastFrost) / 86400000);
+  const frostNote  = daysToFrost > 0 && daysToFrost <= 45
+    ? `${daysToFrost}d to first frost`
+    : daysToFrost > 45
+    ? `Frost-free window: ${Math.max(0,daysToFrost)}d`
+    : `${Math.abs(daysToFrost)}d past first frost`;
+
+  // ── Render chips ─────────────────────────────
+  const chips = [
+    {
+      icon: '🌱', num: activePlants,
+      lbl: 'Active Plants',
+      sub: `${nativeCount} native · ${hostCount} host`,
+      cls: '',
+      delay: 0,
+    },
+    {
+      icon: '🌸', num: blooming.length,
+      lbl: 'In Bloom',
+      sub: blooming.length ? blooming.slice(0,2).map(p=>p.emoji+' '+p.common_name).join(' · ') : 'No bloom data yet',
+      cls: blooming.length ? 'is-bloom' : '',
+      delay: 60,
+    },
+    {
+      icon: '🌾', num: imminentHarvest.length,
+      lbl: 'Harvest Soon',
+      sub: imminentHarvest.length
+        ? imminentHarvest[0].emoji + ' ' + imminentHarvest[0].common_name + (imminentHarvest.length>1 ? ` +${imminentHarvest.length-1} more` : '')
+        : 'Nothing in 14-day window',
+      cls: imminentHarvest.length ? 'is-harvest' : '',
+      delay: 120,
+    },
+    {
+      icon: activeIssues ? '⚠️' : '✅',
+      num: activeIssues || '✓',
+      lbl: 'Health Issues',
+      sub: criticalCount > 0 ? `${criticalCount} high/critical` : activeIssues ? 'Active monitoring' : 'No active issues',
+      cls: criticalCount > 0 ? 'is-alert' : activeIssues ? 'is-urgent' : '',
+      delay: 180,
+    },
+    {
+      icon: '🐝', num: pollinatorIQ,
+      lbl: 'Pollinator IQ',
+      sub: frostNote,
+      cls: pollinatorIQ >= 60 ? 'is-harvest' : pollinatorIQ >= 30 ? 'is-urgent' : '',
+      delay: 240,
+    },
+  ];
+
+  document.getElementById('pulse-strip').innerHTML = chips.map(c => `
+    <div class="pulse-chip ${c.cls}" style="animation-delay:${c.delay}ms">
+      <div class="chip-icon">${c.icon}</div>
+      <div class="chip-body">
+        <div class="chip-num">${c.num}</div>
+        <div class="chip-lbl">${c.lbl}</div>
+        <div class="chip-sub">${c.sub}</div>
+      </div>
+    </div>`).join('');
+
+  // ── Predictive insight sentence ───────────────
+  const banner  = document.getElementById('predict-banner');
+  const textEl  = document.getElementById('predict-text');
+  const metaEl  = document.getElementById('predict-meta');
+  const iconEl  = document.getElementById('predict-icon');
+
+  let insight = '', icon = '🌱', meta = 'Computed from your library data';
+
+  if (criticalCount > 0) {
+    insight = `${criticalCount} plant${criticalCount>1?'s have':' has'} a high or critical health issue active right now. Check the Clinic for treatment protocols before conditions spread.`;
+    icon = '🚨'; banner.style.borderLeftColor = 'var(--red)'; meta = 'Health alert — immediate attention';
+  } else if (imminentHarvest.length > 0) {
+    const p = imminentHarvest[0];
+    const hd = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
+    const days = Math.ceil((hd - today) / 86400000);
+    insight = `${p.emoji} ${p.common_name} ${days <= 0 ? 'is ready to harvest now' : `enters peak harvest in ${days} day${days!==1?'s':''}`}.${imminentHarvest.length > 1 ? ` ${imminentHarvest.length - 1} more plant${imminentHarvest.length>2?'s':''} follow within 14 days.` : ''}`;
+    icon = '🌾'; meta = 'Harvest window approaching';
+  } else if (daysToFrost > 0 && daysToFrost <= 30) {
+    insight = `First frost expected in ${daysToFrost} days (Oct 15, Zone 6b). Harvest frost-sensitive crops and prepare row cover for perennials.`;
+    icon = '❄️'; banner.style.borderLeftColor = 'var(--blue)'; meta = 'Frost window — 30-day alert';
+  } else if (blooming.length === 0 && activePlants > 3) {
+    insight = `No flowering plants detected in your library. Adding even one pollinator plant — marigold, zinnia, or borage — would significantly improve your garden's ecosystem health and Pollinator IQ.`;
+    icon = '🌼'; banner.style.borderLeftColor = 'var(--amber)'; meta = 'Ecosystem opportunity';
+  } else if (nativeCount === 0 && activePlants > 0) {
+    insight = `None of your ${activePlants} plants are flagged as native. Native species provide 3–5× more ecosystem value for local pollinators. Consider adding native flowering plants from your region.`;
+    icon = '🦋'; banner.style.borderLeftColor = 'var(--pink)'; meta = 'Biodiversity signal';
+  } else {
+    const sortedByHarvest = [...plants].sort((a,b) => {
+      const da = harvestDate(a.planted_date, a.maturity_days, a.recovery_days);
+      const db = harvestDate(b.planted_date, b.maturity_days, b.recovery_days);
+      if (!da) return 1; if (!db) return -1;
+      return da - db;
+    });
+    const next = sortedByHarvest.find(p => {
+      const hd = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
+      return hd && hd > today;
+    });
+    if (next) {
+      const hd   = harvestDate(next.planted_date, next.maturity_days, next.recovery_days);
+      const days = Math.ceil((hd - today) / 86400000);
+      insight = `${next.emoji} ${next.common_name} is your next harvest — approximately ${days} day${days!==1?'s':''} away. ${pollinatorIQ >= 50 ? `Your Pollinator IQ of ${pollinatorIQ} is healthy.` : `Pollinator IQ ${pollinatorIQ} — consider adding native plants.`}`;
+      icon = '📅'; meta = 'Next harvest forecast';
+    } else {
+      insight = `${activePlants} plant${activePlants!==1?'s':''} active. Pollinator IQ: ${pollinatorIQ}. ${nativeCount} native species supporting the local ecosystem.`;
+      icon = '🌿';
+    }
+  }
+
+  iconEl.textContent  = icon;
+  textEl.textContent  = insight;
+  metaEl.textContent  = meta;
+  banner.style.display = 'flex';
+
+  // ── Also trigger bloom gap using the same plants ──
+  renderBloomGap(plants);
+}
+
+// ══════════════════════════════════════════════
+//  BLOOM GAP DETECTOR
+//  Maps each library plant's family → bloom window
+//  Builds 26-week grid from today, marks gaps and
+//  blooming weeks, recommends fillers for gap weeks.
+// ══════════════════════════════════════════════
+function renderBloomGap(plants) {
+  const grid    = document.getElementById('bloom-grid');
+  const gapList = document.getElementById('bloom-gaps-list');
+  if (!grid || !gapList) return;
+
+  const today   = new Date();
+  const WEEKS   = 26;
+
+  // ── Bloom windows by plant family (month 1-based) ──
+  // [startMonth, endMonth] inclusive
+  const FAMILY_BLOOM = {
+    Asteraceae:      [6, 10],   // June–Oct
+    Lamiaceae:       [5, 9],    // May–Sept
+    Rosaceae:        [5, 9],    // May–Sept
+    Boraginaceae:    [5, 9],    // May–Sept
+    Tropaeolaceae:   [6, 10],   // June–Oct
+    Caprifoliaceae:  [5, 8],    // May–Aug
+    Scrophulariaceae:[6, 9],
+    Violaceae:       [4, 6],
+    Ranunculaceae:   [4, 6],
+    Papaveraceae:    [5, 7],
+  };
+
+  // Common-name overrides for vegetables/herbs that bloom usefully
+  const NAME_BLOOM = {
+    'borage':       [5, 9],
+    'nasturtium':   [6, 10],
+    'zinnia':       [6, 10],
+    'marigold':     [6, 10],
+    'sunflower':    [7, 9],
+    'cosmos':       [7, 10],
+    'lavender':     [6, 8],
+    'echinacea':    [7, 9],
+    'coneflower':   [7, 9],
+    'black-eyed':   [7, 9],
+    'bee balm':     [7, 8],
+    'catmint':      [5, 9],
+    'salvia':       [6, 9],
+    'dill':         [7, 8],
+    'fennel':       [7, 8],
+    'chives':       [5, 6],
+    'allium':       [5, 7],
+    'rose':         [5, 9],
+    'strawberry':   [4, 6],
+    'raspberry':    [5, 7],
+    'blueberry':    [4, 6],
+    'thyme':        [5, 7],
+    'oregano':      [7, 8],
+    'basil':        [7, 9],
+  };
+
+  // Build a set of blooming week indices from library plants
+  const bloomingWeeks = new Set();
+  const weekPlants    = {};  // weekIdx → [plant names]
+
+  plants.forEach(p => {
+    const fam   = p.plant_family || '';
+    const name  = (p.common_name || '').toLowerCase();
+
+    let window = null;
+    // Name match first (more specific)
+    for (const [key, win] of Object.entries(NAME_BLOOM)) {
+      if (name.includes(key)) { window = win; break; }
+    }
+    // Family fallback
+    if (!window) {
+      for (const [key, win] of Object.entries(FAMILY_BLOOM)) {
+        if (fam.includes(key)) { window = win; break; }
+      }
+    }
+    if (!window) return;
+
+    const [startM, endM] = window;
+
+    // Mark which of our 26 weeks fall within bloom window
+    for (let w = 0; w < WEEKS; w++) {
+      const wDate = new Date(today.getTime() + w * 7 * 86400000);
+      const m     = wDate.getMonth() + 1; // 1-based
+      if (m >= startM && m <= endM) {
+        bloomingWeeks.add(w);
+        if (!weekPlants[w]) weekPlants[w] = [];
+        weekPlants[w].push((p.emoji||'🌱') + ' ' + p.common_name);
+      }
+    }
+  });
+
+  // Active growing season only: Apr 15 – Oct 15
+  const seasonStart = new Date(today.getFullYear(), 3, 15);
+  const seasonEnd   = new Date(today.getFullYear(), 9, 15);
+
+  // Build gap list — consecutive week runs with no blooms, within growing season
+  const gapRuns = [];
+  let runStart  = null;
+  for (let w = 0; w < WEEKS; w++) {
+    const wDate  = new Date(today.getTime() + w * 7 * 86400000);
+    const inSeas = wDate >= seasonStart && wDate <= seasonEnd;
+    const isGap  = inSeas && !bloomingWeeks.has(w);
+
+    if (isGap && runStart === null) runStart = w;
+    else if (!isGap && runStart !== null) {
+      gapRuns.push({ from: runStart, to: w - 1 });
+      runStart = null;
+    }
+  }
+  if (runStart !== null) gapRuns.push({ from: runStart, to: WEEKS - 1 });
+
+  // ── Filler suggestions from companion DB / general knowledge ──
+  const FILLERS = [
+    { name:'Zinnia',      emoji:'🌺', window:[6,10], reason:'Prolific bloomer, draws ladybugs and hoverflies' },
+    { name:'Marigold',    emoji:'🌼', window:[6,10], reason:'Nematode deterrent; continuous color Jun–Oct' },
+    { name:'Borage',      emoji:'⭐', window:[5,9],  reason:'Self-seeding; attracts bees all season' },
+    { name:'Nasturtium',  emoji:'🌸', window:[6,10], reason:'Edible trap crop; orange-yellow continuous bloom' },
+    { name:'Echinacea',   emoji:'🌸', window:[7,9],  reason:'Native perennial; peak late-season pollinator plant' },
+    { name:'Black-eyed Susan',emoji:'🌻',window:[7,9],reason:'Native perennial; fills the late-summer gap' },
+    { name:'Catmint',     emoji:'💜', window:[5,9],  reason:'Long-blooming; attracts bumblebees' },
+    { name:'Cosmos',      emoji:'🌸', window:[7,10], reason:'Easy annual; peak Sept–Oct fill' },
+    { name:'Lavender',    emoji:'💜', window:[6,8],  reason:'Drought-tolerant perennial; strong June–Aug bloom' },
+    { name:'Bee Balm',    emoji:'🌺', window:[7,8],  reason:'Native perennial; fills the July–Aug gap' },
+    { name:'Salvia',      emoji:'💙', window:[6,9],  reason:'Heat-tolerant; hummingbirds and bees' },
+    { name:'Alyssum',     emoji:'🤍', window:[4,10], reason:'Nearly year-round bloomer in Zone 6b' },
+  ];
+
+  // ── Render the 26-week bar ──────────────────
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  grid.innerHTML = Array.from({length: WEEKS}, (_, w) => {
+    const wDate  = new Date(today.getTime() + w * 7 * 86400000);
+    const inSeas = wDate >= seasonStart && wDate <= seasonEnd;
+    const isBloom= bloomingWeeks.has(w);
+    const isGap  = inSeas && !isBloom;
+    const isCur  = w === 0;
+    const mon    = monthNames[wDate.getMonth()];
+    const day    = wDate.getDate();
+
+    let cls = '';
+    if (isBloom) cls = 'blooming';
+    else if (isGap) cls = 'gap';
+    else if (inSeas) cls = 'future';
+
+    const tipPlants = weekPlants[w] ? weekPlants[w].slice(0,3).join(', ') : (isGap ? 'No blooms' : 'Off-season');
+    const tip = `${mon} ${day}${weekPlants[w] ? ': ' + tipPlants : isGap ? ' — Gap' : ''}`;
+
+    return `<div class="bloom-week ${cls}${isCur?' current':''}" title="${tip}">
+      <div class="bloom-week-tip">${tip}</div>
+    </div>`;
+  }).join('');
+
+  // ── Render gap rows ───────────────────────────
+  if (!gapRuns.length) {
+    gapList.innerHTML = '<div style="font-family:var(--mono);font-size:0.52rem;color:var(--green);letter-spacing:0.08em;padding:0.25rem 0;">✓ No bloom gaps detected in your 26-week window.</div>';
+    return;
+  }
+
+  const plantedNames = new Set(plants.map(p => p.common_name.toLowerCase()));
+
+  gapList.innerHTML = gapRuns.slice(0, 4).map(run => {
+    const fromDate = new Date(today.getTime() + run.from * 7 * 86400000);
+    const toDate   = new Date(today.getTime() + run.to   * 7 * 86400000);
+    const dateStr  = fromDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+                   + ' – '
+                   + toDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const weeks    = run.to - run.from + 1;
+
+    // Find fillers that cover this gap
+    const gapMonth = fromDate.getMonth() + 1;
+    const suggestions = FILLERS
+      .filter(f => f.window[0] <= gapMonth + 1 && f.window[1] >= gapMonth)
+      .filter(f => !plantedNames.has(f.name.toLowerCase()))
+      .slice(0, 3);
+
+    const suggHtml = suggestions.length
+      ? suggestions.map(s =>
+          `<span style="font-weight:500;color:var(--green)">${s.emoji} ${s.name}</span> (${s.reason})`
+        ).join(' · ')
+      : 'All known fillers already in your library — well planted!';
+
+    return `<div class="gap-row">
+      <div class="gap-date">${dateStr}</div>
+      <div>
+        <div class="gap-label">${weeks}-week bloom gap</div>
+        <div class="gap-sugg">Consider adding: ${suggHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // Close modals on backdrop click
