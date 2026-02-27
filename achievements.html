@@ -92,9 +92,9 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
   cursor: pointer; transition: color 0.12s, border-color 0.12s, background 0.12s;
   white-space: nowrap; line-height: 1; display: inline-block;
 }
-.nav-link:hover  { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
+.nav-link:hover  { color: var(--green); border-color: var(--green); background: var(--green-lt); }
 .nav-link.active { color: var(--green); border-color: var(--green); font-weight: 500; }
-.nav-link.danger:hover { color: var(--red); border-color: var(--red-lt); background: var(--red-lt); }
+.nav-link.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-lt); }
 
 .card { background: var(--surface); border: 1px solid var(--border); padding: 1rem 1.2rem; }
 .card-eyebrow, .eyebrow {
@@ -106,9 +106,9 @@ nav { display: flex; align-items: center; gap: 0.15rem; flex-wrap: wrap; }
 .progress-fill.fill-growing { background: var(--green); }
 .progress-fill.fill-harvest { background: var(--amber); }
 .badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.09em; text-transform: uppercase; padding: 0.14rem 0.42rem; border: 1px solid; line-height: 1.4; }
-.badge-green { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
-.badge-amber { color: var(--amber); border-color: #e8c88a; background: var(--amber-lt); }
-.badge-red   { color: var(--red);   border-color: #e8b4b0; background: var(--red-lt); }
+.badge-green { color: var(--green); border-color: var(--green); background: var(--green-lt); }
+.badge-amber { color: var(--amber); border-color: #c8a060; background: var(--amber-lt); }
+.badge-red   { color: var(--red);   border-color: #c09090; background: var(--red-lt); }
 .badge-muted { color: var(--muted); border-color: var(--border); background: var(--surface2); }
 .skel { background: linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%); background-size:400% 100%; animation: skel-sweep 1.4s ease infinite; }
 @keyframes skel-sweep { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
@@ -167,9 +167,9 @@ body::after {
 }
 .page-title {
   font-family: var(--serif); font-size: 3.8rem; font-weight: 600;
-  color: var(--gold-lt); line-height: 1; letter-spacing: -0.01em;
+  color: var(--gold); line-height: 1; letter-spacing: -0.01em;
 }
-.page-title em { font-style: italic; color: var(--parchment2); }
+.page-title em { font-style: italic; color: var(--amber); }
 .page-sub {
   font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
   color: var(--muted); margin-top: 0.6rem; text-transform: uppercase;
@@ -192,7 +192,7 @@ body::after {
   pointer-events: none;
 }
 .sum-item { text-align: center; }
-.sum-num  { font-family: var(--serif); font-size: 2.4rem; font-style: italic; color: var(--gold-lt); line-height: 1; }
+.sum-num  { font-family: var(--serif); font-size: 2.4rem; font-style: italic; color: var(--gold); line-height: 1; }
 .sum-lbl  { font-family: var(--mono);  font-size: 0.48rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: 0.15rem; }
 .sum-sep  { width: 1px; height: 3rem; background: var(--border); }
 
@@ -257,7 +257,7 @@ body::after {
   font-family: var(--mono); font-size: 0.52rem; color: var(--muted);
   margin-bottom: 0.3rem;
 }
-.ch-prog-label .ch-pct { color: var(--gold-lt); }
+.ch-prog-label .ch-pct { color: var(--gold); }
 .ch-track { height: 4px; background: var(--surface3); overflow: hidden; }
 .ch-fill  {
   height: 100%;
@@ -271,8 +271,8 @@ body::after {
   font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em;
   text-transform: uppercase; margin-top: 0.5rem; text-align: right;
 }
-.ch-status.done    { color: var(--gold-lt); }
-.ch-status.active  { color: var(--green-lt); }
+.ch-status.done    { color: var(--gold); }
+.ch-status.active  { color: var(--green); }
 .ch-status.locked  { color: var(--muted); }
 
 /* Deadline badge */
@@ -363,7 +363,7 @@ body::after {
   color: var(--text); line-height: 1.2; margin-bottom: 0.3rem;
 }
 .badge-card:not(.earned) .badge-name { color: var(--muted); }
-.badge-card.earned .badge-name { color: var(--gold-lt); }
+.badge-card.earned .badge-name { color: var(--gold); }
 
 .badge-desc {
   font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.06em;
@@ -416,7 +416,7 @@ body::after {
 .cert-icon { font-size: 3.5rem; display: block; margin-bottom: 0.75rem; }
 .cert-title {
   font-family: var(--serif); font-size: 2rem; font-style: italic;
-  color: var(--gold-lt); margin-bottom: 0.5rem;
+  color: var(--gold); margin-bottom: 0.5rem;
 }
 .cert-.cert-requirements {
   display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
@@ -426,7 +426,7 @@ body::after {
   display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
 }
 .cert-req-val { font-family: var(--serif); font-size: 1.5rem; font-style: italic; }
-.cert-req-val.met { color: var(--gold-lt); }
+.cert-req-val.met { color: var(--gold); }
 .cert-req-val.unmet { color: var(--muted); }
 .cert-req-lbl { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .cert-earned-banner {
@@ -435,7 +435,7 @@ body::after {
   border-bottom: 1px solid var(--gold);
   padding: 0.6rem;
   font-family: var(--serif); font-size: 1rem; font-style: italic;
-  color: var(--gold-lt); margin-top: 1.25rem; letter-spacing: 0.05em;
+  color: var(--gold); margin-top: 1.25rem; letter-spacing: 0.05em;
 }
 
 /* ── Animations ───────────────────────────────── */
@@ -456,7 +456,7 @@ body::after {
   padding: 0.7rem 1.1rem; font-family: var(--mono); font-size: 0.62rem;
   letter-spacing: 0.08em; opacity: 0; transform: translateY(6px);
   transition: opacity 0.25s, transform 0.25s; pointer-events: none;
-  background: var(--surface2); color: var(--gold-lt);
+  background: var(--surface2); color: var(--gold);
   border: 1px solid var(--gold); max-width: 320px;
 }
 #toast.show { opacity: 1; transform: translateY(0); }
