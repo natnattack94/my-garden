@@ -6,61 +6,209 @@
 <title>GardenHub OS | Plant Clinic v10.6</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="weather-engine.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* ── Tokens ──────────────────────────────────── */
-:root {
-  --bg:        #0e0b09;
-  --surface:   #16110e;
-  --surface2:  #1d1611;
-  --surface3:  #241b14;
-  --border:    #2e2118;
-  --border2:   #3d2d1f;
-  --red:       #e84040;
-  --red-lt:    rgba(232,64,64,0.12);
-  --amber:     #e8a020;
-  --amber-lt:  rgba(232,160,32,0.12);
-  --green:     #4caf72;
-  --green-lt:  rgba(76,175,114,0.12);
-  --blue:      #5b9ef5;
-  --blue-lt:   rgba(91,158,245,0.1);
-  --purple:    #a78bfa;
-  --text:      #e8d8c8;
-  --muted:     #7a6050;
-  --mono:      'DM Mono', monospace;
-  --serif:     'Cormorant Garamond', serif;
-  --sans:      'DM Sans', sans-serif;
-  --penalty:   5; /* default recovery penalty days */
-}
+/* ════════════════════════════════════════════
+   GardenHub OS — Design System (inlined)
+   Warm cream palette · Fraunces serif
+   ════════════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  overflow-x: hidden;
+:root {
+  --bg:        #f0ead9;
+  --bg2:       #e8e0cc;
+  --surface:   #faf6ee;
+  --surface2:  #ede8dd;
+  --surface3:  #e4ddd0;
+  --border:    #d5ccb8;
+  --border2:   #bfb5a0;
+  --text:      #1c2419;
+  --text2:     #3a4a36;
+  --muted:     #7a7060;
+  --green:     #2d6a42;
+  --green-lt:  #e2ede6;
+  --green-mid: #4a8c62;
+  --green-dim: #4a7a5a;
+  --green-vv:  #1a9450;
+  --amber:     #a05c14;
+  --amber-lt:  #fcefd8;
+  --amber-mid: #c47820;
+  --red:       #b82018;
+  --red-lt:    #faeae8;
+  --blue:      #1a4d8c;
+  --blue-lt:   #e4edf8;
+  --pink:      #a01850;
+  --pink-lt:   #faeaf0;
+  --serif: 'Fraunces', Georgia, serif;
+  --mono:  'DM Mono', monospace;
+  --sans:  'DM Sans', sans-serif;
 }
+
+html { font-size: 16px; }
+
+body {
+  background:  var(--bg);
+  color:       var(--text);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.6;
+  min-height:  100vh;
+  overflow-x:  hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: var(--bg2); }
+::-webkit-scrollbar-thumb        { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--muted); }
+
+/* ── Top bar ──────────────────────────────────── */
+.top-bar {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(240,234,217,0.97);
+  border-bottom: 2px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  height: 54px;
+  gap: 1rem;
+}
+
+/* ── Logo ─────────────────────────────────────── */
+.logo-block {
+  display: flex; align-items: baseline;
+  gap: 0.55rem; flex-shrink: 0;
+}
+.logo-eye {
+  font-family: var(--mono);
+  font-size: 0.45rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.logo-name {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1;
+}
+.logo-name em { font-weight: 700; font-style: italic; color: var(--green); }
+
+/* ── Nav links ────────────────────────────────── */
+nav {
+  display: flex; align-items: center;
+  gap: 0.15rem; flex-wrap: wrap;
+}
+.nav-link {
+  font-family:     var(--mono);
+  font-size:       0.5rem;
+  letter-spacing:  0.07em;
+  text-transform:  uppercase;
+  text-decoration: none;
+  padding:         0.28rem 0.55rem;
+  border:          1px solid transparent;
+  color:           var(--muted);
+  background:      transparent;
+  cursor:          pointer;
+  transition:      color 0.12s, border-color 0.12s, background 0.12s;
+  white-space:     nowrap;
+  line-height:     1;
+  display:         inline-block;
+}
+.nav-link:hover {
+  color:        var(--green);
+  border-color: var(--green-lt);
+  background:   var(--green-lt);
+}
+.nav-link.active {
+  color:        var(--green);
+  border-color: var(--green);
+  font-weight:  500;
+}
+.nav-link.danger:hover {
+  color:        var(--red);
+  border-color: var(--red-lt);
+  background:   var(--red-lt);
+}
+
+/* ── Shared card base ─────────────────────────── */
+.card {
+  background: var(--surface);
+  border:     1px solid var(--border);
+  padding:    1rem 1.2rem;
+}
+
+/* ── Eyebrow label ────────────────────────────── */
+.card-eyebrow, .eyebrow {
+  font-family:     var(--mono);
+  font-size:       0.48rem;
+  letter-spacing:  0.18em;
+  text-transform:  uppercase;
+  color:           var(--muted);
+}
+
+/* ── Progress bar ─────────────────────────────── */
+.progress-track {
+  height: 4px; background: var(--surface3);
+  border-radius: 2px; overflow: hidden; margin: 0.4rem 0;
+}
+.progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+.progress-fill.fill-growing { background: var(--green); }
+.progress-fill.fill-harvest { background: var(--amber); }
+
+/* ── Badge ────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: 0.42rem;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 0.14rem 0.42rem; border: 1px solid; line-height: 1.4;
+}
+.badge-green  { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
+.badge-amber  { color: var(--amber); border-color: #e8c88a;         background: var(--amber-lt); }
+.badge-red    { color: var(--red);   border-color: #e8b4b0;         background: var(--red-lt);   }
+.badge-muted  { color: var(--muted); border-color: var(--border);   background: var(--surface2); }
+
+/* ── Skeleton loader ──────────────────────────── */
+.skel {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+  background-size: 400% 100%;
+  animation: skel-sweep 1.4s ease infinite;
+}
+@keyframes skel-sweep { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+@media (max-width: 900px) {
+  .top-bar { padding: 0 1rem; height: 48px; }
+}
+@media (max-width: 600px) {
+  .logo-eye { display: none; }
+  nav { gap: 0.1rem; }
+  .nav-link { font-size: 0.46rem; padding: 0.25rem 0.4rem; }
+}
+
+:root {
+  /* Clinic-specific */
+  --purple: #7c5cc4;
+  --penalty: 5;
+}
+
+/* ── Tokens ──────────────────────────────────── */
+
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* subtle noise texture overlay */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 9998; opacity: 0.6;
-}
-
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
 /* ── Auth Overlay ─────────────────────────────── */
 #auth-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(14,11,9,0.97);
+  background: rgba(242,237,228,0.97);
   display: flex; align-items: center; justify-content: center;
 }
 #auth-overlay.hidden { display: none; }
@@ -96,29 +244,8 @@ body::before {
 #auth-err { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
 
 /* ── Top Bar ──────────────────────────────────── */
-.top-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.9rem 2rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  position: sticky; top: 0; z-index: 100;
-}
-.logo-block { display: flex; align-items: baseline; gap: 0.75rem; }
-.logo-eye  { font-family: var(--mono); font-size: 0.52rem; color: var(--muted); letter-spacing: 0.22em; text-transform: uppercase; }
-.logo-name { font-family: var(--serif); font-size: 1.4rem; color: var(--text); }
 .logo-name em { color: var(--red); font-style: italic; }
 
-nav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
-.nav-link {
-  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em;
-  text-transform: uppercase; text-decoration: none;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--border); color: var(--muted);
-  background: transparent; cursor: pointer; transition: all 0.15s;
-}
-.nav-link:hover  { border-color: var(--border2); color: var(--text); }
-.nav-link.active { border-color: var(--red); color: var(--red); }
-.nav-link.danger:hover { border-color: var(--red); color: var(--red); }
 
 /* ── Climate Bar ──────────────────────────────── */
 .climate-bar {
@@ -137,10 +264,7 @@ nav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
 main { max-width: 1400px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 
 /* ── Header KPIs ──────────────────────────────── */
-.clinic-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 1.5rem; gap: 1.5rem; flex-wrap: wrap;
-}
+
 .clinic-title-block { flex: 1; }
 .clinic-eyebrow { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; margin-bottom: 0.35rem; }
 .clinic-title  { font-family: var(--serif); font-size: 3rem; line-height: 1; letter-spacing: -0.02em; }
@@ -281,9 +405,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 /* urgent: horizontal layout */
 .scan-card.urgent { flex-direction: row; max-width: 800px; }
 .urgent .card-img  { width: 200px; min-width: 200px; }
-.urgent .card-body { flex: 1; }
-
-.card-img {
+.urgent .card-.card-img {
   position: relative; background: var(--surface2);
   overflow: hidden;
 }
@@ -297,14 +419,12 @@ main { max-width: 1400px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
 }
 .img-date {
   position: absolute; top: 0.5rem; right: 0.5rem;
-  background: rgba(14,11,9,0.8); backdrop-filter: blur(4px);
+  background: rgba(242,237,228,0.8); backdrop-filter: blur(4px);
   font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.1em;
   color: var(--text); padding: 0.2rem 0.45rem;
 }
 
-.card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 0.6rem; }
-
-.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+.card-.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
 .card-plant { font-family: var(--serif); font-size: 1.15rem; font-style: italic; color: var(--text); line-height: 1.2; }
 .card-status { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.15rem 0.4rem; flex-shrink: 0; }
 .status-active   { color: var(--red);   background: var(--red-lt);   border: 1px solid rgba(232,64,64,0.3); }
@@ -404,17 +524,17 @@ main { max-width: 1400px; margin: 0 auto; padding: 1.75rem 2rem 4rem; }
     <div class="logo-name">Plant <em>Clinic</em></div>
   </div>
   <nav>
-    <a href="index.html"    class="nav-link">Dashboard</a>
-    <a href="map.html"      class="nav-link">Map</a>
+    <a href="index.html" class="nav-link">Dashboard</a>
+    <a href="map.html" class="nav-link">Map</a>
     <a href="insights.html" class="nav-link">Insights</a>
-    <a href="library.html"      class="nav-link">Library</a>
-    <a href="calendar.html"    class="nav-link">Calendar</a>
+    <a href="library.html" class="nav-link">Library</a>
+    <a href="calendar.html" class="nav-link">Calendar</a>
     <a href="achievements.html" class="nav-link">Medals</a>
-    <a href="journal.html"       class="nav-link">Journal</a>
-    <a href="snapshot.html"     class="nav-link">Snapshot</a>
-    <a href="weather.html"      class="nav-link">Weather</a>
+    <a href="journal.html" class="nav-link">Journal</a>
+    <a href="snapshot.html" class="nav-link">Snapshot</a>
+    <a href="weather.html" class="nav-link">Weather</a>
     <a href="companions.html" class="nav-link">Companions</a>
-    <a href="clinic.html"   class="nav-link active">Clinic</a>
+    <a href="clinic.html" class="nav-link active">Clinic</a>
     <button class="nav-link danger" id="logout-btn">Logout</button>
   </nav>
 </div>
