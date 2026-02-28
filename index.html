@@ -551,6 +551,86 @@ nav {
 .predict-.predict-text { font-family: var(--serif); font-size: 0.84rem; font-style: italic; color: var(--text); line-height: 1.55; }
 .predict-meta { font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
+/* ── Native Alternatives Drawer ──────────────── */
+.native-drawer {
+  margin: 0 1.5rem 0;
+  border: 1px solid var(--border);
+  border-top: none;
+  background: var(--surface);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.38s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+  opacity: 0;
+}
+.native-drawer.open {
+  max-height: 900px;
+  opacity: 1;
+}
+.native-drawer-inner {
+  padding: 1rem 1.25rem 1.25rem;
+}
+.native-drawer-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid var(--surface2);
+  padding-bottom: 0.6rem;
+}
+.native-drawer-title {
+  font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--text);
+}
+.native-drawer-sub {
+  font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); margin-top: 2px;
+}
+.native-close {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); cursor: pointer;
+  background: none; padding: 0.15rem 0.4rem;
+  border: 1px solid var(--border); transition: color 0.12s, border-color 0.12s;
+}
+.native-close:hover { color: var(--green); border-color: var(--green); }
+.swap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.6rem;
+}
+.swap-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 0.75rem 0.9rem;
+  transition: border-color 0.15s;
+  position: relative;
+}
+.swap-card:hover { border-color: var(--green); }
+.swap-card.in-library {
+  border-color: var(--green);
+  background: var(--green-lt);
+}
+.swap-card.in-library::after {
+  content: '✓ In your library';
+  position: absolute; top: 0.5rem; right: 0.6rem;
+  font-family: var(--mono); font-size: 0.4rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--green); opacity: 0.8;
+}
+.swap-common { font-family: var(--sans); font-size: 0.7rem; font-weight: 600; color: var(--text); }
+.swap-arrow  { font-family: var(--mono); font-size: 0.55rem; color: var(--green); margin: 0.25rem 0; }
+.swap-native { font-family: var(--serif); font-size: 0.88rem; font-style: italic; color: var(--green); }
+.swap-why    { font-family: var(--sans); font-size: 0.6rem; color: var(--muted); line-height: 1.45; margin-top: 0.3rem; }
+.swap-badge  {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: 0.38rem; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 0.1rem 0.35rem;
+  border: 1px solid #bbddc8; background: var(--green-lt); color: var(--green);
+  margin-top: 0.35rem;
+}
+.predict-banner.clickable { cursor: pointer; }
+.predict-banner.clickable:hover { border-color: var(--pink); background: var(--pink-lt); }
+.predict-banner .native-cue {
+  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--pink); margin-top: 4px; display: none;
+}
+.predict-banner.clickable .native-cue { display: block; }
+
 /* ── Bloom gap detector — Circular Clock ──────── */
 .bloom-card { background: var(--surface); border: 1px solid var(--border); margin-top: 0.75rem; }
 .bloom-card-head {
@@ -688,11 +768,28 @@ nav {
     <!-- populated by renderPulse() -->
   </div>
   <!-- ═══ PREDICTIVE INSIGHT BANNER ═══ -->
-  <div class="predict-banner" id="predict-banner" style="display:none;">
+  <div class="predict-banner" id="predict-banner" style="display:none;" onclick="toggleNativeDrawer()">
     <div class="predict-icon" id="predict-icon">🌱</div>
     <div class="predict-body">
       <div class="predict-text" id="predict-text">Loading garden intelligence…</div>
       <div class="predict-meta" id="predict-meta">Computed from your library</div>
+      <div class="native-cue">↓ Click to explore native alternatives</div>
+    </div>
+  </div>
+
+  <!-- ═══ NATIVE ALTERNATIVES DRAWER ═══ -->
+  <div class="native-drawer" id="native-drawer">
+    <div class="native-drawer-inner">
+      <div class="native-drawer-head">
+        <div>
+          <div class="native-drawer-title">Native Plant Alternatives</div>
+          <div class="native-drawer-sub">Zone 6b · Connecticut · Swap common cultivars for native species</div>
+        </div>
+        <button class="native-close" onclick="toggleNativeDrawer(event)">✕ Close</button>
+      </div>
+      <div class="swap-grid" id="swap-grid">
+        <!-- populated by renderNativeDrawer() -->
+      </div>
     </div>
   </div>
 
@@ -1434,6 +1531,12 @@ async function renderPulse() {
   } else if (nativeCount === 0 && activePlants > 0) {
     insight = `None of your ${activePlants} plants are flagged as native. Native species provide 3–5× more ecosystem value for local pollinators. Consider adding native flowering plants from your region.`;
     icon = '🦋'; banner.style.borderLeftColor = 'var(--pink)'; meta = 'Biodiversity signal';
+    // Make banner clickable to open native drawer
+    banner.classList.add('clickable');
+    renderNativeDrawer(plants);
+  } else if (nativeCount > 0 && nativeCount < activePlants) {
+    banner.classList.add('clickable');
+    renderNativeDrawer(plants);
   } else {
     const sortedByHarvest = [...plants].sort((a,b) => {
       const da = harvestDate(a.planted_date, a.maturity_days, a.recovery_days);
@@ -1829,6 +1932,126 @@ function renderGrowthGraph(plants) {
   });
 })();
 
+// ══════════════════════════════════════════════
+//  NATIVE ALTERNATIVES DRAWER
+//  Full hardcoded swap DB (common → native).
+//  Cards highlighted if native alt is already
+//  in the user's library.
+// ══════════════════════════════════════════════
+
+const NATIVE_SWAPS = [
+  {
+    common: 'Butterfly Bush', commonEmoji: '🌸',
+    native: 'Joe Pye Weed', nativeEmoji: '🌺', nativeSci: 'Eutrochium purpureum',
+    benefit: 'Supports 42 native bee species vs. butterfly bush\'s near zero. Blooms Jul–Sep.',
+    tags: ['Perennial', 'Pollinator', 'Zone 4–9'],
+  },
+  {
+    common: 'English Lavender', commonEmoji: '💜',
+    native: 'Wild Bergamot', nativeEmoji: '💜', nativeSci: 'Monarda fistulosa',
+    benefit: 'Native bees can\'t access non-native lavender efficiently. Wild bergamot is their preferred nectar source.',
+    tags: ['Perennial', 'Bee Magnet', 'Deer Resistant'],
+  },
+  {
+    common: 'Burning Bush', commonEmoji: '🔴',
+    native: 'Highbush Blueberry', nativeEmoji: '🫐', nativeSci: 'Vaccinium corymbosum',
+    benefit: 'Burning bush is invasive in CT. Blueberry provides food for 288 caterpillar species + edible fruit.',
+    tags: ['Shrub', 'Edible', 'Wildlife Food'],
+  },
+  {
+    common: 'Japanese Barberry', commonEmoji: '🌿',
+    native: 'Spicebush', nativeEmoji: '🌿', nativeSci: 'Lindera benzoin',
+    benefit: 'Barberry is invasive and harbors deer ticks. Spicebush hosts the Spicebush Swallowtail butterfly.',
+    tags: ['Shrub', 'Host Plant', 'Fall Color'],
+  },
+  {
+    common: 'Daylily (non-native)', commonEmoji: '🌼',
+    native: 'Orange Coneflower', nativeEmoji: '🌻', nativeSci: 'Rudbeckia fulgida',
+    benefit: 'Tawny daylily is invasive in CT. Coneflower supports goldfinches in fall with seed heads.',
+    tags: ['Perennial', 'Birds', 'Long Bloom'],
+  },
+  {
+    common: 'Forsythia', commonEmoji: '💛',
+    native: 'Witch Hazel', nativeEmoji: '💛', nativeSci: 'Hamamelis virginiana',
+    benefit: 'Witch hazel blooms Nov–Jan — the only late-season nectar source for queen bumblebees.',
+    tags: ['Shrub', 'Winter Bloom', 'Medicinal'],
+  },
+  {
+    common: 'Hosta', commonEmoji: '🍃',
+    native: 'Wild Ginger', nativeEmoji: '🍃', nativeSci: 'Asarum canadense',
+    benefit: 'Both are shade groundcovers, but wild ginger hosts specialist native bees and self-spreads naturally.',
+    tags: ['Groundcover', 'Shade', 'Perennial'],
+  },
+  {
+    common: 'Crape Myrtle', commonEmoji: '🌸',
+    native: 'Serviceberry', nativeEmoji: '🍒', nativeSci: 'Amelanchier canadensis',
+    benefit: 'Serviceberry blooms first in spring (critical for emerging bees), provides edible berries, and hosts 124 Lepidoptera species.',
+    tags: ['Tree/Shrub', 'Edible', 'Early Bloom'],
+  },
+  {
+    common: 'Japanese Honeysuckle', commonEmoji: '🌼',
+    native: 'Trumpet Honeysuckle', nativeEmoji: '🌼', nativeSci: 'Lonicera sempervirens',
+    benefit: 'Japanese honeysuckle is invasive. Native trumpet honeysuckle is the primary Ruby-throated Hummingbird nectar plant.',
+    tags: ['Vine', 'Hummingbirds', 'Non-invasive'],
+  },
+  {
+    common: 'Norway Maple', commonEmoji: '🍁',
+    native: 'Sugar Maple', nativeEmoji: '🍁', nativeSci: 'Acer saccharum',
+    benefit: 'Norway maple shades out native understory plants. Sugar maple supports 285 caterpillar species and is CT\'s state tree.',
+    tags: ['Tree', 'Fall Color', 'Wildlife'],
+  },
+  {
+    common: 'Catmint (non-native)', commonEmoji: '💙',
+    native: 'Blue Wild Indigo', nativeEmoji: '💙', nativeSci: 'Baptisia australis',
+    benefit: 'Blue wild indigo is a host plant for Wild Indigo Duskywing butterfly and supports native bumblebees exclusively.',
+    tags: ['Perennial', 'Host Plant', 'Drought Tolerant'],
+  },
+  {
+    common: 'Ornamental Grass (misc)', commonEmoji: '🌾',
+    native: 'Little Bluestem', nativeEmoji: '🌾', nativeSci: 'Schizachyrium scoparium',
+    benefit: 'Little bluestem turns copper-red in fall, provides winter bird habitat, and is a host grass for 8 skipper species.',
+    tags: ['Grass', 'Birds', 'Winter Interest'],
+  },
+];
+
+let _nativeDrawerPlants = [];
+
+function renderNativeDrawer(plants) {
+  _nativeDrawerPlants = plants || [];
+  const grid = document.getElementById('swap-grid');
+  if (!grid) return;
+
+  const libraryNames = new Set(
+    _nativeDrawerPlants.map(p => (p.common_name || '').toLowerCase())
+  );
+
+  grid.innerHTML = NATIVE_SWAPS.map(swap => {
+    const nativeLower  = swap.native.toLowerCase();
+    const inLib        = libraryNames.has(nativeLower) ||
+                         [...libraryNames].some(n => n.includes(nativeLower.split(' ')[0]));
+    const tagsHtml     = swap.tags.map(t =>
+      `<span class="swap-badge">${t}</span>`
+    ).join(' ');
+
+    return `<div class="swap-card ${inLib ? 'in-library' : ''}">
+      <div class="swap-common">${swap.commonEmoji} ${swap.common}</div>
+      <div class="swap-arrow">→ swap for native</div>
+      <div class="swap-native">${swap.nativeEmoji} ${swap.native}</div>
+      <div style="font-family:var(--mono);font-size:0.44rem;color:var(--muted);letter-spacing:0.06em;margin-top:1px;">${swap.nativeSci}</div>
+      <div class="swap-why">${swap.benefit}</div>
+      <div style="margin-top:0.4rem;">${tagsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNativeDrawer(e) {
+  if (e) e.stopPropagation();
+  const drawer = document.getElementById('native-drawer');
+  if (!drawer) return;
+  drawer.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════════
 // Close modals on backdrop click
 document.getElementById('add-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('add-modal')) closeModal();
