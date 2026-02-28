@@ -296,11 +296,15 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 }
 
 /* ── Uplink error hero state ─────────────────── */
+/* collapse the 3-col hero grid so the error fills the full row */
+.conditions-hero.uplink-mode {
+  display: block;
+}
 .uplink-error-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 1.5rem 2rem; gap: 0.6rem;
-  border: 1px dashed #3a6a9a; background: #0d1a2a;
-  width: 100%;
+  padding: 2rem; gap: 0.6rem;
+  background: #0d1a2a;
+  width: 100%; min-height: 120px;
 }
 .uplink-icon {
   font-size: 2rem; opacity: 0.6;
@@ -592,6 +596,7 @@ function renderUplinkError(e) {
 
   // Replace the hero with the in-universe error state
   const hero = $('conditions-hero');
+  hero.classList.add('uplink-mode');
   hero.innerHTML = `
     <div class="uplink-error-state">
       <div class="uplink-icon">📡</div>
@@ -608,6 +613,7 @@ function renderUplinkError(e) {
 
 async function retryUplink() {
   const hero = $('conditions-hero');
+  hero.classList.add('uplink-mode');
   // Show scanning state
   hero.innerHTML = `
     <div class="uplink-error-state">
@@ -652,6 +658,7 @@ async function retryUplink() {
         <div class="risk-badge risk-LOW" id="risk-badge">LOW</div>
         <div class="risk-sub">Today's Risk</div>
       </div>`;
+    hero.classList.remove('uplink-mode');
     populateHero(wx);
     toast('📡 Uplink restored', false, false);
   } catch(e) {
@@ -685,17 +692,47 @@ function populateHero(wx) {
 
 // ── Load charts ───────────────────────────────────
 async function loadCharts() {
-  const [history, events, scans] = await Promise.all([
-    WeatherEngine.loadHistory(sb, 90),
-    sb.from('weather_events').select('*').gte('event_date', daysAgo(90)).order('event_date').then(r=>r.data||[]),
-    sb.from('plant_health_scans').select('scan_date,severity,status,issue_type').gte('scan_date', daysAgo(90)).order('scan_date').then(r=>r.data||[]),
-  ]);
+  let history = [], events = [], scans = [];
 
-  buildTempChart(history, events);
-  buildPrecipChart(history, events);
-  buildDiseaseWxChart(history, events, scans);
+  // History comes from WeatherEngine — may fail if API is down
+  try {
+    history = await WeatherEngine.loadHistory(sb, 90);
+  } catch(e) {
+    console.warn('[Charts] loadHistory failed — rendering empty state:', e.message);
+    renderChartUplinkState();
+  }
+
+  // Events and scans come from Supabase directly — usually available even when API is down
+  try {
+    [events, scans] = await Promise.all([
+      sb.from('weather_events').select('*').gte('event_date', daysAgo(90)).order('event_date').then(r=>r.data||[]),
+      sb.from('plant_health_scans').select('scan_date,severity,status,issue_type').gte('scan_date', daysAgo(90)).order('scan_date').then(r=>r.data||[]),
+    ]);
+  } catch(e) {
+    console.warn('[Charts] Supabase query failed:', e.message);
+  }
+
+  if (history.length) {
+    buildTempChart(history, events);
+    buildPrecipChart(history, events);
+    buildDiseaseWxChart(history, events, scans);
+  }
   buildEventSummary(events);
   updateEventCountHero(events);
+}
+
+function renderChartUplinkState() {
+  const MSG = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:0.5rem;opacity:0.5;">
+    <div style="font-size:1.5rem;">📡</div>
+    <div style="font-family:var(--mono);font-size:0.5rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);">No signal — uplink required</div>
+  </div>`;
+  ['chart-temp','chart-precip','chart-disease-wx'].forEach(id => {
+    const canvas = document.getElementById(id);
+    if (canvas) {
+      const wrap = canvas.parentElement;
+      wrap.innerHTML = MSG;
+    }
+  });
 }
 
 // ── Temperature chart with event annotations ──────
