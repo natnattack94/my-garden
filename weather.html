@@ -279,6 +279,49 @@ nav { display: flex; gap: 0.35rem; flex-wrap: wrap; }
   transition: opacity 0.2s, transform 0.2s; pointer-events: none; max-width: 320px;
 }
 #toast.show { opacity: 1; transform: translateY(0); }
+#toast.uplink-err {
+  background: #0d1a2a;
+  border-color: #3a6a9a;
+  color: #8ab4d4;
+  animation: uplink-flicker 2.4s ease-in-out infinite;
+}
+@keyframes uplink-flicker {
+  0%,100% { opacity: 1; }
+  48%     { opacity: 1; }
+  50%     { opacity: 0.7; }
+  52%     { opacity: 1; }
+  80%     { opacity: 1; }
+  82%     { opacity: 0.85; }
+  84%     { opacity: 1; }
+}
+
+/* ── Uplink error hero state ─────────────────── */
+.uplink-error-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.5rem 2rem; gap: 0.6rem;
+  border: 1px dashed #3a6a9a; background: #0d1a2a;
+  width: 100%;
+}
+.uplink-icon {
+  font-size: 2rem; opacity: 0.6;
+  animation: uplink-flicker 2.4s ease-in-out infinite;
+}
+.uplink-title {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: #8ab4d4;
+}
+.uplink-detail {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.12em;
+  color: #3a6a9a; text-align: center; line-height: 1.7;
+}
+.uplink-retry {
+  margin-top: 0.5rem;
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.14em;
+  text-transform: uppercase; padding: 0.4rem 1rem;
+  background: transparent; border: 1px solid #3a6a9a; color: #8ab4d4;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.uplink-retry:hover { border-color: #8ab4d4; color: #c8dff0; }
 
 @media (max-width: 900px) {
   .two-col { grid-template-columns: 1fr; }
@@ -470,12 +513,20 @@ const EV_CFG = {
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function toast(msg, err=false) {
+function toast(msg, err=false, uplink=false) {
   const el = $('toast'); el.textContent = msg;
-  el.style.color       = err ? '#f08080' : 'var(--sky)';
-  el.style.borderColor = err ? '#802020' : 'var(--sky)';
-  el.className = 'show';
-  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3500);
+  if (uplink) {
+    el.style.color       = '';
+    el.style.borderColor = '';
+    el.className = 'show uplink-err';
+  } else {
+    el.style.color       = err ? '#f08080' : 'var(--sky)';
+    el.style.borderColor = err ? '#802020' : 'var(--sky)';
+    el.className = 'show';
+  }
+  clearTimeout(el._t);
+  // Uplink errors linger longer — they're important
+  el._t = setTimeout(() => el.className = '', uplink ? 6000 : 3500);
 }
 
 function daysAgo(n) {
@@ -500,8 +551,7 @@ async function boot() {
     populateHero(wx);
   } catch(e) {
     console.error('[Weather] engine error:', e);
-    $('hero-icon').textContent = '⚠️';
-    toast('Weather fetch failed — showing cached data', true);
+    renderUplinkError(e);
   }
 
   // Load all data in parallel
@@ -510,6 +560,103 @@ async function boot() {
     loadEventTimeline(),
     loadHistoryTable(),
   ]);
+}
+
+// ── Uplink error — in-universe error state ────────
+function renderUplinkError(e) {
+  // Diagnose the failure type for the console log
+  let diagnosis = 'Unknown signal loss';
+  let detail    = 'Atmospheric interference detected.\nSatellite uplink could not be established.';
+
+  if (e && e.message) {
+    const msg = e.message.toLowerCase();
+    if (msg.includes('cors') || msg.includes('blocked')) {
+      diagnosis = 'CORS — Cross-Origin Signal Block';
+      detail    = 'Uplink blocked by origin policy.\nCheck CORS headers on the weather API.';
+    } else if (msg.includes('network') || msg.includes('failed to fetch') || msg.includes('networkerror')) {
+      diagnosis = 'Network dropout';
+      detail    = 'No route to weather satellite.\nCheck network connection or API availability.';
+    } else if (msg.includes('401') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('forbidden')) {
+      diagnosis = 'Auth handshake failed';
+      detail    = 'API key rejected or expired.\nVerify credentials in weather-engine.js.';
+    } else if (msg.includes('429') || msg.includes('rate')) {
+      diagnosis = 'Uplink rate-limited';
+      detail    = 'Too many requests to weather API.\nRetry in 60 seconds.';
+    } else if (msg.includes('timeout') || msg.includes('timed out')) {
+      diagnosis = 'Signal timeout';
+      detail    = 'Weather satellite did not respond.\nRetry when conditions improve.';
+    }
+  }
+
+  console.warn('[Weather] Uplink diagnosis:', diagnosis);
+
+  // Replace the hero with the in-universe error state
+  const hero = $('conditions-hero');
+  hero.innerHTML = `
+    <div class="uplink-error-state">
+      <div class="uplink-icon">📡</div>
+      <div class="uplink-title">Satellite Uplink Interrupted</div>
+      <div class="uplink-detail">${detail.replace(/\n/g, '<br/>')}<br/><br/>
+        <span style="opacity:0.5;">Diagnosis: ${diagnosis}</span>
+      </div>
+      <button class="uplink-retry" onclick="retryUplink()">↺ Retry Uplink</button>
+    </div>`;
+
+  // Uplink-style toast — lingers 6s, flickers
+  toast('📡 Satellite uplink interrupted — last known data shown below', false, true);
+}
+
+async function retryUplink() {
+  const hero = $('conditions-hero');
+  // Show scanning state
+  hero.innerHTML = `
+    <div class="uplink-error-state">
+      <div class="uplink-icon" style="animation:uplink-flicker 0.6s ease-in-out infinite;">📡</div>
+      <div class="uplink-title">Scanning…</div>
+      <div class="uplink-detail">Re-establishing satellite connection</div>
+    </div>`;
+
+  try {
+    const wx = await WeatherEngine.run(sb);
+    // Restore the original hero markup then populate it
+    hero.innerHTML = `
+      <div class="hero-icon-col" id="hero-icon">⌛</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hs-num sky" id="hs-temp">--</div>
+          <div class="hs-lbl">Current Temp</div>
+          <div class="hs-sub" id="hs-feels">Feels like --</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-num" id="hs-range">-- / --</div>
+          <div class="hs-lbl">High / Low Today</div>
+          <div class="hs-sub" id="hs-desc">Loading…</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-num" id="hs-humidity">--%</div>
+          <div class="hs-lbl">Humidity</div>
+          <div class="hs-sub" id="hs-wind">-- mph</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-num rain" id="hs-precip">--"</div>
+          <div class="hs-lbl">Precipitation</div>
+          <div class="hs-sub" id="hs-solar">-- solar hrs</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-num" id="hs-event-count" style="color:var(--heat)">--</div>
+          <div class="hs-lbl">Events (30d)</div>
+          <div class="hs-sub" id="hs-event-sub">-- frost · -- heat</div>
+        </div>
+      </div>
+      <div class="hero-risk-col">
+        <div class="risk-badge risk-LOW" id="risk-badge">LOW</div>
+        <div class="risk-sub">Today's Risk</div>
+      </div>`;
+    populateHero(wx);
+    toast('📡 Uplink restored', false, false);
+  } catch(e) {
+    renderUplinkError(e);
+  }
 }
 
 // ── Populate hero bar ─────────────────────────────
