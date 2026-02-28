@@ -197,6 +197,105 @@ nav {
 /* subtle dot grid background */
 .page-wrap { position: relative; z-index: 1; max-width: 1380px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
 
+/* ── Quick Log FAB ────────────────────────────── */
+#ql-fab {
+  position: fixed; bottom: 1.75rem; right: 1.75rem; z-index: 600;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;
+}
+#ql-trigger {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--green); border: none;
+  color: white; font-size: 1.2rem; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(45,106,66,0.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), background 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+#ql-trigger:hover { background: var(--green-mid); box-shadow: 0 6px 20px rgba(45,106,66,0.5); }
+#ql-trigger.open  { transform: rotate(45deg); background: var(--text); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+#ql-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1rem 1.1rem 0.85rem;
+  width: 260px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  display: none;
+  animation: ql-in 0.22s cubic-bezier(0.16,1,0.3,1) both;
+  transform-origin: bottom right;
+}
+#ql-panel.visible { display: block; }
+@keyframes ql-in {
+  from { opacity:0; transform: scale(0.88) translateY(8px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.ql-head {
+  font-family: var(--mono); font-size: 0.48rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.65rem;
+}
+.ql-actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.35rem; margin-bottom: 0.75rem;
+}
+.ql-action {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 0.48rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text2); cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.ql-action:hover    { border-color: var(--green); background: var(--green-lt); color: var(--green); }
+.ql-action.selected { border-color: var(--green); background: var(--green-lt); color: var(--green); font-weight: 500; }
+.ql-action-icon     { font-size: 0.9rem; }
+.ql-plant-row { margin-bottom: 0.5rem; }
+.ql-select {
+  width: 100%; padding: 0.45rem 0.6rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: 0.72rem;
+  outline: none; cursor: pointer; transition: border-color 0.12s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a7060'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.6rem center; padding-right: 1.8rem;
+}
+.ql-select:focus { border-color: var(--green); }
+.ql-notes {
+  width: 100%; padding: 0.4rem 0.6rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: 0.72rem;
+  outline: none; resize: none; height: 48px; margin-bottom: 0.5rem;
+  transition: border-color 0.12s; box-sizing: border-box;
+}
+.ql-notes:focus { border-color: var(--green); }
+.ql-notes::placeholder { color: var(--muted); }
+.ql-submit {
+  width: 100%; padding: 0.5rem;
+  background: var(--green); color: white; border: none;
+  font-family: var(--mono); font-size: 0.52rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.ql-submit:hover    { opacity: 0.85; }
+.ql-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+@keyframes ql-confirm {
+  0%   { background: var(--green-vv); transform: scale(1.15); }
+  60%  { background: var(--green-vv); transform: scale(1.05); }
+  100% { background: var(--green);    transform: scale(1); }
+}
+#ql-trigger.confirming { animation: ql-confirm 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+/* toast for quick log */
+#ql-toast {
+  position: fixed; bottom: 5.5rem; right: 1.75rem; z-index: 700;
+  background: var(--text); color: var(--surface);
+  font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.1em;
+  padding: 0.5rem 0.9rem; border-left: 3px solid var(--green);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.18s, transform 0.18s; pointer-events: none;
+}
+#ql-toast.show { opacity: 1; transform: translateY(0); }
+#ql-toast.err  { border-left-color: var(--red); }
+
 /* ── Auth Overlay ────────────────────────────── */
 #auth-overlay {
   position: fixed; inset: 0; z-index: 1000;
@@ -2062,6 +2161,157 @@ let _lastPlants = null;
 const _origRenderGrowth = renderGrowthGraph;
 window.renderGrowthGraph = function(plants) { _lastPlants = plants; _origRenderGrowth(plants); };
 window.addEventListener('resize', () => { if (_lastPlants) renderGrowthGraph(_lastPlants); });
+
+// ══════════════════════════════════════════════
+//  QUICK LOG FAB
+//  Floating action button. Populates plant list
+//  from garden_library, writes to garden_logs.
+// ══════════════════════════════════════════════
+let _qlOpen    = false;
+let _qlType    = null;
+let _qlPlants  = [];
+
+// Load plants into dropdown when FAB first opens
+async function qlLoadPlants() {
+  if (_qlPlants.length) return;  // already loaded
+  const { data } = await sb.from('garden_library')
+    .select('id, common_name, emoji')
+    .order('common_name');
+  _qlPlants = data || [];
+
+  const sel = document.getElementById('ql-plant');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select plant —</option>'
+    + _qlPlants.map(p =>
+        `<option value="${p.common_name}">${p.emoji || '🌱'} ${p.common_name}</option>`
+      ).join('');
+}
+
+function qlToggle() {
+  _qlOpen = !_qlOpen;
+  const panel   = document.getElementById('ql-panel');
+  const trigger = document.getElementById('ql-trigger');
+  panel.classList.toggle('visible', _qlOpen);
+  trigger.classList.toggle('open', _qlOpen);
+  if (_qlOpen) qlLoadPlants();
+}
+
+function qlSelectType(btn) {
+  // Deselect all, select clicked
+  document.querySelectorAll('.ql-action').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  _qlType = btn.dataset.type;
+  qlValidate();
+}
+
+function qlValidate() {
+  const plant  = document.getElementById('ql-plant')?.value;
+  const submit = document.getElementById('ql-submit');
+  if (submit) submit.disabled = !(_qlType && plant);
+}
+
+// Re-validate when plant changes
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ql-plant')?.addEventListener('change', qlValidate);
+});
+
+async function qlSubmit() {
+  const plantName = document.getElementById('ql-plant')?.value;
+  const notes     = document.getElementById('ql-notes')?.value.trim();
+  const submit    = document.getElementById('ql-submit');
+  const trigger   = document.getElementById('ql-trigger');
+
+  if (!_qlType || !plantName) return;
+
+  submit.disabled  = true;
+  submit.textContent = 'Saving…';
+
+  try {
+    const { error } = await sb.from('garden_logs').insert({
+      user_id:       _userId,
+      activity_type: _qlType,
+      plant_name:    plantName,
+      notes:         notes || null,
+      log_date:      new Date().toISOString().slice(0, 10),
+    });
+
+    if (error) throw error;
+
+    // Success — flash confirm, close panel, show toast
+    trigger.classList.add('confirming');
+    setTimeout(() => trigger.classList.remove('confirming'), 500);
+
+    qlShowToast(`✓ ${plantName} — ${_qlType} logged`, false);
+
+    // Reset panel
+    _qlType = null;
+    document.querySelectorAll('.ql-action').forEach(b => b.classList.remove('selected'));
+    document.getElementById('ql-notes').value = '';
+    document.getElementById('ql-plant').value = '';
+    submit.disabled = true;
+    submit.textContent = '→ Log it';
+
+    // Close after brief delay
+    setTimeout(() => {
+      _qlOpen = false;
+      document.getElementById('ql-panel').classList.remove('visible');
+      document.getElementById('ql-trigger').classList.remove('open');
+    }, 600);
+
+    // Refresh the log feed if it's on the page
+    if (typeof loadLogFeed === 'function') loadLogFeed();
+    if (typeof loadWaterPulse === 'function' && _qlType === 'watering') loadWaterPulse();
+
+  } catch(e) {
+    qlShowToast('✗ Save failed — ' + e.message, true);
+    submit.disabled  = false;
+    submit.textContent = '→ Log it';
+  }
+}
+
+function qlShowToast(msg, err = false) {
+  const t = document.getElementById('ql-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className   = err ? 'show err' : 'show';
+  clearTimeout(t._ql);
+  t._ql = setTimeout(() => t.className = '', 3000);
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', e => {
+  if (!_qlOpen) return;
+  const fab = document.getElementById('ql-fab');
+  if (fab && !fab.contains(e.target)) {
+    _qlOpen = false;
+    document.getElementById('ql-panel').classList.remove('visible');
+    document.getElementById('ql-trigger').classList.remove('open');
+  }
+});
+
 </script>
+
+<!-- ══════════ QUICK LOG FAB ══════════ -->
+<div id="ql-fab">
+  <div id="ql-panel">
+    <div class="ql-head">Quick Log</div>
+    <div class="ql-actions">
+      <button class="ql-action" data-type="watering"   onclick="qlSelectType(this)"><span class="ql-action-icon">💧</span>Watered</button>
+      <button class="ql-action" data-type="pruning"    onclick="qlSelectType(this)"><span class="ql-action-icon">✂️</span>Pruned</button>
+      <button class="ql-action" data-type="harvest"    onclick="qlSelectType(this)"><span class="ql-action-icon">🌾</span>Harvested</button>
+      <button class="ql-action" data-type="observation" onclick="qlSelectType(this)"><span class="ql-action-icon">👁</span>Observed</button>
+    </div>
+    <div class="ql-plant-row">
+      <select class="ql-select" id="ql-plant">
+        <option value="">Loading plants…</option>
+      </select>
+    </div>
+    <textarea class="ql-notes" id="ql-notes" placeholder="Optional note…"></textarea>
+    <button class="ql-submit" id="ql-submit" onclick="qlSubmit()" disabled>→ Log it</button>
+  </div>
+  <button id="ql-trigger" onclick="qlToggle()" title="Quick Log">＋</button>
+</div>
+<div id="ql-toast"></div>
+
 </body>
 </html>
