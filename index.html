@@ -447,12 +447,6 @@ nav {
 .fill-growing  { background: var(--green-vv); }
 .fill-harvest  { background: var(--amber); animation: pulse-anim 2s infinite; }
 
-/* ── Right Column — Temporal Pulse ───────────── */
-.temporal-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
-  position: sticky; top: 1.5rem;
-}
 .forecast-item {
   padding: 0.7rem 0;
   border-bottom: 1px solid var(--surface2);
@@ -557,39 +551,40 @@ nav {
 .predict-.predict-text { font-family: var(--serif); font-size: 0.84rem; font-style: italic; color: var(--text); line-height: 1.55; }
 .predict-meta { font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
-/* ── Bloom gap detector ───────────────────────── */
+/* ── Bloom gap detector — Circular Clock ──────── */
 .bloom-card { background: var(--surface); border: 1px solid var(--border); margin-top: 0.75rem; }
 .bloom-card-head {
   padding: 0.75rem 1rem 0.35rem;
   display: flex; align-items: baseline; justify-content: space-between;
 }
-.bloom-grid {
-  display: grid; grid-template-columns: repeat(26,1fr);
-  gap: 2px; padding: 0 1rem 0.35rem;
+/* Legacy selector kept for mobile fallback */
+.bloom-grid { display: none; }
+
+/* Clock container */
+.bloom-clock-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0.5rem 1rem 0.25rem;
+  position: relative;
 }
-.bloom-week {
-  position: relative; height: 28px; border-radius: 2px;
-  transition: transform 0.1s;
-}
-.bloom-week:hover { transform: scaleY(1.25); z-index: 1; }
-.bloom-week.gap      { background: rgba(220,38,38,0.1);  border: 1px solid rgba(220,38,38,0.25); }
-.bloom-week.blooming { background: rgba(190,24,93,0.18); border: 1px solid rgba(190,24,93,0.3);  }
-.bloom-week.current  { outline: 2px solid var(--green); outline-offset: 1px; }
-.bloom-week.future   { background: rgba(122,146,120,0.07); border: 1px solid rgba(122,146,120,0.12); }
-.bloom-week-tip {
-  display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
-  background: var(--text); color: var(--surface); z-index: 20; pointer-events: none;
-  font-family: var(--mono); font-size: 0.42rem; padding: 0.22rem 0.45rem; white-space: nowrap;
-}
-.bloom-week:hover .bloom-week-tip { display: block; }
-.bloom-legend {
-  display: flex; gap: 0.85rem; padding: 0 1rem 0.6rem; flex-wrap: wrap;
+#bloom-clock-svg { width: 100%; max-width: 220px; height: auto; overflow: visible; }
+.bloom-clock-legend {
+  display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center;
+  padding: 0.3rem 1rem 0.5rem;
 }
 .bloom-legend-item {
   display: flex; align-items: center; gap: 0.35rem;
   font-family: var(--mono); font-size: 0.43rem; letter-spacing: 0.08em; color: var(--muted);
 }
-.legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+/* Tooltip for clock */
+#bloom-clock-tip {
+  display: none; position: absolute; z-index: 30; pointer-events: none;
+  background: var(--text); color: var(--surface);
+  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.06em;
+  padding: 0.22rem 0.5rem; white-space: nowrap;
+  top: 0; left: 50%; transform: translateX(-50%);
+}
+
 .bloom-gaps-list { padding: 0 1rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .gap-row {
   display: flex; align-items: flex-start; gap: 0.6rem;
@@ -599,6 +594,27 @@ nav {
 .gap-date  { font-family: var(--mono); font-size: 0.47rem; color: var(--muted); white-space: nowrap; min-width: 58px; padding-top: 2px; }
 .gap-label { font-family: var(--serif); font-size: 0.8rem; font-style: italic; color: var(--text); }
 .gap-sugg  { font-family: var(--sans); font-size: 0.62rem; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+
+/* ── Temporal Pulse line graph ────────────────── */
+.temporal-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1.1rem 1.25rem;
+  position: sticky; top: 1.5rem;
+}
+.growth-graph-wrap {
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid var(--surface2);
+  padding-bottom: 0.75rem;
+}
+.growth-graph-label {
+  font-family: var(--mono); font-size: 0.45rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.4rem;
+}
+#growth-canvas {
+  width: 100%; display: block;
+  cursor: crosshair;
+}
 </style>
 <script src="season-bar.js"></script>
 </head>
@@ -779,24 +795,33 @@ nav {
     <!-- ── Right Column: Temporal Pulse ── -->
     <div>
       <div class="temporal-card">
-        <div class="card-eyebrow" style="margin-bottom:1rem;">Temporal Pulse</div>
+        <div class="card-eyebrow" style="margin-bottom:0.75rem;">Temporal Pulse</div>
+        <!-- 14-day growth projection graph -->
+        <div class="growth-graph-wrap">
+          <div class="growth-graph-label">14-Day Growth Projection</div>
+          <canvas id="growth-canvas" height="90"></canvas>
+        </div>
         <div id="harvest-forecast">
           <div class="log-empty">Loading forecast…</div>
         </div>
       </div>
 
-      <!-- ═══ BLOOM GAP DETECTOR ═══ -->
+      <!-- ═══ BLOOM GAP DETECTOR — Circular Clock ═══ -->
       <div class="bloom-card" id="bloom-card">
         <div class="bloom-card-head">
           <div class="card-eyebrow">Bloom Gap Detector</div>
           <a href="calendar.html" style="font-family:var(--mono);font-size:0.44rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);text-decoration:none;opacity:0.7;">↗ Calendar</a>
         </div>
-        <div class="bloom-grid" id="bloom-grid"></div>
-        <div class="bloom-legend">
-          <div class="bloom-legend-item"><div class="legend-swatch" style="background:rgba(190,24,93,0.25);border:1px solid rgba(190,24,93,0.4);"></div>Blooming</div>
-          <div class="bloom-legend-item"><div class="legend-swatch" style="background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);"></div>Gap week</div>
-          <div class="bloom-legend-item"><div class="legend-swatch" style="background:rgba(122,146,120,0.1);border:1px solid rgba(122,146,120,0.15);"></div>No data</div>
-          <div class="bloom-legend-item"><div class="legend-swatch" style="outline:2px solid var(--green);"></div>This week</div>
+        <!-- Hidden div kept for JS compatibility (gap list renderer reads bloom-grid id) -->
+        <div id="bloom-grid" style="display:none;"></div>
+        <div class="bloom-clock-wrap">
+          <div id="bloom-clock-tip"></div>
+          <svg id="bloom-clock-svg" viewBox="-110 -110 220 220" aria-label="Bloom gap clock"></svg>
+        </div>
+        <div class="bloom-clock-legend">
+          <div class="bloom-legend-item"><div class="legend-swatch" style="background:var(--pink);opacity:0.7;"></div>Blooming</div>
+          <div class="bloom-legend-item"><div class="legend-swatch" style="background:var(--red);opacity:0.5;"></div>Gap</div>
+          <div class="bloom-legend-item"><div class="legend-swatch" style="background:var(--surface3);border:1px solid var(--border);"></div>Off-season</div>
         </div>
         <div class="bloom-gaps-list" id="bloom-gaps-list"></div>
       </div>
@@ -1438,203 +1463,382 @@ async function renderPulse() {
 
   // ── Also trigger bloom gap using the same plants ──
   renderBloomGap(plants);
+  // ── Also render the 14-day growth graph ──────────
+  renderGrowthGraph(plants);
 }
 
 // ══════════════════════════════════════════════
-//  BLOOM GAP DETECTOR
-//  Maps each library plant's family → bloom window
-//  Builds 26-week grid from today, marks gaps and
-//  blooming weeks, recommends fillers for gap weeks.
+//  BLOOM GAP DETECTOR — Circular Clock
+//  12-month radial SVG. Each month arc is colored:
+//    • blooming  → pink
+//    • gap       → red (in-season, no blooms)
+//    • off-season→ surface3 grey
+//  Inner ring shows month labels. Current month
+//  gets a green dot marker.
 // ══════════════════════════════════════════════
 function renderBloomGap(plants) {
-  const grid    = document.getElementById('bloom-grid');
+  const svg     = document.getElementById('bloom-clock-svg');
   const gapList = document.getElementById('bloom-gaps-list');
-  if (!grid || !gapList) return;
+  if (!svg || !gapList) return;
 
-  const today   = new Date();
-  const WEEKS   = 26;
+  const tip = document.getElementById('bloom-clock-tip');
 
-  // ── Bloom windows by plant family (month 1-based) ──
-  // [startMonth, endMonth] inclusive
+  // ── Bloom windows (same data as before) ──────
   const FAMILY_BLOOM = {
-    Asteraceae:      [6, 10],   // June–Oct
-    Lamiaceae:       [5, 9],    // May–Sept
-    Rosaceae:        [5, 9],    // May–Sept
-    Boraginaceae:    [5, 9],    // May–Sept
-    Tropaeolaceae:   [6, 10],   // June–Oct
-    Caprifoliaceae:  [5, 8],    // May–Aug
-    Scrophulariaceae:[6, 9],
-    Violaceae:       [4, 6],
-    Ranunculaceae:   [4, 6],
-    Papaveraceae:    [5, 7],
+    Asteraceae:[6,10],Lamiaceae:[5,9],Rosaceae:[5,9],Boraginaceae:[5,9],
+    Tropaeolaceae:[6,10],Caprifoliaceae:[5,8],Scrophulariaceae:[6,9],
+    Violaceae:[4,6],Ranunculaceae:[4,6],Papaveraceae:[5,7],
   };
-
-  // Common-name overrides for vegetables/herbs that bloom usefully
   const NAME_BLOOM = {
-    'borage':       [5, 9],
-    'nasturtium':   [6, 10],
-    'zinnia':       [6, 10],
-    'marigold':     [6, 10],
-    'sunflower':    [7, 9],
-    'cosmos':       [7, 10],
-    'lavender':     [6, 8],
-    'echinacea':    [7, 9],
-    'coneflower':   [7, 9],
-    'black-eyed':   [7, 9],
-    'bee balm':     [7, 8],
-    'catmint':      [5, 9],
-    'salvia':       [6, 9],
-    'dill':         [7, 8],
-    'fennel':       [7, 8],
-    'chives':       [5, 6],
-    'allium':       [5, 7],
-    'rose':         [5, 9],
-    'strawberry':   [4, 6],
-    'raspberry':    [5, 7],
-    'blueberry':    [4, 6],
-    'thyme':        [5, 7],
-    'oregano':      [7, 8],
-    'basil':        [7, 9],
+    'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
+    'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
+    'coneflower':[7,9],'black-eyed':[7,9],'bee balm':[7,8],'catmint':[5,9],
+    'salvia':[6,9],'dill':[7,8],'fennel':[7,8],'chives':[5,6],'allium':[5,7],
+    'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
+    'thyme':[5,7],'oregano':[7,8],'basil':[7,9],
   };
 
-  // Build a set of blooming week indices from library plants
-  const bloomingWeeks = new Set();
-  const weekPlants    = {};  // weekIdx → [plant names]
-
+  // Build month → blooming plants map
+  const monthPlants = {};  // 1-12 → [names]
   plants.forEach(p => {
-    const fam   = p.plant_family || '';
-    const name  = (p.common_name || '').toLowerCase();
-
-    let window = null;
-    // Name match first (more specific)
-    for (const [key, win] of Object.entries(NAME_BLOOM)) {
-      if (name.includes(key)) { window = win; break; }
-    }
-    // Family fallback
-    if (!window) {
-      for (const [key, win] of Object.entries(FAMILY_BLOOM)) {
-        if (fam.includes(key)) { window = win; break; }
-      }
-    }
-    if (!window) return;
-
-    const [startM, endM] = window;
-
-    // Mark which of our 26 weeks fall within bloom window
-    for (let w = 0; w < WEEKS; w++) {
-      const wDate = new Date(today.getTime() + w * 7 * 86400000);
-      const m     = wDate.getMonth() + 1; // 1-based
-      if (m >= startM && m <= endM) {
-        bloomingWeeks.add(w);
-        if (!weekPlants[w]) weekPlants[w] = [];
-        weekPlants[w].push((p.emoji||'🌱') + ' ' + p.common_name);
-      }
+    const fam  = p.plant_family || '';
+    const name = (p.common_name || '').toLowerCase();
+    let win = null;
+    for (const [k,w] of Object.entries(NAME_BLOOM)) { if (name.includes(k)) { win=w; break; } }
+    if (!win) for (const [k,w] of Object.entries(FAMILY_BLOOM)) { if (fam.includes(k)) { win=w; break; } }
+    if (!win) return;
+    for (let m = win[0]; m <= win[1]; m++) {
+      if (!monthPlants[m]) monthPlants[m] = [];
+      monthPlants[m].push((p.emoji||'🌱')+' '+p.common_name);
     }
   });
 
-  // Active growing season only: Apr 15 – Oct 15
-  const seasonStart = new Date(today.getFullYear(), 3, 15);
-  const seasonEnd   = new Date(today.getFullYear(), 9, 15);
+  // Growing season: Apr(4)–Oct(10)
+  const SEASON = [4,5,6,7,8,9,10];
+  const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const curMonth = new Date().getMonth() + 1;  // 1-based
+  const curYear  = new Date().getFullYear();
 
-  // Build gap list — consecutive week runs with no blooms, within growing season
-  const gapRuns = [];
-  let runStart  = null;
-  for (let w = 0; w < WEEKS; w++) {
-    const wDate  = new Date(today.getTime() + w * 7 * 86400000);
-    const inSeas = wDate >= seasonStart && wDate <= seasonEnd;
-    const isGap  = inSeas && !bloomingWeeks.has(w);
+  // ── SVG geometry ─────────────────────────────
+  const OUTER = 88, INNER = 52, LABEL = 44;
+  const GAP_DEG = 2;   // gap between arc segments (degrees)
 
-    if (isGap && runStart === null) runStart = w;
-    else if (!isGap && runStart !== null) {
-      gapRuns.push({ from: runStart, to: w - 1 });
-      runStart = null;
-    }
+  // Helper: polar to cartesian
+  function pol(r, deg) {
+    const rad = (deg - 90) * Math.PI / 180;
+    return [r * Math.cos(rad), r * Math.sin(rad)];
   }
-  if (runStart !== null) gapRuns.push({ from: runStart, to: WEEKS - 1 });
 
-  // ── Filler suggestions from companion DB / general knowledge ──
+  // Helper: SVG arc path for a donut segment
+  function arcPath(r1, r2, startDeg, endDeg) {
+    const s1 = pol(r1, startDeg), e1 = pol(r1, endDeg);
+    const s2 = pol(r2, startDeg), e2 = pol(r2, endDeg);
+    const lg = (endDeg - startDeg) > 180 ? 1 : 0;
+    return [
+      `M ${s1[0].toFixed(2)} ${s1[1].toFixed(2)}`,
+      `A ${r1} ${r1} 0 ${lg} 1 ${e1[0].toFixed(2)} ${e1[1].toFixed(2)}`,
+      `L ${e2[0].toFixed(2)} ${e2[1].toFixed(2)}`,
+      `A ${r2} ${r2} 0 ${lg} 0 ${s2[0].toFixed(2)} ${s2[1].toFixed(2)}`,
+      'Z'
+    ].join(' ');
+  }
+
+  // CSS variable values
+  const style   = getComputedStyle(document.documentElement);
+  const C_BLOOM = '#be185d';   // pink
+  const C_GAP   = '#b82018';   // red
+  const C_OFF   = '#e4ddd0';   // surface3
+  const C_GRN   = '#2d6a42';   // green
+  const C_TEXT  = '#7a7060';   // muted
+
+  let svgContent = '';
+  const STEP = 360 / 12;
+
+  for (let i = 0; i < 12; i++) {
+    const m        = i + 1;          // 1-based month
+    const startDeg = i * STEP + GAP_DEG / 2;
+    const endDeg   = (i + 1) * STEP - GAP_DEG / 2;
+    const midDeg   = (startDeg + endDeg) / 2;
+
+    const inSeason = SEASON.includes(m);
+    const hasBlooms = !!(monthPlants[m] && monthPlants[m].length);
+    const isGap    = inSeason && !hasBlooms;
+    const isBloom  = inSeason && hasBlooms;
+
+    let fill    = C_OFF;
+    let opacity = '1';
+    if (isBloom) { fill = C_BLOOM; opacity = '0.75'; }
+    if (isGap)   { fill = C_GAP;   opacity = '0.45'; }
+
+    const d = arcPath(OUTER, INNER, startDeg, endDeg);
+
+    // Tooltip data stored in data-attrs
+    const bloomNames = (monthPlants[m]||[]).slice(0,3).join(', ');
+    const tipText    = isBloom ? `${MONTHS[i]}: ${bloomNames}` :
+                       isGap  ? `${MONTHS[i]}: Gap — no blooms` :
+                                `${MONTHS[i]}: Off-season`;
+
+    svgContent += `<path d="${d}" fill="${fill}" opacity="${opacity}"
+      class="clock-arc" style="cursor:pointer;transition:opacity 0.15s;"
+      data-tip="${tipText.replace(/"/g,'&quot;')}"
+      onmouseenter="showClockTip(this)" onmouseleave="hideClockTip()"
+    />`;
+
+    // Month label
+    const [lx, ly] = pol(LABEL, midDeg);
+    const isCur = (m === curMonth);
+    svgContent += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"
+      text-anchor="middle" dominant-baseline="middle"
+      font-family="'DM Mono',monospace"
+      font-size="${isCur ? '7' : '6'}"
+      font-weight="${isCur ? '500' : '400'}"
+      fill="${isCur ? C_GRN : C_TEXT}">${MONTHS[i].toUpperCase()}</text>`;
+  }
+
+  // Centre hub — IQ score placeholder (shows # of blooming months)
+  const bloomMonthCount = Object.keys(monthPlants).filter(m => SEASON.includes(+m)).length;
+  const seasonLen       = SEASON.length;
+  const coveragePct     = Math.round((bloomMonthCount / seasonLen) * 100);
+
+  svgContent += `
+    <circle cx="0" cy="0" r="${INNER - 2}" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle"
+      font-family="'Fraunces',Georgia,serif" font-size="22" font-style="italic"
+      fill="${C_GRN}">${coveragePct}%</text>
+    <text x="0" y="10" text-anchor="middle" dominant-baseline="middle"
+      font-family="'DM Mono',monospace" font-size="5.5" fill="${C_TEXT}"
+      letter-spacing="0.12em">COVERAGE</text>
+    <text x="0" y="20" text-anchor="middle" dominant-baseline="middle"
+      font-family="'DM Mono',monospace" font-size="5" fill="${C_TEXT}"
+      opacity="0.7">${bloomMonthCount}/${seasonLen} MONTHS</text>
+  `;
+
+  // Current month marker — small green dot on outer ring
+  const markerDeg = ((curMonth - 1) * STEP) + STEP / 2 - 90;
+  const [mx, my]  = pol(OUTER + 5, ((curMonth - 1) * STEP) + STEP / 2);
+  svgContent += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="3.5" fill="${C_GRN}"/>`;
+
+  svg.innerHTML = svgContent;
+
+  // ── Gap list (same logic as before) ──────────
+  const gapMonths = SEASON.filter(m => !monthPlants[m]);
+
   const FILLERS = [
-    { name:'Zinnia',      emoji:'🌺', window:[6,10], reason:'Prolific bloomer, draws ladybugs and hoverflies' },
-    { name:'Marigold',    emoji:'🌼', window:[6,10], reason:'Nematode deterrent; continuous color Jun–Oct' },
-    { name:'Borage',      emoji:'⭐', window:[5,9],  reason:'Self-seeding; attracts bees all season' },
-    { name:'Nasturtium',  emoji:'🌸', window:[6,10], reason:'Edible trap crop; orange-yellow continuous bloom' },
-    { name:'Echinacea',   emoji:'🌸', window:[7,9],  reason:'Native perennial; peak late-season pollinator plant' },
+    { name:'Zinnia',emoji:'🌺',window:[6,10],reason:'Prolific bloomer, draws ladybugs and hoverflies' },
+    { name:'Marigold',emoji:'🌼',window:[6,10],reason:'Nematode deterrent; continuous color Jun–Oct' },
+    { name:'Borage',emoji:'⭐',window:[5,9],reason:'Self-seeding; attracts bees all season' },
+    { name:'Nasturtium',emoji:'🌸',window:[6,10],reason:'Edible trap crop; orange-yellow continuous bloom' },
+    { name:'Echinacea',emoji:'🌸',window:[7,9],reason:'Native perennial; peak late-season pollinator plant' },
     { name:'Black-eyed Susan',emoji:'🌻',window:[7,9],reason:'Native perennial; fills the late-summer gap' },
-    { name:'Catmint',     emoji:'💜', window:[5,9],  reason:'Long-blooming; attracts bumblebees' },
-    { name:'Cosmos',      emoji:'🌸', window:[7,10], reason:'Easy annual; peak Sept–Oct fill' },
-    { name:'Lavender',    emoji:'💜', window:[6,8],  reason:'Drought-tolerant perennial; strong June–Aug bloom' },
-    { name:'Bee Balm',    emoji:'🌺', window:[7,8],  reason:'Native perennial; fills the July–Aug gap' },
-    { name:'Salvia',      emoji:'💙', window:[6,9],  reason:'Heat-tolerant; hummingbirds and bees' },
-    { name:'Alyssum',     emoji:'🤍', window:[4,10], reason:'Nearly year-round bloomer in Zone 6b' },
+    { name:'Catmint',emoji:'💜',window:[5,9],reason:'Long-blooming; attracts bumblebees' },
+    { name:'Cosmos',emoji:'🌸',window:[7,10],reason:'Easy annual; peak Sept–Oct fill' },
+    { name:'Lavender',emoji:'💜',window:[6,8],reason:'Drought-tolerant perennial; strong June–Aug bloom' },
+    { name:'Bee Balm',emoji:'🌺',window:[7,8],reason:'Native perennial; fills the July–Aug gap' },
+    { name:'Salvia',emoji:'💙',window:[6,9],reason:'Heat-tolerant; hummingbirds and bees' },
+    { name:'Alyssum',emoji:'🤍',window:[4,10],reason:'Nearly year-round bloomer in Zone 6b' },
   ];
 
-  // ── Render the 26-week bar ──────────────────
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  grid.innerHTML = Array.from({length: WEEKS}, (_, w) => {
-    const wDate  = new Date(today.getTime() + w * 7 * 86400000);
-    const inSeas = wDate >= seasonStart && wDate <= seasonEnd;
-    const isBloom= bloomingWeeks.has(w);
-    const isGap  = inSeas && !isBloom;
-    const isCur  = w === 0;
-    const mon    = monthNames[wDate.getMonth()];
-    const day    = wDate.getDate();
-
-    let cls = '';
-    if (isBloom) cls = 'blooming';
-    else if (isGap) cls = 'gap';
-    else if (inSeas) cls = 'future';
-
-    const tipPlants = weekPlants[w] ? weekPlants[w].slice(0,3).join(', ') : (isGap ? 'No blooms' : 'Off-season');
-    const tip = `${mon} ${day}${weekPlants[w] ? ': ' + tipPlants : isGap ? ' — Gap' : ''}`;
-
-    return `<div class="bloom-week ${cls}${isCur?' current':''}" title="${tip}">
-      <div class="bloom-week-tip">${tip}</div>
-    </div>`;
-  }).join('');
-
-  // ── Render gap rows ───────────────────────────
-  if (!gapRuns.length) {
-    gapList.innerHTML = '<div style="font-family:var(--mono);font-size:0.52rem;color:var(--green);letter-spacing:0.08em;padding:0.25rem 0;">✓ No bloom gaps detected in your 26-week window.</div>';
+  if (!gapMonths.length) {
+    gapList.innerHTML = '<div style="font-family:var(--mono);font-size:0.52rem;color:var(--green);letter-spacing:0.08em;padding:0.25rem 0;">✓ Full season bloom coverage detected.</div>';
     return;
   }
 
   const plantedNames = new Set(plants.map(p => p.common_name.toLowerCase()));
 
-  gapList.innerHTML = gapRuns.slice(0, 4).map(run => {
-    const fromDate = new Date(today.getTime() + run.from * 7 * 86400000);
-    const toDate   = new Date(today.getTime() + run.to   * 7 * 86400000);
-    const dateStr  = fromDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})
-                   + ' – '
-                   + toDate.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const weeks    = run.to - run.from + 1;
+  // Collapse consecutive gap months into runs
+  const runs = [];
+  let run = [gapMonths[0]];
+  for (let i = 1; i < gapMonths.length; i++) {
+    if (gapMonths[i] === gapMonths[i-1] + 1) { run.push(gapMonths[i]); }
+    else { runs.push(run); run = [gapMonths[i]]; }
+  }
+  runs.push(run);
 
-    // Find fillers that cover this gap
-    const gapMonth = fromDate.getMonth() + 1;
+  gapList.innerHTML = runs.slice(0,4).map(r => {
+    const from = r[0], to = r[r.length-1];
+    const dateStr = from === to
+      ? MONTHS[from-1]
+      : `${MONTHS[from-1]} – ${MONTHS[to-1]}`;
+    const weeks = r.length * 4;
+
     const suggestions = FILLERS
-      .filter(f => f.window[0] <= gapMonth + 1 && f.window[1] >= gapMonth)
+      .filter(f => f.window[0] <= from+1 && f.window[1] >= from)
       .filter(f => !plantedNames.has(f.name.toLowerCase()))
-      .slice(0, 3);
+      .slice(0,3);
 
     const suggHtml = suggestions.length
-      ? suggestions.map(s =>
-          `<span style="font-weight:500;color:var(--green)">${s.emoji} ${s.name}</span> (${s.reason})`
-        ).join(' · ')
+      ? suggestions.map(s => `<span style="font-weight:500;color:var(--green)">${s.emoji} ${s.name}</span> (${s.reason})`).join(' · ')
       : 'All known fillers already in your library — well planted!';
 
     return `<div class="gap-row">
       <div class="gap-date">${dateStr}</div>
       <div>
-        <div class="gap-label">${weeks}-week bloom gap</div>
+        <div class="gap-label">~${weeks}-week bloom gap</div>
         <div class="gap-sugg">Consider adding: ${suggHtml}</div>
       </div>
     </div>`;
   }).join('');
 }
 
+// Clock tooltip helpers
+function showClockTip(el) {
+  const tip = document.getElementById('bloom-clock-tip');
+  if (!tip) return;
+  tip.textContent = el.dataset.tip;
+  tip.style.display = 'block';
+}
+function hideClockTip() {
+  const tip = document.getElementById('bloom-clock-tip');
+  if (tip) tip.style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+//  TEMPORAL PULSE — 14-Day Growth Line Graph
+//  Canvas-based. Draws projected maturity % over
+//  the next 14 days for all active plants.
+//  Shows individual plant trajectories as thin
+//  lines + a bold average line.
+// ══════════════════════════════════════════════
+function renderGrowthGraph(plants) {
+  const canvas = document.getElementById('growth-canvas');
+  if (!canvas || !plants || plants.length === 0) return;
+
+  const W   = canvas.offsetWidth || 220;
+  const H   = 90;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const DAYS = 14;
+  const PAD  = { top:8, right:8, bottom:18, left:28 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top  - PAD.bottom;
+
+  // For each plant, compute pct for each of the next 14 days
+  const activePlants = plants.filter(p => p.planted_date && p.maturity_days);
+  const seriesData   = activePlants.map(p => {
+    return Array.from({length: DAYS}, (_, d) => {
+      const future    = Date.now() + d * 86400000;
+      const daysGrown = (future - new Date(p.planted_date).getTime()) / 86400000;
+      const effective = (p.maturity_days||60) + (p.recovery_days||0);
+      return Math.min(100, Math.max(0, (daysGrown / effective) * 100));
+    });
+  });
+
+  // Average series
+  const avgSeries = Array.from({length: DAYS}, (_, d) => {
+    if (!seriesData.length) return 0;
+    return seriesData.reduce((acc, s) => acc + s[d], 0) / seriesData.length;
+  });
+
+  // Determine Y range — pad to at least 0–100 if all plants mature
+  const allVals = seriesData.flat().concat(avgSeries);
+  const yMin    = Math.max(0, Math.floor(Math.min(...allVals) / 10) * 10 - 5);
+  const yMax    = Math.min(100, Math.ceil(Math.max(...allVals) / 10) * 10 + 5);
+  const yRange  = yMax - yMin || 10;
+
+  function xOf(d) { return PAD.left + (d / (DAYS - 1)) * chartW; }
+  function yOf(v) { return PAD.top  + chartH - ((v - yMin) / yRange) * chartH; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // ── Grid lines ──
+  ctx.strokeStyle = 'rgba(213,204,184,0.5)';
+  ctx.lineWidth   = 0.5;
+  [0, 25, 50, 75, 100].forEach(pct => {
+    if (pct < yMin || pct > yMax) return;
+    const y = yOf(pct);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y);
+    ctx.stroke();
+    ctx.fillStyle   = 'rgba(122,112,96,0.7)';
+    ctx.font        = '8px DM Mono, monospace';
+    ctx.textAlign   = 'right';
+    ctx.fillText(`${pct}%`, PAD.left - 3, y + 3);
+  });
+
+  // ── X axis day labels: today + day 7 + day 14 ──
+  ctx.fillStyle = 'rgba(122,112,96,0.8)';
+  ctx.font      = '7px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  [0, 7, 13].forEach(d => {
+    const label = d === 0 ? 'Today' : `+${d}d`;
+    ctx.fillText(label, xOf(d), H - 3);
+  });
+
+  // ── Individual plant lines (thin, muted) ──
+  seriesData.forEach(series => {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(74,140,98,0.2)';
+    ctx.lineWidth   = 1;
+    series.forEach((v, d) => {
+      d === 0 ? ctx.moveTo(xOf(d), yOf(v)) : ctx.lineTo(xOf(d), yOf(v));
+    });
+    ctx.stroke();
+  });
+
+  // ── Harvest-ready fill zone (pct ≥ 100) ──
+  if (yMax >= 95) {
+    const readyY = yOf(100);
+    ctx.fillStyle = 'rgba(160,92,20,0.06)';
+    ctx.fillRect(PAD.left, PAD.top, chartW, readyY - PAD.top);
+  }
+
+  // ── Average line (bold green with gradient) ──
+  const grad = ctx.createLinearGradient(xOf(0), 0, xOf(DAYS-1), 0);
+  grad.addColorStop(0,   '#4a8c62');
+  grad.addColorStop(0.7, '#2d6a42');
+  grad.addColorStop(1,   '#a05c14');
+
+  ctx.beginPath();
+  ctx.strokeStyle = grad;
+  ctx.lineWidth   = 2.5;
+  ctx.lineJoin    = 'round';
+  ctx.lineCap     = 'round';
+  avgSeries.forEach((v, d) => {
+    d === 0 ? ctx.moveTo(xOf(d), yOf(v)) : ctx.lineTo(xOf(d), yOf(v));
+  });
+  ctx.stroke();
+
+  // ── Endpoint dot ──
+  const endX = xOf(DAYS-1), endY = yOf(avgSeries[DAYS-1]);
+  ctx.beginPath();
+  ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+  ctx.fillStyle = avgSeries[DAYS-1] >= 95 ? '#a05c14' : '#2d6a42';
+  ctx.fill();
+
+  // ── Today dot ──
+  ctx.beginPath();
+  ctx.arc(xOf(0), yOf(avgSeries[0]), 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#2d6a42';
+  ctx.fill();
+}
+
+// Hover tooltip on growth canvas
+(function setupGraphHover() {
+  const canvas = document.getElementById('growth-canvas');
+  if (!canvas) return;
+  canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x    = e.clientX - rect.left;
+    const W    = canvas.offsetWidth;
+    const PAD_L = 28, PAD_R = 8;
+    const chartW = W - PAD_L - PAD_R;
+    const d = Math.round(((x - PAD_L) / chartW) * 13);
+    if (d < 0 || d > 13) { canvas.title = ''; return; }
+    canvas.title = d === 0 ? 'Today' : `Day +${d}`;
+  });
+})();
+
 // Close modals on backdrop click
 document.getElementById('add-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('add-modal')) closeModal();
 });
+
+// Redraw graph on resize
+let _lastPlants = null;
+const _origRenderGrowth = renderGrowthGraph;
+window.renderGrowthGraph = function(plants) { _lastPlants = plants; _origRenderGrowth(plants); };
+window.addEventListener('resize', () => { if (_lastPlants) renderGrowthGraph(_lastPlants); });
 </script>
 </body>
 </html>
