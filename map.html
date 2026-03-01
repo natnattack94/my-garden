@@ -830,6 +830,7 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
     <div id="auth-err"></div>
     <button class="auth-btn" id="btn-login">Initialize Session</button>
     <button class="auth-btn ghost" id="btn-reg">Register</button>
+    <button class="auth-btn ghost" id="btn-guest" style="margin-top:0.5rem;font-size:0.58rem;opacity:0.55;">↳ Continue without account</button>
   </div>
 </div>
 
@@ -1656,54 +1657,53 @@ function renderInventory(grid, plants) {
 }
 
 // ── Auth ──────────────────────────────────────
+document.getElementById('btn-guest').onclick = () => {
+  // Guest mode — no Supabase, uses localStorage for persistence
+  userId = 'guest';
+  document.getElementById('auth-overlay').classList.add('hidden');
+  loadLocalState();
+  loadInventory();
+  renderAll();
+};
+
 document.getElementById('btn-login').onclick = async () => {
   const errEl = document.getElementById('auth-err');
   const btn   = document.getElementById('btn-login');
 
-  // Read values — force a slight delay to ensure Safari autofill has committed
   await new Promise(r => setTimeout(r, 80));
 
-  const emailEl = document.getElementById('a-email');
-  const passEl  = document.getElementById('a-pass');
-  const email   = (emailEl.value || '').trim();
-  const pass    = passEl.value || '';
+  const email = (document.getElementById('a-email').value || '').trim();
+  const pass  = document.getElementById('a-pass').value || '';
 
-  errEl.style.color   = 'var(--red)';
+  errEl.style.color    = 'var(--red)';
   errEl.style.fontSize = '0.72rem';
+  errEl.textContent    = '';
 
-  if (!email) { errEl.textContent = '✕ Enter your email address'; return; }
+  if (!email) { errEl.textContent = '✕ Enter your email'; return; }
   if (!pass)  { errEl.textContent = '✕ Enter your password'; return; }
 
   btn.textContent = 'Connecting…';
-  btn.disabled = true;
+  btn.disabled    = true;
 
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-
     if (error) {
-      // Show full error so we can debug
-      errEl.textContent = '✕ ' + error.message;
-      console.error('[Auth] Supabase error:', error);
-      btn.textContent = 'Initialize Session';
-      btn.disabled = false;
+      errEl.textContent   = '✕ ' + error.message;
+      btn.textContent     = 'Initialize Session';
+      btn.disabled        = false;
       return;
     }
-
     if (!data?.user) {
-      errEl.textContent = '✕ No user returned — try again';
-      btn.textContent = 'Initialize Session';
-      btn.disabled = false;
+      errEl.textContent   = '✕ No user returned';
+      btn.textContent     = 'Initialize Session';
+      btn.disabled        = false;
       return;
     }
-
-    btn.textContent = 'Session Active ✓';
     afterAuth(data.user);
-
   } catch(e) {
-    errEl.textContent = '✕ Network error: ' + (e.message || 'check connection');
-    console.error('[Auth] Login exception:', e);
-    btn.textContent = 'Initialize Session';
-    btn.disabled = false;
+    errEl.textContent = '✕ ' + (e.message || 'Network error');
+    btn.textContent   = 'Initialize Session';
+    btn.disabled      = false;
   }
 };
 
@@ -1747,6 +1747,34 @@ async function checkSession() {
     console.warn('[Auth] checkSession error:', e);
   }
 }
+
+// ── LocalStorage fallback (guest mode) ───────
+function saveLocalState() {
+  try {
+    localStorage.setItem('ghub_beds',   JSON.stringify(bedData));
+    localStorage.setItem('ghub_plants', JSON.stringify(plantData));
+    localStorage.setItem('ghub_tags',   JSON.stringify(
+      Object.fromEntries(Object.entries(cellTags).map(([k,v])=>[k,[...v]]))
+    ));
+  } catch(e) { console.warn('LocalStorage save failed', e); }
+}
+
+function loadLocalState() {
+  try {
+    bedData   = JSON.parse(localStorage.getItem('ghub_beds')   || '[]');
+    plantData = JSON.parse(localStorage.getItem('ghub_plants') || '[]');
+    const raw = JSON.parse(localStorage.getItem('ghub_tags')   || '{}');
+    cellTags  = Object.fromEntries(Object.entries(raw).map(([k,v])=>[k, new Set(v)]));
+  } catch(e) { console.warn('LocalStorage load failed', e); }
+  renderAll();
+}
+
+// Patch scheduleSave to also save locally in guest mode
+const _origScheduleSave = scheduleSave;
+scheduleSave = function() {
+  _origScheduleSave();
+  if (userId === 'guest') saveLocalState();
+};
 
 // ── Utility ───────────────────────────────────
 function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
