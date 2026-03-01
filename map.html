@@ -1682,8 +1682,17 @@ async function afterAuth() {
 }
 
 async function checkSession() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) afterAuth();
+  try {
+    // First try existing session
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { afterAuth(); return; }
+    // If no session, try refreshing the token (handles expired JWTs)
+    const { data: { session: refreshed } } = await sb.auth.refreshSession();
+    if (refreshed) { afterAuth(); return; }
+  } catch(e) {
+    console.warn('[Auth] Session check failed:', e);
+  }
+  // No valid session — show login
 }
 
 // ── Utility ───────────────────────────────────
