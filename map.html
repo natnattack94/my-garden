@@ -2954,21 +2954,6 @@ onScrub = function() {
   }
 };
 
-window.addEventListener('resize', () => {
-  if (_sceneOpen) renderSceneView();
-});
-
-// Re-render scene when scrubber changes (if open)
-const _origOnScrub = onScrub;
-onScrub = function() {
-  _origOnScrub();
-  if (_sceneOpen) {
-    _sceneSeason = getSeasonFromDay(simDay);
-    setSceneSeason(_sceneSeason, false);
-    renderSceneView();
-  }
-};
-
 // Re-render on window resize
 window.addEventListener('resize', () => {
   if (_sceneOpen) renderSceneView();
