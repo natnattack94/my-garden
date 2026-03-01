@@ -648,12 +648,13 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
 #layer-bloom.on .toggle-pill::after { left: 16px; background: #ec4899; }
 
 
+
 /* ══════════════════════════════════════════════
-   SCENE VIEW — Botanical illustration style
-   Full-screen garden elevation rendering
+   GARDEN VIEW — VegPlotter-style top-down editor
+   Warm linen palette, fully interactive
    ══════════════════════════════════════════════ */
 
-/* Toggle button in scrubber bar */
+/* Toggle button */
 #scene-toggle-btn {
   padding: 0.3rem 0.85rem;
   background: transparent;
@@ -668,153 +669,351 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
   white-space: nowrap;
   flex-shrink: 0;
 }
-#scene-toggle-btn:hover { border-color: var(--green-dim); color: var(--green); }
+#scene-toggle-btn:hover  { border-color: var(--green-dim); color: var(--green); }
 #scene-toggle-btn.active { background: var(--green-dim); border-color: var(--green); color: #e8f5e8; }
 
-/* Fullscreen scene overlay */
+/* ── Fullscreen Garden View wrapper ── */
 #scene-view {
   position: fixed;
   inset: 0;
   z-index: 400;
-  background: #e8f0e0;
+  background: #f5f0e6;
   display: none;
-  flex-direction: column;
+  flex-direction: row;
 }
 #scene-view.show { display: flex; }
 
-/* Scene header bar */
-#scene-header {
-  height: 48px;
-  background: #f5f0e8;
-  border-bottom: 1px solid #c8c0a8;
+/* ── Left palette sidebar ── */
+#gv-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: #faf7f0;
+  border-right: 1px solid #d8ceb8;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#gv-sidebar-head {
+  padding: 1rem 1rem 0.6rem;
+  border-bottom: 1px solid #e0d8c8;
+}
+.gv-logo {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #3a4a28;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.gv-search {
+  width: 100%;
+  background: #f0ebe0;
+  border: 1px solid #d0c8b0;
+  color: #3a4a28;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  outline: none;
+  transition: border-color 0.15s;
+  border-radius: 2px;
+}
+.gv-search:focus { border-color: #8a9c60; }
+.gv-search::placeholder { color: #a0987c; }
+
+#gv-plant-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+#gv-plant-list::-webkit-scrollbar { width: 3px; }
+#gv-plant-list::-webkit-scrollbar-thumb { background: #c8bca0; border-radius: 2px; }
+
+.gv-palette-item {
   display: flex;
   align-items: center;
-  padding: 0 1.5rem;
-  gap: 1.5rem;
-  flex-shrink: 0;
-  z-index: 10;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 4px;
+  cursor: grab;
+  transition: background 0.12s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
 }
-.scene-title {
-  font-family: var(--serif);
-  font-size: 1rem;
-  font-style: italic;
-  color: #2a3820;
-  letter-spacing: -0.02em;
+.gv-palette-item:hover  { background: #ede8da; border-color: #c8bca0; }
+.gv-palette-item:active { cursor: grabbing; opacity: 0.75; }
+.gv-palette-thumb {
+  width: 38px; height: 38px; flex-shrink: 0;
 }
-.scene-meta {
+.gv-palette-thumb svg { width: 100%; height: 100%; overflow: visible; }
+.gv-palette-name {
   font-family: var(--mono);
-  font-size: 0.48rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #8a9878;
+  font-size: 0.6rem;
+  color: #4a5830;
+  line-height: 1.3;
+  flex: 1;
 }
-#scene-close-btn {
-  margin-left: auto;
-  padding: 0.3rem 0.85rem;
-  background: transparent;
-  border: 1px solid #b0a890;
-  color: #6a7858;
-  font-family: var(--mono);
-  font-size: 0.52rem;
-  letter-spacing: 0.12em;
+.gv-palette-badges { display: flex; gap: 2px; margin-top: 2px; }
+.gv-badge {
+  font-size: 0.38rem;
+  padding: 0.05rem 0.22rem;
+  border-radius: 2px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s;
 }
-#scene-close-btn:hover { border-color: #3d6030; color: #3d6030; }
+.gv-badge-n { background: rgba(80,140,50,0.15); color: #3a7828; border: 1px solid rgba(80,140,50,0.3); }
+.gv-badge-h { background: rgba(80,120,200,0.12); color: #3a5098; border: 1px solid rgba(80,120,200,0.25); }
 
-/* Season strip tabs */
-.scene-seasons {
-  display: flex;
-  gap: 0;
-  margin-left: 0.5rem;
-}
-.scene-season-btn {
-  padding: 0.2rem 0.7rem;
+#gv-sidebar-foot {
+  padding: 0.6rem 0.8rem;
+  border-top: 1px solid #e0d8c8;
   font-family: var(--mono);
   font-size: 0.46rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  border: 1px solid #c0b8a0;
-  border-right: none;
-  background: #eae4d8;
-  color: #8a9070;
-  cursor: pointer;
-  transition: all 0.12s;
+  color: #a09070;
 }
-.scene-season-btn:last-child { border-right: 1px solid #c0b8a0; }
-.scene-season-btn:hover { background: #ddd8c8; color: #4a6030; }
-.scene-season-btn.active { background: #4a6a30; color: #e8f5d8; border-color: #4a6a30; }
 
-/* Main scene canvas area */
-#scene-canvas-wrap {
+/* ── Main garden canvas area ── */
+#gv-main {
   flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-/* SVG scene canvas */
-#scene-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* Plant legend strip at bottom */
-#scene-legend {
-  height: 70px;
-  background: #f5f0e8;
-  border-top: 1px solid #c8c0a8;
-  display: flex;
-  align-items: center;
-  padding: 0 1.5rem;
-  gap: 1.5rem;
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  font-family: var(--mono);
-  font-size: 0.5rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6a7858;
-}
-.legend-thumb {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-}
-.legend-thumb svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.scene-empty {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Top toolbar ── */
+#gv-toolbar {
+  height: 44px;
+  background: #faf7f0;
+  border-bottom: 1px solid #d8ceb8;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.gv-toolbar-title {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #3a4a28;
+  letter-spacing: -0.02em;
+  margin-right: auto;
+}
+.gv-tool-btn {
+  padding: 0.25rem 0.7rem;
+  background: transparent;
+  border: 1px solid #c8bca0;
+  color: #6a7848;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.gv-tool-btn:hover  { background: #ede8da; border-color: #a09070; color: #3a4a28; }
+.gv-tool-btn.danger { color: #a03028; border-color: #d09088; }
+.gv-tool-btn.danger:hover { background: rgba(160,48,40,0.06); }
+.gv-season-tabs { display: flex; gap: 0; }
+.gv-season-tab {
+  padding: 0.22rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid #c8bca0;
+  border-right: none;
+  background: #f0ebe0;
+  color: #8a9070;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.gv-season-tab:last-child { border-right: 1px solid #c8bca0; border-radius: 0 2px 2px 0; }
+.gv-season-tab:first-child { border-radius: 2px 0 0 2px; }
+.gv-season-tab:hover { background: #e5dfd0; color: #4a6030; }
+.gv-season-tab.active { background: #5a7838; color: #e8f5d8; border-color: #5a7838; }
+
+/* ── Garden canvas scroll ── */
+#gv-canvas-scroll {
+  flex: 1;
+  overflow: auto;
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(120,100,60,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 70%, rgba(80,120,40,0.06) 0%, transparent 55%),
+    #e8e0cc;
+  padding: 2rem;
+  cursor: crosshair;
+}
+
+/* ── Garden bed ── */
+#gv-bed {
+  position: relative;
+  background: #c8a870;
+  border: 2px solid #b09060;
+  border-radius: 4px;
+  box-shadow:
+    0 2px 12px rgba(80,60,20,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  /* Soil texture */
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(100,70,20,0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(80,60,20,0.2) 0%, transparent 45%),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0px, transparent 8px,
+      rgba(0,0,0,0.02) 8px, rgba(0,0,0,0.02) 9px
+    );
+}
+
+/* ── Grid overlay on bed ── */
+.gv-grid-cell {
+  position: absolute;
+  border-right: 1px solid rgba(180,140,80,0.2);
+  border-bottom: 1px solid rgba(180,140,80,0.2);
+  transition: background 0.1s;
+  box-sizing: border-box;
+}
+.gv-grid-cell:hover { background: rgba(255,255,255,0.12) !important; }
+.gv-grid-cell.gv-drop-target { background: rgba(100,180,60,0.18) !important; }
+
+/* ── Plant tokens on garden bed ── */
+.gv-plant-token {
+  position: absolute;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  gap: 0.75rem;
-  opacity: 0.5;
+  border-radius: 50%;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
+  z-index: 10;
 }
-.scene-empty-icon { font-size: 3rem; }
-.scene-empty-msg {
+.gv-plant-token:hover {
+  transform: scale(1.12) translateY(-2px);
+  z-index: 20;
+}
+.gv-plant-token:active { cursor: grabbing; }
+.gv-plant-token svg { width: 100%; height: 100%; overflow: visible; }
+
+/* Bloom ring */
+.gv-plant-token.blooming {
+  box-shadow: 0 0 0 3px rgba(236,72,153,0.5), 0 3px 10px rgba(0,0,0,0.2);
+}
+/* Conflict ring */
+.gv-plant-token.conflict {
+  box-shadow: 0 0 0 3px rgba(200,60,40,0.55), 0 3px 10px rgba(0,0,0,0.2);
+}
+/* Native highlight */
+.gv-plant-token.native {
+  box-shadow: 0 0 0 2px rgba(80,160,60,0.6), 0 3px 10px rgba(0,0,0,0.18);
+}
+/* Selected */
+.gv-plant-token.selected {
+  box-shadow: 0 0 0 3px #5a7838, 0 4px 14px rgba(0,0,0,0.25) !important;
+  z-index: 30;
+}
+
+/* ── Spread ring on bed ── */
+.gv-spread-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(100,160,60,0.4);
+  pointer-events: none;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+}
+
+/* ── Plant detail popup ── */
+#gv-detail {
+  position: absolute;
+  background: #faf7f0;
+  border: 1px solid #c8bca0;
+  border-radius: 4px;
+  padding: 0.75rem 0.9rem;
+  box-shadow: 0 6px 24px rgba(60,40,10,0.18);
+  min-width: 190px;
+  z-index: 100;
+  display: none;
+  font-family: var(--mono);
+}
+#gv-detail.show { display: block; }
+.gvd-name {
   font-family: var(--serif);
+  font-size: 0.95rem;
+  color: #2a3820;
+  font-weight: 700;
   font-style: italic;
-  font-size: 1.1rem;
-  color: #4a6030;
+  margin-bottom: 0.35rem;
 }
-.scene-empty-sub {
+.gvd-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.55rem;
+  padding: 0.15rem 0;
+  border-top: 1px solid #e8e0cc;
+  color: #6a7848;
+}
+.gvd-row span:last-child { color: #3a4a28; font-weight: 500; }
+.gvd-bloom  { color: #b04878 !important; }
+.gvd-gap    { color: #b04030 !important; }
+.gvd-native { color: #3a7828 !important; }
+.gvd-actions {
+  display: flex; gap: 0.4rem; margin-top: 0.5rem;
+}
+.gvd-btn {
+  flex: 1;
+  padding: 0.25rem 0;
   font-family: var(--mono);
   font-size: 0.48rem;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8a9878;
+  border: 1px solid #c8bca0;
+  background: #f0ebe0;
+  color: #6a7848;
+  cursor: pointer;
+  border-radius: 2px;
+  text-align: center;
+  transition: all 0.1s;
 }
+.gvd-btn:hover  { background: #e5dfd0; color: #3a4a28; }
+.gvd-btn.del    { color: #a03028; border-color: #d09088; }
+.gvd-btn.del:hover { background: rgba(160,48,40,0.06); }
+
+/* ── Status bar ── */
+#gv-statusbar {
+  height: 28px;
+  background: #f0ebe0;
+  border-top: 1px solid #d8ceb8;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+.gv-stat {
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a9070;
+}
+.gv-stat strong { color: #4a5830; }
+
+/* Scene-empty state */
+.scene-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 0.75rem; opacity: 0.55;
+}
+.scene-empty-icon { font-size: 3rem; }
+.scene-empty-msg  { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: #5a6838; }
+.scene-empty-sub  { font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8a9070; }
 
 </style>
 </head>
@@ -2776,9 +2975,27 @@ const PLANT_DRAWERS = {
 };
 
 // ── Scene View state ──────────────────────────
-let _sceneOpen   = false;
-let _sceneSeason = 'summer';
 
+// ══════════════════════════════════════════════
+//  GARDEN VIEW — VegPlotter-style top-down editor
+//  Warm linen palette, drag/drop, click-to-place
+// ══════════════════════════════════════════════
+
+let _sceneOpen    = false;
+let _sceneSeason  = 'summer';
+let _gvSelected   = null;   // currently selected plant id
+let _gvDragItem   = null;   // plant being dragged from palette
+let _gvDragOffset = {x:0,y:0}; // offset when dragging token on bed
+
+// Cell size on the garden bed (px)
+const GV_CELL = 52;
+// Bed dimensions — same 24×18 as the map grid
+const GV_COLS = 24;
+const GV_ROWS = 18;
+const GV_W    = GV_COLS * GV_CELL;
+const GV_H    = GV_ROWS * GV_CELL;
+
+// ── Season helpers ────────────────────────────
 function getSeasonFromDay(day) {
   if (day < 80)  return 'spring';
   if (day < 172) return 'summer';
@@ -2786,6 +3003,15 @@ function getSeasonFromDay(day) {
   return 'winter';
 }
 
+function setSceneSeason(season, rerender = true) {
+  _sceneSeason = season;
+  document.querySelectorAll('.gv-season-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.season === season)
+  );
+  if (rerender && _sceneOpen) renderGardenView();
+}
+
+// ── Toggle open/close ─────────────────────────
 function toggleSceneView() {
   _sceneOpen = !_sceneOpen;
   const sv  = document.getElementById('scene-view');
@@ -2795,197 +3021,397 @@ function toggleSceneView() {
   if (_sceneOpen) {
     _sceneSeason = getSeasonFromDay(simDay);
     setSceneSeason(_sceneSeason, false);
-    renderSceneView();
+    gvInit();
+    renderGardenView();
+    gvPopulatePalette();
   }
 }
 
-function setSceneSeason(season, rerender = true) {
-  _sceneSeason = season;
-  document.querySelectorAll('.scene-season-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.season === season);
-  });
-  if (rerender) renderSceneView();
+// ── Init bed grid ─────────────────────────────
+function gvInit() {
+  const bed = document.getElementById('gv-bed');
+  if (!bed) return;
+  bed.style.width  = GV_W + 'px';
+  bed.style.height = GV_H + 'px';
+
+  // Only build grid cells once
+  if (bed.querySelector('.gv-grid-cell')) return;
+  const frag = document.createDocumentFragment();
+  for (let r = 0; r < GV_ROWS; r++) {
+    for (let c = 0; c < GV_COLS; c++) {
+      const el = document.createElement('div');
+      el.className   = 'gv-grid-cell';
+      el.style.left  = (c * GV_CELL) + 'px';
+      el.style.top   = (r * GV_CELL) + 'px';
+      el.style.width = el.style.height = GV_CELL + 'px';
+      frag.appendChild(el);
+    }
+  }
+  bed.appendChild(frag);
 }
 
-function renderSceneView() {
-  const wrap = document.getElementById('scene-canvas-wrap');
-  if (!wrap) return;
+// ── Populate plant palette ─────────────────────
+let _gvPaletteData = [];
 
-  if (!plantData.length) {
-    wrap.innerHTML = `<div class="scene-empty">
-      <div class="scene-empty-icon">🌱</div>
-      <div class="scene-empty-msg">Your garden bed is empty</div>
-      <div class="scene-empty-sub">Place plants on the map to visualize them here</div>
-    </div>`;
-    document.getElementById('scene-legend').innerHTML = '';
-    updateSceneHeader();
+function gvPopulatePalette() {
+  // Use the same _pickerPlants data already loaded by the map's inventory
+  if (_pickerPlants && _pickerPlants.length) {
+    _gvPaletteData = _pickerPlants;
+    gvRenderPalette(_gvPaletteData);
     return;
   }
+  // Fallback: wait briefly for inventory to load
+  setTimeout(() => {
+    _gvPaletteData = _pickerPlants || [];
+    gvRenderPalette(_gvPaletteData);
+  }, 600);
+}
 
-  // Ensure SVG element exists
-  let svgEl = document.getElementById('scene-svg');
-  if (!svgEl) {
-    wrap.innerHTML = '<svg id="scene-svg" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%"></svg>';
-    svgEl = document.getElementById('scene-svg');
+function gvFilterPalette(query) {
+  const q = query.toLowerCase().trim();
+  const filtered = q ? _gvPaletteData.filter(p =>
+    p.name.toLowerCase().includes(q) || (p.family||'').toLowerCase().includes(q)
+  ) : _gvPaletteData;
+  gvRenderPalette(filtered);
+}
+
+function gvRenderPalette(plants) {
+  const list = document.getElementById('gv-plant-list');
+  if (!list) return;
+  if (!plants.length) {
+    list.innerHTML = '<div style="font-family:var(--mono);font-size:0.5rem;color:#a09070;padding:0.5rem;">No plants found</div>';
+    return;
   }
+  list.innerHTML = plants.map(p => {
+    const svg = getPlantSVG(p.name);
+    const badges = [
+      p.isNative ? '<span class="gv-badge gv-badge-n">Native</span>' : '',
+      p.isHost   ? '<span class="gv-badge gv-badge-h">Host</span>'   : '',
+    ].join('');
+    const dataStr = JSON.stringify(p).replace(/"/g, '&quot;');
+    return `<div class="gv-palette-item" draggable="true"
+      data-plant="${dataStr}"
+      ondragstart="gvPaletteDragStart(event, this)"
+      onclick="gvPaletteClick(event, this)">
+      <div class="gv-palette-thumb">${svg}</div>
+      <div class="gv-palette-name">
+        ${p.name}
+        <div class="gv-palette-badges">${badges}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-  const W = wrap.clientWidth  || window.innerWidth  || 1200;
-  const H = wrap.clientHeight || window.innerHeight * 0.75 || 500;
+// ── Drag from palette ─────────────────────────
+function gvPaletteDragStart(e, el) {
+  const p = JSON.parse(el.dataset.plant);
+  _gvDragItem = p;
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', p.name);
+}
 
-  const groundY  = H * 0.82;
-  const maxPlantH = groundY * 0.88; // tallest plant fills 88% of sky
+function gvPaletteClick(e, el) {
+  // Clicking palette item enters "placement mode" — next click on bed places it
+  const p = JSON.parse(el.dataset.plant);
+  _gvDragItem = p;
+  document.querySelectorAll('.gv-palette-item').forEach(i => i.style.outline = '');
+  el.style.outline = '2px solid #5a7838';
+  document.getElementById('gv-canvas-scroll').style.cursor = 'cell';
+}
 
-  // Season themes
-  const seasonTheme = {
-    spring: { sky1:'#c5dff0', sky2:'#e8f4fb', ground:'#6a9c44', soil:'#5a4028', mulch:'#7a6040' },
-    summer: { sky1:'#74b8e8', sky2:'#c0e0f5', ground:'#4a8c28', soil:'#4a3018', mulch:'#6a5030' },
-    fall:   { sky1:'#c8a060', sky2:'#e8c878', ground:'#7a7028', soil:'#3c2810', mulch:'#5a4020' },
-    winter: { sky1:'#b8ccd8', sky2:'#dce8f2', ground:'#8a9880', soil:'#2e2418', mulch:'#4a4038' },
+// ── Drop onto bed ─────────────────────────────
+function gvOnDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+}
+
+function gvOnDrop(e) {
+  e.preventDefault();
+  if (!_gvDragItem) return;
+  const bed  = document.getElementById('gv-bed');
+  const rect = bed.getBoundingClientRect();
+  const scroll = document.getElementById('gv-canvas-scroll');
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
+  // Snap to cell center
+  const col  = Math.max(0, Math.min(GV_COLS-1, Math.floor(rawX / GV_CELL)));
+  const row  = Math.max(0, Math.min(GV_ROWS-1, Math.floor(rawY / GV_CELL)));
+  gvPlacePlant(_gvDragItem, col * GV_CELL + GV_CELL/2, row * GV_CELL + GV_CELL/2);
+  _gvDragItem = null;
+  document.querySelectorAll('.gv-palette-item').forEach(i => i.style.outline = '');
+  document.getElementById('gv-canvas-scroll').style.cursor = 'crosshair';
+}
+
+// ── Click to place ────────────────────────────
+function gvOnCanvasClick(e) {
+  if (e.target.closest('.gv-plant-token')) return;
+  if (!_gvDragItem) {
+    // Deselect
+    gvClearSelected();
+    return;
+  }
+  const bed  = document.getElementById('gv-bed');
+  const rect = bed.getBoundingClientRect();
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
+  if (rawX < 0 || rawY < 0 || rawX > GV_W || rawY > GV_H) return;
+  const col = Math.max(0, Math.min(GV_COLS-1, Math.floor(rawX / GV_CELL)));
+  const row = Math.max(0, Math.min(GV_ROWS-1, Math.floor(rawY / GV_CELL)));
+  gvPlacePlant(_gvDragItem, col * GV_CELL + GV_CELL/2, row * GV_CELL + GV_CELL/2);
+  _gvDragItem = null;
+  document.querySelectorAll('.gv-palette-item').forEach(i => i.style.outline = '');
+  document.getElementById('gv-canvas-scroll').style.cursor = 'crosshair';
+}
+
+// ── Place a plant on the bed ──────────────────
+function gvPlacePlant(palettePlant, bx, by) {
+  // Convert bed coords to map coords (same scale, just different cell size)
+  const mapX = Math.round(bx * (VP_W / GV_W) / 48) * 48;
+  const mapY = Math.round(by * (VP_H / GV_H) / 48) * 48;
+
+  const plant = {
+    id:         uid(),
+    libId:      palettePlant.libId || palettePlant.id,
+    name:       palettePlant.name,
+    emoji:      palettePlant.emoji || '🌱',
+    family:     palettePlant.family || 'Unknown',
+    spread:     palettePlant.spread || 12,
+    dtm:        palettePlant.dtm || 60,
+    bloomStart: palettePlant.bloomStart || 150,
+    isNative:   palettePlant.isNative || false,
+    isHost:     palettePlant.isHost   || false,
+    plantedDay: simDay,
+    x: mapX, y: mapY,
   };
-  const T = seasonTheme[_sceneSeason] || seasonTheme.summer;
 
-  const seasonMonthMap = { spring:5, summer:7, fall:9, winter:12 };
-  const sceneMonth = seasonMonthMap[_sceneSeason] || 7;
-  const sceneDayApprox = { spring:120, summer:180, fall:240, winter:300 }[_sceneSeason] || 180;
+  plantData.push(plant);
+  scheduleSave();
 
-  // Compute max real-world height for scaling
-  const maxRealH = Math.max(...plantData.map(p => PLANT_HEIGHTS[getPlantKey(p.name)] || 22));
-
-  // Build plant scene data
-  const scenePlants = plantData.map(p => {
-    const key     = getPlantKey(p.name);
-    const realH   = PLANT_HEIGHTS[key] || 22;
-    const bloomSt = getBloomStatus(p, sceneMonth);
-    const pdDay   = p.plantedDay != null ? p.plantedDay : 60;
-    const age     = sceneDayApprox - pdDay;
-    const growth  = Math.max(0.25, Math.min(1, age / Math.max(1, p.dtm)));
-    // Scene X: map the plant's map x-position across the full canvas width
-    // with padding on edges
-    const padding = W * 0.06;
-    const sceneX  = padding + (p.x / VP_W) * (W - padding * 2);
-    // Pixel height at full growth for this plant
-    const fullH = (realH / maxRealH) * maxPlantH;
-    return { ...p, key, realH, bloomSt, growth, sceneX, fullH };
-  });
-
-  // Sort: tallest first so they render behind shorter plants
-  const sorted = [...scenePlants].sort((a, b) => b.realH - a.realH);
-
-  // ── Build SVG string ─────────────────────────
-  let s = '';
-
-  // Defs
-  s += `<defs>
-    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${T.sky1}"/>
-      <stop offset="100%" stop-color="${T.sky2}"/>
-    </linearGradient>
-    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${T.ground}"/>
-      <stop offset="35%" stop-color="${T.mulch}"/>
-      <stop offset="100%" stop-color="${T.soil}"/>
-    </linearGradient>
-    <filter id="plantShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.18)"/>
-    </filter>
-    <filter id="bgBlur"><feGaussianBlur stdDeviation="3"/></filter>
-  </defs>`;
-
-  // Sky
-  s += `<rect width="${W}" height="${H}" fill="url(#sg)"/>`;
-
-  // Season atmospheric overlays
-  const atmoColors = { spring:'rgba(255,255,255,0.07)', summer:'rgba(255,252,200,0.04)', fall:'rgba(180,100,20,0.07)', winter:'rgba(200,220,240,0.12)' };
-  s += `<rect width="${W}" height="${H}" fill="${atmoColors[_sceneSeason]||'none'}"/>`;
-
-  // Distant background haze trees (blurred)
-  s += `<g filter="url(#bgBlur)" opacity="0.22">`;
-  for (let i = 0; i < 9; i++) {
-    const bx = W * (i+0.5) / 9;
-    const bh = 40 + (i*37)%60;
-    s += `<rect x="${bx - 5}" y="${groundY - bh - 10}" width="10" height="${bh}" rx="3" fill="#3a6028"/>`;
-    s += `<ellipse cx="${bx}" cy="${groundY - bh - 10}" rx="${25 + i%3*10}" ry="${20 + i%2*12}" fill="#3a7030"/>`;
-  }
-  s += `</g>`;
-
-  // Ground strip
-  s += `<rect x="0" y="${groundY}" width="${W}" height="${H - groundY}" fill="url(#gg)"/>`;
-  // Ground edge highlight
-  s += `<rect x="0" y="${groundY}" width="${W}" height="3" fill="${T.ground}" opacity="0.6"/>`;
-
-  // Ground texture — subtle soil lines
-  for (let i = 1; i < 4; i++) {
-    const gy2 = groundY + (H - groundY) * (i / 5);
-    s += `<line x1="0" y1="${gy2}" x2="${W}" y2="${gy2}" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>`;
-  }
-
-  // Render plants back to front (sorted by height desc = back first)
-  sorted.forEach(plant => {
-    const drawer = PLANT_DRAWERS[plant.key] || PLANT_DRAWERS.generic;
-    const seasonFilter =
-      _sceneSeason === 'fall'   ? 'sepia(0.35) saturate(0.75)' :
-      _sceneSeason === 'winter' ? 'grayscale(0.55) brightness(0.82)' :
-      _sceneSeason === 'spring' ? 'saturate(1.12) brightness(1.04)' : 'none';
-
-    s += `<g filter="url(#plantShadow)" style="filter:${seasonFilter} drop-shadow(1px 2px 2px rgba(0,0,0,0.18))">`;
-    s += drawer(plant.sceneX, groundY, plant.fullH, plant.growth, plant.bloomSt === 'blooming');
-    s += `</g>`;
-
-    // Ground shadow ellipse
-    const shadowW = plant.fullH * (PLANT_WIDTHS[plant.key]||0.6) * plant.growth * 0.4;
-    s += `<ellipse cx="${plant.sceneX}" cy="${groundY + 3}" rx="${Math.max(8, shadowW)}" ry="3.5" fill="rgba(0,0,0,0.12)"/>`;
-  });
-
-  // Foreground grass tufts
-  for (let i = 0; i < 18; i++) {
-    const gx = W * (i + Math.sin(i*1.7)*0.3) / 17;
-    const gh = 8 + (i*13)%14;
-    s += `<path d="M${gx},${groundY} Q${gx-4},${groundY-gh} ${gx-2},${groundY-gh*1.3}" stroke="${T.ground}" stroke-width="1.5" fill="none" opacity="0.7"/>`;
-    s += `<path d="M${gx},${groundY} Q${gx+3},${groundY-gh*1.1} ${gx+5},${groundY-gh*1.4}" stroke="${T.ground}" stroke-width="1.5" fill="none" opacity="0.6"/>`;
-  }
-
-  svgEl.setAttribute('width', W);
-  svgEl.setAttribute('height', H);
-  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = s;
-
-  // Legend
-  const legend = document.getElementById('scene-legend');
-  const unique = [...new Map(plantData.map(p => [p.name, p])).values()];
-  legend.innerHTML = unique.map(p => `
-    <div class="legend-item">
-      <div class="legend-thumb">${getPlantSVG(p.name)}</div>
-      <span>${p.name}</span>
-    </div>`).join('');
-
-  updateSceneHeader();
+  // Render just this token
+  gvRenderToken(plant);
+  gvUpdateStatusBar();
 }
 
-function updateSceneHeader() {
-  const count = plantData.length;
-  const meta  = document.getElementById('scene-meta');
-  if (meta) {
-    const seasonLabel = { spring:'Spring', summer:'Summer', fall:'Fall', winter:'Winter' }[_sceneSeason] || _sceneSeason;
-    const simDate = new Date(2026, 0, simDay);
-    const dateStr = simDate.toLocaleDateString('en-US', { month:'long', day:'numeric' });
-    meta.textContent = `${count} plant${count!==1?'s':''} · ${seasonLabel} · ${dateStr}`;
+// ── Render a single plant token ───────────────
+function gvRenderToken(plant) {
+  const bed = document.getElementById('gv-bed');
+  if (!bed) return;
+
+  const sceneMonth = {spring:5,summer:7,fall:9,winter:12}[_sceneSeason]||7;
+  const bloomSt    = getBloomStatus(plant, sceneMonth);
+  const isBloom    = bloomSt === 'blooming';
+  const hasConflict = layers.companion && plantData.some(other =>
+    other.id !== plant.id &&
+    COMPANION_DATA[plant.name]?.conflicts?.includes(other.name)
+  );
+
+  // Token size: 44px base, grows with plant maturity
+  const sceneDayApprox = {spring:120,summer:180,fall:240,winter:300}[_sceneSeason]||180;
+  const age    = sceneDayApprox - (plant.plantedDay || 60);
+  const growth = Math.max(0.35, Math.min(1, age / Math.max(1, plant.dtm)));
+  const size   = Math.round(40 + growth * 16); // 40–56px
+
+  // Map coords → bed coords
+  const bx = (plant.x / VP_W) * GV_W;
+  const by = (plant.y / VP_H) * GV_H;
+
+  const el = document.createElement('div');
+  el.className  = 'gv-plant-token';
+  el.dataset.id = plant.id;
+  el.style.cssText = `width:${size}px;height:${size}px;left:${bx - size/2}px;top:${by - size/2}px;`;
+  if (isBloom)     el.classList.add('blooming');
+  if (hasConflict) el.classList.add('conflict');
+  if (plant.isNative) el.classList.add('native');
+
+  el.innerHTML = getPlantSVG(plant.name);
+
+  // Spread ring
+  if (layers.spread) {
+    const spreadPx = (plant.spread / 12) * GV_CELL * growth;
+    const ring = document.createElement('div');
+    ring.className = 'gv-spread-ring';
+    ring.style.cssText = `width:${spreadPx*2}px;height:${spreadPx*2}px;left:${bx}px;top:${by}px;`;
+    if (hasConflict) ring.style.borderColor = 'rgba(200,60,40,0.4)';
+    bed.appendChild(ring);
+    el._spreadRing = ring;
+  }
+
+  // Click → select + show detail
+  el.addEventListener('click', e => {
+    e.stopPropagation();
+    gvSelectPlant(plant.id);
+  });
+
+  // Drag to move on bed
+  el.setAttribute('draggable', 'true');
+  el.addEventListener('dragstart', e => {
+    _gvDragItem  = null; // not a palette drag
+    _gvSelected  = plant.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'token:' + plant.id);
+    el.style.opacity = '0.5';
+  });
+  el.addEventListener('dragend', () => { el.style.opacity = ''; });
+
+  bed.appendChild(el);
+}
+
+// Override drop to also handle token moves
+const _origGvOnDrop = gvOnDrop;
+// Patch drop to detect token vs palette
+document.addEventListener('DOMContentLoaded', () => {
+  const scroll = document.getElementById('gv-canvas-scroll');
+  if (!scroll) return;
+  scroll.addEventListener('dragover', e => e.preventDefault());
+  scroll.addEventListener('drop', e => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('text/plain') || '';
+    if (data.startsWith('token:')) {
+      const pid = data.slice(6);
+      const bed  = document.getElementById('gv-bed');
+      const rect = bed.getBoundingClientRect();
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
+      const col  = Math.max(0, Math.min(GV_COLS-1, Math.floor(rawX / GV_CELL)));
+      const row  = Math.max(0, Math.min(GV_ROWS-1, Math.floor(rawY / GV_CELL)));
+      const newBx = col * GV_CELL + GV_CELL/2;
+      const newBy = row * GV_CELL + GV_CELL/2;
+      const plant = plantData.find(p => p.id === pid);
+      if (plant) {
+        plant.x = Math.round(newBx * (VP_W / GV_W) / 48) * 48;
+        plant.y = Math.round(newBy * (VP_H / GV_H) / 48) * 48;
+        scheduleSave();
+        renderGardenView();
+      }
+    } else {
+      gvOnDrop(e);
+    }
+  });
+});
+
+// ── Full render ───────────────────────────────
+function renderGardenView() {
+  const bed = document.getElementById('gv-bed');
+  if (!bed) return;
+  gvInit();
+
+  // Remove existing tokens + rings
+  bed.querySelectorAll('.gv-plant-token, .gv-spread-ring').forEach(e => e.remove());
+
+  // Render all plants
+  plantData.forEach(p => gvRenderToken(p));
+  gvUpdateStatusBar();
+  gvClearSelected();
+}
+
+// ── Select / deselect ─────────────────────────
+function gvSelectPlant(id) {
+  gvClearSelected();
+  _gvSelected = id;
+  const el = document.querySelector(`.gv-plant-token[data-id="${id}"]`);
+  if (el) el.classList.add('selected');
+
+  const plant = plantData.find(p => p.id === id);
+  if (!plant) return;
+
+  document.getElementById('gv-delete-btn').style.display = '';
+
+  // Populate detail panel
+  const sceneMonth = {spring:5,summer:7,fall:9,winter:12}[_sceneSeason]||7;
+  const bloomSt    = getBloomStatus(plant, sceneMonth);
+  const sceneDayApprox = {spring:120,summer:180,fall:240,winter:300}[_sceneSeason]||180;
+  const age    = sceneDayApprox - (plant.plantedDay||60);
+  const growth = Math.max(0, Math.min(1, age / Math.max(1, plant.dtm)));
+
+  document.getElementById('gvd-name').textContent = plant.name;
+  document.getElementById('gvd-family').textContent = plant.family || '—';
+  document.getElementById('gvd-maturity').textContent = Math.round(growth*100) + '%';
+  document.getElementById('gvd-spread').textContent = (plant.spread||12) + '"';
+
+  const bloomEl = document.getElementById('gvd-bloom');
+  bloomEl.className = '';
+  if (bloomSt === 'blooming') { bloomEl.textContent = '🌸 Blooming'; bloomEl.className = 'gvd-bloom'; }
+  else if (bloomSt === 'gap') { bloomEl.textContent = '⚠ Gap';      bloomEl.className = 'gvd-gap';  }
+  else                        { bloomEl.textContent = bloomSt || '—'; }
+
+  const statusEl = document.getElementById('gvd-status');
+  if (plant.isNative) { statusEl.textContent = 'Native'; statusEl.className = 'gvd-native'; }
+  else if (plant.isHost) { statusEl.textContent = 'Host plant'; statusEl.className = ''; }
+  else { statusEl.textContent = 'Cultivated'; statusEl.className = ''; }
+
+  // Position detail panel near token
+  const tokenEl = document.querySelector(`.gv-plant-token[data-id="${id}"]`);
+  const detail  = document.getElementById('gv-detail');
+  if (tokenEl && detail) {
+    const tRect = tokenEl.getBoundingClientRect();
+    const main  = document.getElementById('gv-main').getBoundingClientRect();
+    let left = tRect.right - main.left + 8;
+    let top  = tRect.top  - main.top;
+    if (left + 200 > main.width) left = tRect.left - main.left - 208;
+    detail.style.left = left + 'px';
+    detail.style.top  = top  + 'px';
+    detail.classList.add('show');
   }
 }
 
+function gvClearSelected() {
+  _gvSelected = null;
+  document.querySelectorAll('.gv-plant-token.selected').forEach(e => e.classList.remove('selected'));
+  document.getElementById('gv-delete-btn').style.display = 'none';
+  const detail = document.getElementById('gv-detail');
+  if (detail) detail.classList.remove('show');
+}
+
+function gvDeleteSelected() {
+  if (!_gvSelected) return;
+  plantData = plantData.filter(p => p.id !== _gvSelected);
+  scheduleSave();
+  gvClearSelected();
+  renderGardenView();
+}
+
+// ── Status bar ────────────────────────────────
+function gvUpdateStatusBar() {
+  const sceneMonth = {spring:5,summer:7,fall:9,winter:12}[_sceneSeason]||7;
+  const blooming   = plantData.filter(p => getBloomStatus(p, sceneMonth) === 'blooming').length;
+  const native     = plantData.filter(p => p.isNative).length;
+
+  let conflicts = 0;
+  if (layers.companion) {
+    plantData.forEach(p => {
+      if (COMPANION_DATA[p.name]?.conflicts) {
+        plantData.forEach(other => {
+          if (other.id !== p.id && COMPANION_DATA[p.name].conflicts.includes(other.name)) conflicts++;
+        });
+      }
+    });
+    conflicts = Math.round(conflicts / 2);
+  }
+
+  document.getElementById('gv-stat-plants').textContent   = plantData.length;
+  document.getElementById('gv-stat-bloom').textContent    = blooming;
+  document.getElementById('gv-stat-native').textContent   = native;
+  document.getElementById('gv-stat-nconflict').textContent = conflicts;
+  const conflEl = document.getElementById('gv-stat-conflict');
+  if (conflEl) conflEl.style.display = conflicts > 0 ? '' : 'none';
+}
+
+// ── Sync map → garden view on scrub ──────────
 const _origOnScrub = onScrub;
 onScrub = function() {
   _origOnScrub();
   if (_sceneOpen) {
     _sceneSeason = getSeasonFromDay(simDay);
     setSceneSeason(_sceneSeason, false);
-    renderSceneView();
+    renderGardenView();
   }
 };
 
-// Re-render on window resize
+// Resize: re-center scroll
 window.addEventListener('resize', () => {
-  if (_sceneOpen) renderSceneView();
+  if (_sceneOpen) gvUpdateStatusBar();
 });
+
 
 </script>
 
@@ -3016,23 +3442,73 @@ window.addEventListener('resize', () => {
 </div>
 
 
-<!-- ═══════════════ SCENE VIEW ════════════════ -->
+<!-- ═══════════════ GARDEN VIEW ═══════════════ -->
 <div id="scene-view">
-  <div id="scene-header">
-    <span class="scene-title">Garden Scene</span>
-    <div class="scene-seasons">
-      <button class="scene-season-btn" data-season="spring" onclick="setSceneSeason('spring')">Spring</button>
-      <button class="scene-season-btn active" data-season="summer" onclick="setSceneSeason('summer')">Summer</button>
-      <button class="scene-season-btn" data-season="fall" onclick="setSceneSeason('fall')">Fall</button>
-      <button class="scene-season-btn" data-season="winter" onclick="setSceneSeason('winter')">Winter</button>
+
+  <!-- Left sidebar: plant palette -->
+  <div id="gv-sidebar">
+    <div id="gv-sidebar-head">
+      <div class="gv-logo">GardenHub</div>
+      <input class="gv-search" id="gv-search" type="text" placeholder="Search plants…" oninput="gvFilterPalette(this.value)"/>
     </div>
-    <span class="scene-meta" id="scene-meta">0 plants</span>
-    <button id="scene-close-btn" onclick="toggleSceneView()">← Back to Map</button>
+    <div id="gv-plant-list">
+      <div style="font-family:var(--mono);font-size:0.5rem;color:#a09070;padding:0.5rem;">Loading library…</div>
+    </div>
+    <div id="gv-sidebar-foot">
+      Drag plants onto the bed
+    </div>
   </div>
-  <div id="scene-canvas-wrap">
-    <svg id="scene-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+  <!-- Main garden area -->
+  <div id="gv-main">
+
+    <!-- Toolbar -->
+    <div id="gv-toolbar">
+      <span class="gv-toolbar-title">My Garden</span>
+      <div class="gv-season-tabs">
+        <button class="gv-season-tab" data-season="spring" onclick="setSceneSeason('spring')">Spring</button>
+        <button class="gv-season-tab active" data-season="summer" onclick="setSceneSeason('summer')">Summer</button>
+        <button class="gv-season-tab" data-season="fall" onclick="setSceneSeason('fall')">Fall</button>
+        <button class="gv-season-tab" data-season="winter" onclick="setSceneSeason('winter')">Winter</button>
+      </div>
+      <button class="gv-tool-btn" onclick="gvClearSelected()">Deselect</button>
+      <button class="gv-tool-btn danger" id="gv-delete-btn" onclick="gvDeleteSelected()" style="display:none">✕ Remove</button>
+      <button class="gv-tool-btn" onclick="toggleSceneView()">← Back to Map</button>
+    </div>
+
+    <!-- Scrollable canvas -->
+    <div id="gv-canvas-scroll"
+         ondragover="gvOnDragOver(event)"
+         ondrop="gvOnDrop(event)"
+         onclick="gvOnCanvasClick(event)">
+      <div id="gv-bed">
+        <!-- grid cells + plant tokens injected by JS -->
+      </div>
+    </div>
+
+    <!-- Detail popup -->
+    <div id="gv-detail">
+      <div class="gvd-name" id="gvd-name">—</div>
+      <div class="gvd-row"><span>Family</span><span id="gvd-family">—</span></div>
+      <div class="gvd-row"><span>Bloom</span><span id="gvd-bloom">—</span></div>
+      <div class="gvd-row"><span>Maturity</span><span id="gvd-maturity">—</span></div>
+      <div class="gvd-row"><span>Spread</span><span id="gvd-spread">—</span></div>
+      <div class="gvd-row"><span>Status</span><span id="gvd-status">—</span></div>
+      <div class="gvd-actions">
+        <div class="gvd-btn del" onclick="gvDeleteSelected()">Remove</div>
+        <div class="gvd-btn" onclick="document.getElementById('gv-detail').classList.remove('show')">Close</div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="gv-statusbar">
+      <span class="gv-stat"><strong id="gv-stat-plants">0</strong> plants</span>
+      <span class="gv-stat"><strong id="gv-stat-bloom">0</strong> blooming</span>
+      <span class="gv-stat"><strong id="gv-stat-native">0</strong> native</span>
+      <span class="gv-stat" id="gv-stat-conflict" style="color:#a05030;display:none">⚠ <strong id="gv-stat-nconflict">0</strong> conflicts</span>
+    </div>
+
   </div>
-  <div id="scene-legend"></div>
 </div>
 
 </body>
