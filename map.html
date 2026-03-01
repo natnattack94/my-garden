@@ -1015,8 +1015,10 @@ function renderObjects() {
 
   // Plants
   plantData.forEach(plant => {
-    const age = simDay - 120;
-    const growth = Math.max(0, Math.min(1, age / Math.max(1, plant.dtm)));
+    // plantedDay: set when placed, defaults to simDay so newly-placed plants are always visible
+    const plantedDay = plant.plantedDay != null ? plant.plantedDay : simDay;
+    const age     = simDay - plantedDay;
+    const growth  = Math.max(0, Math.min(1, age / Math.max(1, plant.dtm)));
     const blooming = simDay >= plant.bloomStart && simDay <= plant.bloomStart + 40;
     const { conflicts, benefits } = layers.companion ? getConflictsForPlant(plant) : { conflicts:[], benefits:[] };
     const hasConflict = conflicts.length > 0;
@@ -1029,9 +1031,10 @@ function renderObjects() {
     el.className = `plant-obj${blooming ? ' stage-bloom' : ''}${hasConflict && layers.companion ? ' companion-conflict' : ''}${plant.isNative ? ' native-marker' : plant.isHost ? ' host-marker' : ''}`;
     el.id = `plant-${plant.id}`;
 
-    const scale = age < -5 ? 0 : (0.25 + growth * 0.75);
-    const sz = Math.round(36 * scale);
-    el.style.cssText = `left:${plant.x - sz/2}px;top:${plant.y - sz/2}px;width:${sz}px;height:${sz}px;font-size:${Math.round(22*scale)}px;opacity:${age < -5 ? 0 : 1}`;
+    // Minimum scale of 0.25 so plants are always visible once placed
+    const scale = Math.max(0.25, 0.25 + growth * 0.75);
+    const sz    = Math.max(18, Math.round(36 * scale));
+    el.style.cssText = `left:${plant.x - sz/2}px;top:${plant.y - sz/2}px;width:${sz}px;height:${sz}px;font-size:${Math.max(12, Math.round(22*scale))}px;opacity:1`;
 
     el.textContent = plant.emoji || '🌱';
     el.draggable = true;
@@ -1050,7 +1053,7 @@ function renderObjects() {
     // Tooltip
     const tip = document.createElement('div');
     tip.className = 'plant-tooltip';
-    const maturity = age <= 0 ? 'Not planted yet' : age >= plant.dtm ? '✓ Mature' : `${Math.round((age/plant.dtm)*100)}% grown`;
+    const maturity = age <= 0 ? 'Seedling' : age >= plant.dtm ? '✓ Mature' : `${Math.round((age/plant.dtm)*100)}% grown`;
     const compLine = hasConflict ? `⚠️ Conflict: ${conflicts.map(c=>c.name).join(', ')}` :
                      benefits.length ? `✓ Good: ${benefits.map(b=>b.name).join(', ')}` : '';
     tip.innerHTML = `<b>${plant.name}</b><br/>${maturity}${plant.isNative ? ' · NATIVE':plant.isHost?' · HOST':''}${compLine ? '<br/>'+compLine : ''}`;
@@ -1168,7 +1171,9 @@ function onViewportDrop(e) {
       const y = Math.max(CELL/2, Math.min(VP_H - CELL/2, rawY));
       plantData.push({ id: uid(), libId: p.libId, name: p.name, emoji: p.emoji,
         family: p.family, spread: p.spread, dtm: p.dtm, bloomStart: p.bloomStart,
-        isNative: p.isNative, isHost: p.isHost, x, y });
+        isNative: p.isNative, isHost: p.isHost,
+        plantedDay: simDay,
+        x, y });
     } else {
       const plant = plantData.find(p => p.id === _drag.id);
       if (plant) {
@@ -1463,6 +1468,8 @@ window.addEventListener('DOMContentLoaded', () => {
   syncLayerUI();
   onScrub();
   checkSession();
+  initClickToPlace();
+  initDetailPanel();
 });
 
 // ══════════════════════════════════════════════
@@ -1555,16 +1562,19 @@ let _pickerPlants = [];    // full list for filtering
 
 // Intercept viewport clicks — only fire if not
 // clicking an existing object and no tactic active
-document.addEventListener('DOMContentLoaded', () => {
+function initClickToPlace() {
   const vp = document.getElementById('viewport');
+  if (!vp) return;
 
   vp.addEventListener('click', e => {
     // If a tactic is active, let existing onCellClick handle it
     if (activeTactic) return;
-    // If click landed on an existing plant or bed, let context menu handle it
-    if (e.target.closest('.plant-obj') || e.target.closest('.bed-obj')) return;
-    // If click landed on a resize handle, ignore
-    if (e.target.closest('.resize-handle')) return;
+    // If click landed on an existing plant — open detail, not picker
+    if (e.target.closest('.plant-obj')) return;
+    // If click landed on a bed or resize handle, ignore
+    if (e.target.closest('.bed-obj') || e.target.closest('.resize-handle')) return;
+    // If click landed on a grid cell (not the viewport background), open picker
+    if (!e.target.classList.contains('grid-cell') && e.target.id !== 'viewport') return;
 
     const rect = vp.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -1573,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     _pendingPlace = { x, y };
     openPicker(e.clientX, e.clientY);
   });
-});
+}
 
 function openPicker(screenX, screenY) {
   const picker = document.getElementById('plant-picker');
@@ -1633,28 +1643,36 @@ function filterPicker(query) {
 }
 
 function placeFromPicker(plantJson) {
-  if (!_pendingPlace) { closePicker(); return; }
-  let p;
-  try { p = JSON.parse(plantJson); } catch(e) { closePicker(); return; }
+  // Snapshot position immediately before anything else clears it
+  const pos = _pendingPlace ? { ..._pendingPlace } : null;
+  closePicker(); // close first so outside-click doesn't interfere
+  if (!pos) return;
 
-  const { x, y } = _pendingPlace;
+  let p;
+  try { p = JSON.parse(plantJson); } catch(e) { return; }
+
   plantData.push({
-    id: uid(), libId: p.libId, name: p.name, emoji: p.emoji,
-    family: p.family, spread: p.spread, dtm: p.dtm, bloomStart: p.bloomStart,
-    isNative: p.isNative, isHost: p.isHost, x, y,
+    id: uid(), libId: p.libId, name: p.name, emoji: p.emoji || '🌱',
+    family: p.family || 'Unknown', spread: p.spread || 12,
+    dtm: p.dtm || 60, bloomStart: p.bloomStart || 150,
+    isNative: !!p.isNative, isHost: !!p.isHost,
+    plantedDay: simDay,  // planted at current scrubber position
+    x: pos.x, y: pos.y,
   });
 
-  closePicker();
   scheduleSave();
   renderAll();
+  console.log('[Map] Plant placed:', p.name, 'at', pos.x, pos.y, '— plantData length:', plantData.length);
 }
 
-// Close picker on outside click
+// Close picker on outside click (non-capturing so picker item onclick fires first)
 document.addEventListener('click', e => {
   const picker = document.getElementById('plant-picker');
   if (!picker.classList.contains('show')) return;
-  if (!picker.contains(e.target)) closePicker();
-}, true);
+  // Don't close if clicking inside the picker
+  if (picker.contains(e.target)) return;
+  closePicker();
+});
 
 // ── Patch loadInventory to also populate _pickerPlants ──
 const _origRenderInventory = renderInventory;
@@ -1744,7 +1762,7 @@ function closeDetail() {
 }
 
 // Patch ctx-info to use the new detail panel
-document.addEventListener('DOMContentLoaded', () => {
+function initDetailPanel() {
   document.getElementById('ctx-info').onclick = () => {
     if (!ctxTarget || ctxTarget.kind !== 'plant') return;
     const el = document.getElementById(`plant-${ctxTarget.id}`);
@@ -1753,7 +1771,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openDetail(ctxTarget.id, rect.right, rect.top);
   };
 
-  // Also open detail on direct plant click (not drag, not right-click)
+  // Open detail on direct plant click (delegated from viewport)
   document.getElementById('viewport').addEventListener('click', e => {
     const plantEl = e.target.closest('.plant-obj');
     if (!plantEl) return;
@@ -1761,7 +1779,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const id = plantEl.id.replace('plant-', '');
     openDetail(id, e.clientX, e.clientY);
   });
-});
+}
 
 // Close detail on outside click
 document.addEventListener('click', e => {
