@@ -488,6 +488,112 @@ body {
 .ctx-item.danger { color: var(--red); }
 .ctx-item.danger:hover { background: rgba(240,82,82,0.1); }
 .ctx-sep { height: 1px; background: var(--border); margin: 0.25rem 0; }
+
+/* ── Click-to-place picker ──────────────────── */
+#plant-picker {
+  position: fixed; z-index: 600;
+  background: var(--surface);
+  border: 1px solid var(--green-dim);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  width: 240px;
+  display: none;
+  flex-direction: column;
+  max-height: 340px;
+}
+#plant-picker.show { display: flex; }
+.picker-head {
+  padding: 0.6rem 0.8rem 0.45rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.5rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--green-dim);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.picker-close {
+  background: none; border: none; color: var(--green-dim);
+  font-size: 0.75rem; cursor: pointer; padding: 0;
+  line-height: 1;
+}
+.picker-close:hover { color: var(--green); }
+.picker-search {
+  margin: 0.5rem 0.7rem;
+  background: var(--bg); border: 1px solid var(--border);
+  color: #c8dfc8; padding: 0.35rem 0.55rem;
+  font-family: var(--mono); font-size: 0.65rem;
+  outline: none; width: calc(100% - 1.4rem);
+  transition: border-color 0.15s;
+}
+.picker-search:focus { border-color: var(--green-dim); }
+.picker-list {
+  overflow-y: auto; flex: 1;
+  padding: 0 0 0.4rem;
+}
+.picker-item {
+  padding: 0.42rem 0.8rem;
+  font-size: 0.65rem; cursor: pointer;
+  color: #8aab8a; display: flex; align-items: center;
+  gap: 0.5rem; transition: background 0.1s;
+}
+.picker-item:hover { background: var(--surface2); color: var(--green-pale); }
+.picker-item .pi-badge {
+  font-size: 0.4rem; padding: 0.05rem 0.25rem;
+  border: 1px solid; flex-shrink: 0;
+}
+.picker-item .pi-native { color: var(--green); border-color: var(--green-dim); }
+.picker-item .pi-host   { color: var(--blue);  border-color: #2a5580; }
+
+/* ── Plant detail panel ─────────────────────── */
+#plant-detail {
+  position: fixed; z-index: 550;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  width: 230px;
+  padding: 0.85rem;
+  display: none;
+  flex-direction: column; gap: 0.45rem;
+}
+#plant-detail.show { display: flex; }
+.pd-name {
+  font-family: var(--serif); font-size: 1rem;
+  color: #e8f5e8; font-weight: 700; line-height: 1.1;
+}
+.pd-sci {
+  font-size: 0.52rem; color: var(--green-dim); font-style: italic;
+  letter-spacing: 0.04em;
+}
+.pd-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.58rem; border-top: 1px solid var(--border);
+  padding-top: 0.35rem;
+}
+.pd-label { color: #5a7a60; }
+.pd-val   { color: #c8dfc8; font-weight: 500; }
+.pd-val.bloom  { color: #ec4899; }
+.pd-val.gap    { color: var(--red); }
+.pd-val.native { color: var(--green); }
+.pd-val.mature { color: var(--amber); }
+.pd-close-btn {
+  align-self: flex-end; background: none; border: 1px solid var(--border);
+  color: #5a7a60; font-family: var(--mono); font-size: 0.48rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.2rem 0.5rem; cursor: pointer; margin-top: 0.25rem;
+  transition: border-color 0.12s, color 0.12s;
+}
+.pd-close-btn:hover { border-color: var(--green-dim); color: var(--green); }
+
+/* ── Bloom gap overlay ──────────────────────── */
+.bloom-active { box-shadow: inset 0 0 0 2px rgba(236,72,153,0.6) !important; background: rgba(236,72,153,0.12) !important; }
+.bloom-gap    { box-shadow: inset 0 0 0 2px rgba(240,82,82,0.5) !important; background: rgba(240,82,82,0.10) !important; }
+.bloom-offseason { opacity: 0.85; }
+
+/* ── Click-to-place cursor hint ─────────────── */
+body.placing { cursor: crosshair; }
+body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
+
+/* ── Bloom gap layer toggle ─────────────────── */
+#layer-bloom.on .toggle-pill { background: rgba(236,72,153,0.5); border-color: #ec4899; }
+#layer-bloom.on .toggle-pill::after { left: 16px; background: #ec4899; }
+
 </style>
 </head>
 
@@ -559,6 +665,10 @@ body {
     </div>
     <div class="layer-row" id="layer-spread" onclick="toggleLayer('spread')">
       <span class="layer-name">🌿 Spread Rings</span>
+      <div class="toggle-pill"></div>
+    </div>
+    <div class="layer-row" id="layer-bloom" onclick="toggleLayer('bloom')">
+      <span class="layer-name">🌸 Bloom Gap Map</span>
       <div class="toggle-pill"></div>
     </div>
     <div class="layer-row" id="layer-companion" onclick="toggleLayer('companion')">
@@ -1354,6 +1464,344 @@ window.addEventListener('DOMContentLoaded', () => {
   onScrub();
   checkSession();
 });
+
+// ══════════════════════════════════════════════
+//  BLOOM GAP OVERLAY
+//  Colors each plant cell based on whether the
+//  plant is currently blooming, in a gap, or
+//  off-season — using the same bloom window DB
+//  as the index page clock.
+// ══════════════════════════════════════════════
+
+const BLOOM_NAME_WIN = {
+  'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
+  'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
+  'coneflower':[7,9],'black-eyed':[7,9],'bee balm':[7,8],'catmint':[5,9],
+  'salvia':[6,9],'dill':[7,8],'fennel':[7,8],'chives':[5,6],'allium':[5,7],
+  'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
+  'thyme':[5,7],'oregano':[7,8],'basil':[7,9],'tomato':[6,9],
+  'pepper':[6,9],'bean':[6,8],'squash':[6,9],'cucumber':[6,9],
+};
+const BLOOM_FAM_WIN = {
+  Asteraceae:[6,10],Lamiaceae:[5,9],Rosaceae:[5,9],Boraginaceae:[5,9],
+  Tropaeolaceae:[6,10],Caprifoliaceae:[5,8],Scrophulariaceae:[6,9],
+  Violaceae:[4,6],Ranunculaceae:[4,6],Papaveraceae:[5,7],
+  Solanaceae:[6,9],Cucurbitaceae:[6,9],Fabaceae:[6,8],
+};
+const SEASON_MONTHS = [4,5,6,7,8,9,10]; // Apr–Oct
+
+function getBloomWindow(plant) {
+  const name = (plant.name || '').toLowerCase();
+  for (const [k,w] of Object.entries(BLOOM_NAME_WIN)) {
+    if (name.includes(k)) return w;
+  }
+  const fam = plant.family || '';
+  for (const [k,w] of Object.entries(BLOOM_FAM_WIN)) {
+    if (fam.includes(k)) return w;
+  }
+  return null;
+}
+
+function getBloomStatus(plant, monthNum) {
+  const win = getBloomWindow(plant);
+  if (!win) return 'unknown';
+  const inSeason = SEASON_MONTHS.includes(monthNum);
+  if (!inSeason) return 'offseason';
+  if (monthNum >= win[0] && monthNum <= win[1]) return 'blooming';
+  return 'gap';
+}
+
+function renderBloomLayer() {
+  // Clear existing bloom classes from all cells
+  document.querySelectorAll('.grid-cell').forEach(c => {
+    c.classList.remove('bloom-active', 'bloom-gap', 'bloom-offseason');
+  });
+  if (!layers.bloom) return;
+
+  // Use current simDay to get month
+  const simDate = new Date(2026, 0, simDay);
+  const month   = simDate.getMonth() + 1; // 1-based
+
+  plantData.forEach(plant => {
+    const cellId = cellFromXY(plant.x, plant.y);
+    const el     = document.getElementById(`cell-${cellId}`);
+    if (!el) return;
+    const status = getBloomStatus(plant, month);
+    if (status === 'blooming')  el.classList.add('bloom-active');
+    else if (status === 'gap')  el.classList.add('bloom-gap');
+    else if (status === 'offseason') el.classList.add('bloom-offseason');
+  });
+}
+
+// ── Patch renderLayers to include bloom ──────
+const _origRenderLayers = renderLayers;
+renderLayers = function() {
+  _origRenderLayers();
+  renderBloomLayer();
+};
+
+// ── Patch layers object to include bloom ─────
+layers.bloom = false;
+
+// ══════════════════════════════════════════════
+//  CLICK-TO-PLACE
+//  Click on the viewport (not on an existing
+//  plant/bed) → show plant picker at click pos
+//  → select plant → drop it at that position.
+// ══════════════════════════════════════════════
+
+let _pendingPlace = null;  // { x, y } in viewport coords
+let _pickerPlants = [];    // full list for filtering
+
+// Intercept viewport clicks — only fire if not
+// clicking an existing object and no tactic active
+document.addEventListener('DOMContentLoaded', () => {
+  const vp = document.getElementById('viewport');
+
+  vp.addEventListener('click', e => {
+    // If a tactic is active, let existing onCellClick handle it
+    if (activeTactic) return;
+    // If click landed on an existing plant or bed, let context menu handle it
+    if (e.target.closest('.plant-obj') || e.target.closest('.bed-obj')) return;
+    // If click landed on a resize handle, ignore
+    if (e.target.closest('.resize-handle')) return;
+
+    const rect = vp.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    _pendingPlace = { x, y };
+    openPicker(e.clientX, e.clientY);
+  });
+});
+
+function openPicker(screenX, screenY) {
+  const picker = document.getElementById('plant-picker');
+  // Reset search
+  document.getElementById('picker-search').value = '';
+  filterPicker('');
+
+  // Position near click, keep in viewport
+  const pw = 240, ph = 340;
+  let left = screenX + 10;
+  let top  = screenY + 10;
+  if (left + pw > window.innerWidth)  left = screenX - pw - 10;
+  if (top  + ph > window.innerHeight) top  = screenY - ph - 10;
+  picker.style.left = left + 'px';
+  picker.style.top  = top  + 'px';
+  picker.classList.add('show');
+
+  // Focus search
+  setTimeout(() => document.getElementById('picker-search').focus(), 50);
+}
+
+function closePicker() {
+  document.getElementById('plant-picker').classList.remove('show');
+  _pendingPlace = null;
+}
+
+// Populate picker list
+function buildPickerList() {
+  // Use existing inventory data
+  const grid  = document.getElementById('plant-inventory');
+  const items = grid ? [...grid.querySelectorAll('.inv-item')] : [];
+  // Re-use _pickerPlants which is set in loadInventory patch below
+  filterPicker('');
+}
+
+function filterPicker(query) {
+  const list = document.getElementById('picker-list');
+  const q    = query.toLowerCase().trim();
+  const filtered = q
+    ? _pickerPlants.filter(p => p.name.toLowerCase().includes(q))
+    : _pickerPlants;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:0.6rem 0.8rem;font-size:0.6rem;color:#3a5040;">No matches</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(p => {
+    const nBadge = p.isNative   ? '<span class="pi-badge pi-native">N</span>' : '';
+    const hBadge = p.isHost     ? '<span class="pi-badge pi-host">H</span>'   : '';
+    return `<div class="picker-item" onclick="placeFromPicker(${JSON.stringify(JSON.stringify(p)).slice(1,-1).replace(/"/g,'&quot;')})">
+      <span>${p.emoji||'🌱'}</span>
+      <span style="flex:1;">${p.name}</span>
+      ${nBadge}${hBadge}
+    </div>`;
+  }).join('');
+}
+
+function placeFromPicker(plantJson) {
+  if (!_pendingPlace) { closePicker(); return; }
+  let p;
+  try { p = JSON.parse(plantJson); } catch(e) { closePicker(); return; }
+
+  const { x, y } = _pendingPlace;
+  plantData.push({
+    id: uid(), libId: p.libId, name: p.name, emoji: p.emoji,
+    family: p.family, spread: p.spread, dtm: p.dtm, bloomStart: p.bloomStart,
+    isNative: p.isNative, isHost: p.isHost, x, y,
+  });
+
+  closePicker();
+  scheduleSave();
+  renderAll();
+}
+
+// Close picker on outside click
+document.addEventListener('click', e => {
+  const picker = document.getElementById('plant-picker');
+  if (!picker.classList.contains('show')) return;
+  if (!picker.contains(e.target)) closePicker();
+}, true);
+
+// ── Patch loadInventory to also populate _pickerPlants ──
+const _origRenderInventory = renderInventory;
+renderInventory = function(grid, plants) {
+  _origRenderInventory(grid, plants);
+  _pickerPlants = plants.map(p => ({
+    libId: p.id, name: p.common_name, emoji: p.emoji || '🌱',
+    family: p.plant_family || 'Unknown', spread: p.spread_in || 12,
+    dtm: p.maturity_days || 60, bloomStart: p.bloom_start_day || 150,
+    isNative: !!p.is_native, isHost: !!p.is_host_plant,
+  }));
+};
+
+// ══════════════════════════════════════════════
+//  PLANT DETAIL PANEL
+//  Rich click-info panel. Triggered from ctx-info
+//  and also by clicking a plant-obj directly.
+// ══════════════════════════════════════════════
+
+function openDetail(plantId, screenX, screenY) {
+  const plant = plantData.find(p => p.id === plantId);
+  if (!plant) return;
+
+  const age     = simDay - 120;
+  const maturity = age <= 0 ? 'Dormant' : age >= plant.dtm ? '✓ Mature' : `${Math.round((age/plant.dtm)*100)}%`;
+  const simDate  = new Date(2026, 0, simDay);
+  const month    = simDate.getMonth() + 1;
+  const bloomSt  = getBloomStatus(plant, month);
+  const win      = getBloomWindow(plant);
+
+  const bloomLabel =
+    bloomSt === 'blooming'  ? `🌸 Blooming now` :
+    bloomSt === 'gap'       ? `⚠ Gap — not blooming` :
+    bloomSt === 'offseason' ? `Off-season` :
+    win ? `Blooms ${['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][win[0]]}–${['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][win[1]]}` :
+    'Unknown';
+
+  const bloomCls =
+    bloomSt === 'blooming'  ? 'bloom' :
+    bloomSt === 'gap'       ? 'gap'   : '';
+
+  const { conflicts, benefits } = getConflictsForPlant(plant);
+  const statusLabel = plant.isNative ? '🌿 Native' : plant.isHost ? '🦋 Host Plant' : 'Cultivated';
+
+  document.getElementById('pd-emoji').textContent   = plant.emoji || '🌱';
+  document.getElementById('pd-name').textContent    = plant.name;
+  document.getElementById('pd-sci').textContent     = plant.family || '';
+  document.getElementById('pd-family').textContent  = plant.family || 'Unknown';
+  document.getElementById('pd-maturity').textContent= maturity;
+  document.getElementById('pd-spread').textContent  = plant.spread ? `${plant.spread}" spread` : '—';
+  document.getElementById('pd-status').textContent  = statusLabel;
+  document.getElementById('pd-status').className    = `pd-val${plant.isNative ? ' native' : ''}${maturity.includes('Mature') ? ' mature' : ''}`;
+
+  const bloomEl = document.getElementById('pd-bloom');
+  bloomEl.textContent = bloomLabel;
+  bloomEl.className   = `pd-val${bloomCls ? ' ' + bloomCls : ''}`;
+
+  const conflictRow = document.getElementById('pd-conflict-row');
+  const conflictVal = document.getElementById('pd-conflict');
+  if (conflicts.length || benefits.length) {
+    conflictRow.style.display = 'flex';
+    const parts = [];
+    if (benefits.length)  parts.push(`✓ ${benefits.slice(0,2).map(b=>b.name).join(', ')}`);
+    if (conflicts.length) parts.push(`⚠ ${conflicts.slice(0,2).map(c=>c.name).join(', ')}`);
+    conflictVal.textContent = parts.join(' · ');
+    conflictVal.style.color = conflicts.length ? 'var(--red)' : 'var(--green)';
+  } else {
+    conflictRow.style.display = 'none';
+  }
+
+  const panel = document.getElementById('plant-detail');
+  panel.classList.add('show');
+
+  // Position near click
+  const pw = 230, ph = 280;
+  let left = screenX + 12;
+  let top  = screenY - 20;
+  if (left + pw > window.innerWidth)  left = screenX - pw - 12;
+  if (top  + ph > window.innerHeight) top  = window.innerHeight - ph - 12;
+  if (top < 0) top = 12;
+  panel.style.left = left + 'px';
+  panel.style.top  = top  + 'px';
+}
+
+function closeDetail() {
+  document.getElementById('plant-detail').classList.remove('show');
+}
+
+// Patch ctx-info to use the new detail panel
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ctx-info').onclick = () => {
+    if (!ctxTarget || ctxTarget.kind !== 'plant') return;
+    const el = document.getElementById(`plant-${ctxTarget.id}`);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    openDetail(ctxTarget.id, rect.right, rect.top);
+  };
+
+  // Also open detail on direct plant click (not drag, not right-click)
+  document.getElementById('viewport').addEventListener('click', e => {
+    const plantEl = e.target.closest('.plant-obj');
+    if (!plantEl) return;
+    e.stopPropagation();
+    const id = plantEl.id.replace('plant-', '');
+    openDetail(id, e.clientX, e.clientY);
+  });
+});
+
+// Close detail on outside click
+document.addEventListener('click', e => {
+  const detail = document.getElementById('plant-detail');
+  const picker = document.getElementById('plant-picker');
+  if (!detail.classList.contains('show')) return;
+  if (!detail.contains(e.target) && !e.target.closest('.plant-obj')) {
+    closeDetail();
+  }
+});
+
+// ── SQL hint in console for the curious ──────
+console.info('[GardenHub Map] Plant positions are stored in map_state.plant_data as JSON.\nNo separate table needed — positions are part of the serialized garden state.');
 </script>
+
+<!-- ═══ CLICK-TO-PLACE PLANT PICKER ═══ -->
+<div id="plant-picker">
+  <div class="picker-head">
+    Place Plant
+    <button class="picker-close" onclick="closePicker()">✕</button>
+  </div>
+  <input class="picker-search" id="picker-search" placeholder="Search library…" oninput="filterPicker(this.value)"/>
+  <div class="picker-list" id="picker-list"></div>
+</div>
+
+<!-- ═══ PLANT DETAIL PANEL ═══ -->
+<div id="plant-detail">
+  <div id="pd-emoji" style="font-size:2rem;line-height:1;"></div>
+  <div class="pd-name" id="pd-name"></div>
+  <div class="pd-sci"  id="pd-sci"></div>
+  <div class="pd-row"><span class="pd-label">Family</span>    <span class="pd-val" id="pd-family"></span></div>
+  <div class="pd-row"><span class="pd-label">Maturity</span>  <span class="pd-val" id="pd-maturity"></span></div>
+  <div class="pd-row"><span class="pd-label">Bloom Status</span><span class="pd-val" id="pd-bloom"></span></div>
+  <div class="pd-row"><span class="pd-label">Spread</span>    <span class="pd-val" id="pd-spread"></span></div>
+  <div class="pd-row"><span class="pd-label">Status</span>    <span class="pd-val" id="pd-status"></span></div>
+  <div class="pd-row" id="pd-conflict-row" style="display:none">
+    <span class="pd-label">Companions</span><span class="pd-val" id="pd-conflict"></span>
+  </div>
+  <button class="pd-close-btn" onclick="closeDetail()">✕ Close</button>
+</div>
+
 </body>
 </html>
