@@ -2326,258 +2326,393 @@ function getPlantKey(name) {
   return 'generic';
 }
 
-// Front-elevation SVG builders — return SVG element string
-// sceneH = available height in px, baseY = ground line Y
-// Each plant is drawn relative to ground at y=100 (svg coords 0-100)
-function getElevationSVG(plantName, bloomStatus, growthPct, season) {
-  const key = getPlantKey(plantName);
-  const g   = Math.max(0.3, growthPct); // minimum 30% so seedlings show
-  const isBloom = bloomStatus === 'blooming';
 
-  // Season color modifiers
-  const seasonMod = {
-    spring: { sat: 1.1, bright: 1.05 },
-    summer: { sat: 1.0, bright: 1.0  },
-    fall:   { sat: 0.7, bright: 0.85 },
-    winter: { sat: 0.2, bright: 0.7  },
-  }[season] || { sat: 1.0, bright: 1.0 };
+// ══════════════════════════════════════════════
+//  SCENE VIEW — Rewritten renderer
+//
+//  Key fix: plants are drawn DIRECTLY into the
+//  master SVG in absolute scene coordinates,
+//  anchored at the ground line. No nested <svg>,
+//  no scale() transforms that collapse shapes.
+//
+//  Each drawPlant_X(svg, cx, groundY, tallH, growth, bloom)
+//  function draws into the scene SVG at pixel
+//  coords where cx = plant center X, groundY =
+//  ground line Y, tallH = max pixel height for
+//  this plant type at full growth.
+// ══════════════════════════════════════════════
 
-  const builders = {
-    sunflower: (g) => `
-      <g transform="scale(${g})">
-        <line x1="50" y1="100" x2="50" y2="22" stroke="#6b8c3a" stroke-width="4"/>
-        <line x1="50" y1="75" x2="28" y2="60" stroke="#5a7a2a" stroke-width="2.5"/>
-        <ellipse cx="20" cy="56" rx="14" ry="8" fill="#4a8030" opacity="0.9" transform="rotate(-20 20 56)"/>
-        <line x1="50" y1="68" x2="72" y2="55" stroke="#5a7a2a" stroke-width="2.5"/>
-        <ellipse cx="80" cy="51" rx="14" ry="8" fill="#4a8030" opacity="0.9" transform="rotate(20 80 51)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#f5c518" opacity="0.95"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#e8b000" opacity="0.9" transform="rotate(30 50 24)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#f5c518" opacity="0.9" transform="rotate(60 50 24)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#e8b000" opacity="0.9" transform="rotate(90 50 24)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#f5c518" opacity="0.9" transform="rotate(120 50 24)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#e8b000" opacity="0.9" transform="rotate(150 50 24)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#f5c518" opacity="0.9" transform="rotate(180 50 24)"/>
-        <ellipse cx="50" cy="20" rx="7" ry="13" fill="#e8b000" opacity="0.9" transform="rotate(210 50 24)"/>
-        <circle cx="50" cy="24" r="13" fill="#2a1200"/>
-        <circle cx="50" cy="24" r="9"  fill="#3d1c00"/>
-        ${isBloom ? '<circle cx="50" cy="24" r="15" fill="none" stroke="#f5c518" stroke-width="1" opacity="0.4"/>' : ''}
-      </g>`,
+// Height in "garden inches" — used for proportional scaling
+const PLANT_HEIGHTS = {
+  sunflower:72, lavender:30, basil:18, rose:44, milkweed:46,
+  squash:16, bean:34, carrot:16, cucumber:22, bee_balm:34,
+  black_eyed_susan:28, generic:22,
+};
 
-    lavender: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        ${[0,1,2,3,4].map(i => {
-          const xOff = (i-2)*10;
-          const hOff = Math.abs(i-2)*4;
-          return `
-          <line x1="${50+xOff}" y1="100" x2="${50+xOff*0.6}" y2="${30+hOff}" stroke="#7a9040" stroke-width="2"/>
-          <ellipse cx="${50+xOff*0.5}" cy="${55+hOff/2}" rx="5" ry="3" fill="#8b5fc8" opacity="0.85" transform="rotate(${xOff*2} ${50+xOff*0.5} ${55+hOff/2})"/>
-          <ellipse cx="${50+xOff*0.5}" cy="${45+hOff/2}" rx="5" ry="3" fill="#9b6dd8" opacity="0.9" transform="rotate(${xOff*2} ${50+xOff*0.5} ${45+hOff/2})"/>
-          <ellipse cx="${50+xOff*0.4}" cy="${35+hOff}" rx="4" ry="2.5" fill="#a87de0" opacity="0.9" transform="rotate(${xOff*2} ${50+xOff*0.4} ${35+hOff})"/>
-          <ellipse cx="${50+xOff*0.3}" cy="${28+hOff}" rx="3.5" ry="2" fill="#b890e8" opacity="0.85" transform="rotate(${xOff*2} ${50+xOff*0.3} ${28+hOff})"/>
-          `}).join('')}
-        ${isBloom ? '<rect x="20" y="25" width="60" height="50" rx="4" fill="rgba(139,95,200,0.08)"/>' : ''}
-      </g>`,
+// Width multiplier relative to height (for spacing)
+const PLANT_WIDTHS = {
+  sunflower:0.7, lavender:0.55, basil:0.7, rose:0.65, milkweed:0.65,
+  squash:1.4, bean:0.55, carrot:0.5, cucumber:1.1, bee_balm:0.6,
+  black_eyed_susan:0.65, generic:0.6,
+};
 
-    basil: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="50" y1="100" x2="50" y2="35" stroke="#3a7030" stroke-width="3"/>
-        <line x1="50" y1="80" x2="28" y2="65" stroke="#4a8038" stroke-width="2"/>
-        <line x1="50" y1="80" x2="72" y2="65" stroke="#4a8038" stroke-width="2"/>
-        <line x1="50" y1="65" x2="32" y2="50" stroke="#4a8038" stroke-width="2"/>
-        <line x1="50" y1="65" x2="68" y2="50" stroke="#4a8038" stroke-width="2"/>
-        <ellipse cx="22" cy="63" rx="14" ry="9" fill="#2d7a30" opacity="0.9" transform="rotate(-15 22 63)"/>
-        <ellipse cx="78" cy="63" rx="14" ry="9" fill="#2d7a30" opacity="0.9" transform="rotate(15 78 63)"/>
-        <ellipse cx="28" cy="48" rx="13" ry="8" fill="#358038" opacity="0.85" transform="rotate(-20 28 48)"/>
-        <ellipse cx="72" cy="48" rx="13" ry="8" fill="#358038" opacity="0.85" transform="rotate(20 72 48)"/>
-        <ellipse cx="50" cy="38" rx="12" ry="8" fill="#3a8535" opacity="0.9"/>
-        ${isBloom ? `
-          <circle cx="50" cy="30" r="4" fill="#e8f0c0"/>
-          <circle cx="42" cy="33" r="3" fill="#e8f0c0" opacity="0.8"/>
-          <circle cx="58" cy="33" r="3" fill="#e8f0c0" opacity="0.8"/>
-        ` : ''}
-      </g>`,
-
-    rose: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="50" y1="100" x2="50" y2="40" stroke="#4a7030" stroke-width="3"/>
-        <line x1="50" y1="85" x2="28" y2="68" stroke="#4a7030" stroke-width="2"/>
-        <line x1="50" y1="75" x2="72" y2="60" stroke="#4a7030" stroke-width="2"/>
-        <line x1="50" y1="65" x2="30" y2="52" stroke="#4a7030" stroke-width="1.5"/>
-        <ellipse cx="22" cy="66" rx="13" ry="8" fill="#2a6020" opacity="0.85" transform="rotate(-15 22 66)"/>
-        <ellipse cx="72" cy="58" rx="13" ry="8" fill="#2a6020" opacity="0.85" transform="rotate(15 72 58)"/>
-        <ellipse cx="25" cy="50" rx="11" ry="7" fill="#336025" opacity="0.8" transform="rotate(-25 25 50)"/>
-        <!-- Rose bloom -->
-        <ellipse cx="50" cy="38" rx="16" ry="12" fill="#c0203a" opacity="0.9"/>
-        <ellipse cx="50" cy="36" rx="13" ry="10" fill="#d42848" opacity="0.95"/>
-        <ellipse cx="50" cy="34" rx="10" ry="8"  fill="#e03058" opacity="0.95"/>
-        <ellipse cx="50" cy="33" rx="7"  ry="6"  fill="#f06070" opacity="0.95"/>
-        <ellipse cx="50" cy="32" rx="4"  ry="4"  fill="#f8a0a0"/>
-        ${isBloom ? '<circle cx="50" cy="34" r="20" fill="none" stroke="#e03058" stroke-width="1" opacity="0.3"/>' : ''}
-      </g>`,
-
-    milkweed: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="50" y1="100" x2="50" y2="28" stroke="#5a8040" stroke-width="3.5"/>
-        <line x1="50" y1="80" x2="25" y2="70" stroke="#5a8040" stroke-width="2"/>
-        <line x1="50" y1="80" x2="75" y2="70" stroke="#5a8040" stroke-width="2"/>
-        <line x1="50" y1="65" x2="28" y2="55" stroke="#5a8040" stroke-width="2"/>
-        <line x1="50" y1="65" x2="72" y2="55" stroke="#5a8040" stroke-width="2"/>
-        <ellipse cx="18" cy="68" rx="15" ry="8" fill="#4a8040" opacity="0.9" transform="rotate(-10 18 68)"/>
-        <ellipse cx="82" cy="68" rx="15" ry="8" fill="#4a8040" opacity="0.9" transform="rotate(10 82 68)"/>
-        <ellipse cx="22" cy="53" rx="13" ry="7" fill="#4a8040" opacity="0.85" transform="rotate(-15 22 53)"/>
-        <ellipse cx="78" cy="53" rx="13" ry="7" fill="#4a8040" opacity="0.85" transform="rotate(15 78 53)"/>
-        <!-- Umbel flower cluster -->
-        <circle cx="50" cy="24" r="5" fill="#d4708a" opacity="0.9"/>
-        <circle cx="60" cy="20" r="5" fill="#d4708a" opacity="0.9"/>
-        <circle cx="40" cy="20" r="5" fill="#d4708a" opacity="0.9"/>
-        <circle cx="65" cy="28" r="4" fill="#c4607a" opacity="0.85"/>
-        <circle cx="35" cy="28" r="4" fill="#c4607a" opacity="0.85"/>
-        <circle cx="50" cy="16" r="4" fill="#e880a0" opacity="0.9"/>
-        ${isBloom ? '<ellipse cx="50" cy="22" rx="22" ry="14" fill="rgba(212,112,138,0.1)"/>' : ''}
-      </g>`,
-
-    squash: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="30" y1="100" x2="15" y2="75" stroke="#5a8830" stroke-width="2.5"/>
-        <line x1="50" y1="100" x2="50" y2="75" stroke="#5a8830" stroke-width="3"/>
-        <line x1="70" y1="100" x2="85" y2="75" stroke="#5a8830" stroke-width="2.5"/>
-        <ellipse cx="10" cy="68" rx="18" ry="12" fill="#4a8c30" opacity="0.9" transform="rotate(-15 10 68)"/>
-        <ellipse cx="50" cy="70" rx="22" ry="14" fill="#3d8030" opacity="0.9"/>
-        <ellipse cx="90" cy="68" rx="18" ry="12" fill="#4a8c30" opacity="0.9" transform="rotate(15 90 68)"/>
-        <ellipse cx="25" cy="58" rx="16" ry="10" fill="#5a9038" opacity="0.85" transform="rotate(-25 25 58)"/>
-        <ellipse cx="75" cy="58" rx="16" ry="10" fill="#5a9038" opacity="0.85" transform="rotate(25 75 58)"/>
-        <!-- Yellow trumpet flower -->
-        <ellipse cx="50" cy="55" rx="9" ry="6"  fill="#f5c518" opacity="0.95"/>
-        <ellipse cx="50" cy="55" rx="9" ry="6"  fill="#f5c518" opacity="0.95" transform="rotate(60 50 55)"/>
-        <ellipse cx="50" cy="55" rx="9" ry="6"  fill="#f0bc10" opacity="0.9" transform="rotate(120 50 55)"/>
-        <circle  cx="50" cy="55" r="6"  fill="#e8a800"/>
-        ${isBloom ? '<circle cx="50" cy="55" r="12" fill="none" stroke="#f5c518" stroke-width="1.5" opacity="0.4"/>' : ''}
-      </g>`,
-
-    bean: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <path d="M50,100 Q35,75 40,50 Q44,28 50,18" stroke="#5a8c40" stroke-width="2.5" fill="none"/>
-        <path d="M50,100 Q65,75 60,50 Q56,28 50,18" stroke="#5a8c40" stroke-width="2.5" fill="none"/>
-        <path d="M40,70 Q28,62 20,55" stroke="#5a8c40" stroke-width="1.5" fill="none"/>
-        <ellipse cx="14" cy="52" rx="13" ry="8" fill="#4a8838" opacity="0.9" transform="rotate(-15 14 52)"/>
-        <path d="M60,60 Q72,52 80,45" stroke="#5a8c40" stroke-width="1.5" fill="none"/>
-        <ellipse cx="84" cy="42" rx="13" ry="8" fill="#4a8838" opacity="0.9" transform="rotate(15 84 42)"/>
-        <ellipse cx="44" cy="42" rx="12" ry="8" fill="#5a9848" opacity="0.85" transform="rotate(-10 44 42)"/>
-        <ellipse cx="56" cy="38" rx="12" ry="8" fill="#5a9848" opacity="0.85" transform="rotate(10 56 38)"/>
-        <circle cx="50" cy="20" r="5" fill="white" opacity="0.95"/>
-        <circle cx="42" cy="24" r="4" fill="white" opacity="0.9"/>
-        <circle cx="58" cy="24" r="4" fill="white" opacity="0.9"/>
-      </g>`,
-
-    carrot: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <path d="M40,100 Q45,88 50,80 Q55,88 60,100" fill="#e87820" opacity="0.8"/>
-        <line x1="50" y1="80" x2="50" y2="30" stroke="#5a9030" stroke-width="2.5"/>
-        <path d="M50,65 Q35,55 25,42" stroke="#5aaa45" stroke-width="1.8" fill="none"/>
-        <path d="M50,55 Q38,42 30,28" stroke="#5aaa45" stroke-width="1.8" fill="none"/>
-        <path d="M50,65 Q65,55 75,42" stroke="#5aaa45" stroke-width="1.8" fill="none"/>
-        <path d="M50,52 Q62,38 70,25" stroke="#5aaa45" stroke-width="1.8" fill="none"/>
-        <path d="M50,42 Q46,28 43,16" stroke="#5aaa45" stroke-width="1.5" fill="none"/>
-        <path d="M50,42 Q54,28 57,16" stroke="#5aaa45" stroke-width="1.5" fill="none"/>
-        <!-- Umbel flowers -->
-        <circle cx="25" cy="40" r="3.5" fill="white" opacity="0.92"/>
-        <circle cx="30" cy="26" r="3.5" fill="white" opacity="0.92"/>
-        <circle cx="43" cy="13" r="3.5" fill="white" opacity="0.92"/>
-        <circle cx="50" cy="10" r="3.5" fill="white" opacity="0.92"/>
-        <circle cx="57" cy="13" r="3.5" fill="white" opacity="0.92"/>
-        <circle cx="70" cy="23" r="3.5" fill="white" opacity="0.92"/>
-        <circle cx="75" cy="38" r="3.5" fill="white" opacity="0.92"/>
-      </g>`,
-
-    cucumber: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <path d="M20,100 Q25,80 35,65 Q45,50 55,38 Q65,28 80,22" stroke="#5a9030" stroke-width="2.5" fill="none"/>
-        <path d="M35,65 Q28,55 22,45" stroke="#5a9030" stroke-width="1.2" fill="none"/>
-        <circle cx="20" cy="42" r="14" fill="#4a8c30" opacity="0.8"/>
-        <path d="M55,38 Q62,30 68,22" stroke="#5a9030" stroke-width="1.2" fill="none"/>
-        <circle cx="50" cy="50" r="16" fill="#4a8c30" opacity="0.82"/>
-        <circle cx="75" cy="30" r="13" fill="#4a8c30" opacity="0.78"/>
-        <!-- Leaf veins -->
-        <line x1="20" y1="30" x2="20" y2="55" stroke="#2a6020" stroke-width="1" opacity="0.4"/>
-        <line x1="50" y1="37" x2="50" y2="63" stroke="#2a6020" stroke-width="1" opacity="0.4"/>
-        <!-- Cucumber fruit -->
-        <ellipse cx="32" cy="80" rx="5" ry="13" fill="#5a9828" opacity="0.9" transform="rotate(15 32 80)"/>
-        <ellipse cx="65" cy="72" rx="4.5" ry="12" fill="#6aaa30" opacity="0.85" transform="rotate(-10 65 72)"/>
-        ${isBloom ? `<circle cx="78" cy="55" r="6" fill="#f5c518" opacity="0.95"/>
-          <circle cx="78" cy="55" r="3" fill="#e8a800"/>` : ''}
-      </g>`,
-
-    bee_balm: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="50" y1="100" x2="50" y2="30" stroke="#4a7830" stroke-width="3"/>
-        <line x1="50" y1="82" x2="28" y2="70" stroke="#4a7830" stroke-width="2"/>
-        <line x1="50" y1="82" x2="72" y2="70" stroke="#4a7830" stroke-width="2"/>
-        <line x1="50" y1="68" x2="30" y2="57" stroke="#4a7830" stroke-width="1.8"/>
-        <line x1="50" y1="68" x2="70" y2="57" stroke="#4a7830" stroke-width="1.8"/>
-        <ellipse cx="22" cy="68" rx="14" ry="8" fill="#3d7830" opacity="0.9" transform="rotate(-15 22 68)"/>
-        <ellipse cx="78" cy="68" rx="14" ry="8" fill="#3d7830" opacity="0.9" transform="rotate(15 78 68)"/>
-        <ellipse cx="25" cy="55" rx="12" ry="7" fill="#4a8838" opacity="0.85" transform="rotate(-20 25 55)"/>
-        <ellipse cx="75" cy="55" rx="12" ry="7" fill="#4a8838" opacity="0.85" transform="rotate(20 75 55)"/>
-        <!-- Shaggy flower head -->
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#d43060" opacity="0.95"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#e03870" opacity="0.9" transform="rotate(30 50 32)"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#d43060" opacity="0.9" transform="rotate(60 50 32)"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#e03870" opacity="0.9" transform="rotate(90 50 32)"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#d43060" opacity="0.9" transform="rotate(120 50 32)"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#e03870" opacity="0.9" transform="rotate(150 50 32)"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#d43060" opacity="0.9" transform="rotate(180 50 32)"/>
-        <ellipse cx="50" cy="22" rx="4" ry="10" fill="#e03870" opacity="0.9" transform="rotate(210 50 32)"/>
-        <circle cx="50" cy="32" r="9" fill="#c02858"/>
-        <circle cx="50" cy="32" r="6" fill="#e04070"/>
-        ${isBloom ? '<circle cx="50" cy="32" r="14" fill="none" stroke="#d43060" stroke-width="1.5" opacity="0.35"/>' : ''}
-      </g>`,
-
-    black_eyed_susan: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="50" y1="100" x2="50" y2="32" stroke="#5a8030" stroke-width="3"/>
-        <line x1="50" y1="82" x2="28" y2="68" stroke="#5a8030" stroke-width="2"/>
-        <line x1="50" y1="82" x2="72" y2="68" stroke="#5a8030" stroke-width="2"/>
-        <ellipse cx="22" cy="66" rx="15" ry="9" fill="#5a8830" opacity="0.88" transform="rotate(-15 22 66)"/>
-        <ellipse cx="78" cy="66" rx="15" ry="9" fill="#5a8830" opacity="0.88" transform="rotate(15 78 66)"/>
-        <ellipse cx="28" cy="53" rx="13" ry="7" fill="#4a7828" opacity="0.85" transform="rotate(-25 28 53)"/>
-        <!-- Petals -->
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#e8a800" opacity="0.95"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#f0b800" opacity="0.9" transform="rotate(30 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#e8a800" opacity="0.9" transform="rotate(60 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#f0b800" opacity="0.9" transform="rotate(90 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#e8a800" opacity="0.9" transform="rotate(120 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#f0b800" opacity="0.9" transform="rotate(150 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#e8a800" opacity="0.9" transform="rotate(180 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#f0b800" opacity="0.9" transform="rotate(210 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#e8a800" opacity="0.9" transform="rotate(240 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#f0b800" opacity="0.9" transform="rotate(270 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#e8a800" opacity="0.9" transform="rotate(300 50 36)"/>
-        <ellipse cx="50" cy="18" rx="5.5" ry="13" fill="#f0b800" opacity="0.9" transform="rotate(330 50 36)"/>
-        <circle cx="50" cy="36" r="12" fill="#1a0c00"/>
-        <circle cx="50" cy="36" r="9"  fill="#2a1400"/>
-        <circle cx="50" cy="36" r="5"  fill="#3d1c00"/>
-      </g>`,
-
-    generic: (g) => `
-      <g transform="scale(${g}) translate(0,${(1-g)*100})">
-        <line x1="50" y1="100" x2="50" y2="35" stroke="#5a8030" stroke-width="3"/>
-        <line x1="50" y1="78" x2="28" y2="62" stroke="#5a8030" stroke-width="2"/>
-        <line x1="50" y1="78" x2="72" y2="62" stroke="#5a8030" stroke-width="2"/>
-        <ellipse cx="22" cy="60" rx="14" ry="8" fill="#4a8030" opacity="0.88" transform="rotate(-15 22 60)"/>
-        <ellipse cx="78" cy="60" rx="14" ry="8" fill="#4a8030" opacity="0.88" transform="rotate(15 78 60)"/>
-        <circle cx="50" cy="32" r="16" fill="#5aa840" opacity="0.9"/>
-        <circle cx="50" cy="32" r="11" fill="#6aaa48" opacity="0.9"/>
-        <circle cx="50" cy="32" r="6"  fill="#7aba58" opacity="0.9"/>
-      </g>`,
-  };
-
-  const builder = builders[key] || builders.generic;
-  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" overflow="visible">${builder(g)}</svg>`;
+function getPlantKey(name) {
+  const n = (name || '').toLowerCase();
+  if (n.includes('sunflower'))                         return 'sunflower';
+  if (n.includes('lavender'))                          return 'lavender';
+  if (n.includes('basil'))                             return 'basil';
+  if (n.includes('rose'))                              return 'rose';
+  if (n.includes('milkweed'))                          return 'milkweed';
+  if (n.includes('squash') || n.includes('pumpkin'))   return 'squash';
+  if (n.includes('bean') || n.includes('pea'))         return 'bean';
+  if (n.includes('carrot'))                            return 'carrot';
+  if (n.includes('cucumber'))                          return 'cucumber';
+  if (n.includes('bee balm') || n.includes('monarda')) return 'bee_balm';
+  if ((n.includes('black') && n.includes('susan')) || n.includes('rudbeckia')) return 'black_eyed_susan';
+  return 'generic';
 }
+
+// ── Plant drawers ─────────────────────────────
+// Each receives: cx (center X), gy (ground Y), h (full height px), g (growth 0-1), bloom bool
+// Returns SVG element string drawn in absolute scene coords
+
+function drawSunflower(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(2, h * 0.05);
+  const headR = h * 0.18 * g;
+  const petalL = headR * 0.85;
+  const petalW = headR * 0.38;
+  const lx1 = cx - h*0.22, ly1 = gy - sh*0.45;
+  const lx2 = cx + h*0.20, ly2 = gy - sh*0.55;
+  const petalAngles = [0,30,60,90,120,150,180,210,240,270,300,330];
+  const petals = petalAngles.map(a =>
+    `<ellipse cx="${cx}" cy="${top + headR*0.1}" rx="${petalW}" ry="${petalL}"
+      fill="${a%60===0?'#f5c518':'#e8b000'}" opacity="0.95"
+      transform="rotate(${a} ${cx} ${top + headR})" />`
+  ).join('');
+  return `
+    <!-- sunflower -->
+    <line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + headR}" stroke="#6b8c3a" stroke-width="${stemW}" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${gy - sh*0.55}" x2="${lx1}" y2="${ly1}" stroke="#5a7a2a" stroke-width="${stemW*0.65}" stroke-linecap="round"/>
+    <ellipse cx="${lx1 - h*0.08}" cy="${ly1 - h*0.02}" rx="${h*0.12}" ry="${h*0.07}"
+      fill="#4a8030" opacity="0.88" transform="rotate(-25 ${lx1-h*0.08} ${ly1-h*0.02})"/>
+    <line x1="${cx}" y1="${gy - sh*0.65}" x2="${lx2}" y2="${ly2}" stroke="#5a7a2a" stroke-width="${stemW*0.65}" stroke-linecap="round"/>
+    <ellipse cx="${lx2 + h*0.08}" cy="${ly2 - h*0.02}" rx="${h*0.12}" ry="${h*0.07}"
+      fill="#4a8030" opacity="0.88" transform="rotate(25 ${lx2+h*0.08} ${ly2-h*0.02})"/>
+    ${petals}
+    <circle cx="${cx}" cy="${top + headR}" r="${headR}" fill="#2a1200"/>
+    <circle cx="${cx}" cy="${top + headR}" r="${headR*0.7}" fill="#3d1c00"/>
+    <circle cx="${cx - headR*0.25}" cy="${top + headR*0.8}" r="${headR*0.12}" fill="#1a0a00" opacity="0.6"/>
+    <circle cx="${cx + headR*0.2}" cy="${top + headR*0.7}" r="${headR*0.12}" fill="#1a0a00" opacity="0.6"/>
+    <circle cx="${cx}" cy="${top + headR*1.2}" r="${headR*0.12}" fill="#1a0a00" opacity="0.6"/>
+    ${bloom ? `<circle cx="${cx}" cy="${top+headR}" r="${headR*1.6}" fill="none" stroke="#f5c518" stroke-width="1.5" opacity="0.25"/>` : ''}
+  `;
+}
+
+function drawLavender(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const stemCount = 5;
+  const spread = h * 0.28;
+  let out = '<!-- lavender -->';
+  for (let i = 0; i < stemCount; i++) {
+    const t   = (i / (stemCount-1)) - 0.5; // -0.5 to 0.5
+    const sx  = cx + t * spread;
+    const tipY = gy - sh * (0.95 - Math.abs(t)*0.12);
+    const midY = gy - sh * 0.55;
+    // stem
+    out += `<line x1="${sx}" y1="${gy}" x2="${sx + t*sh*0.08}" y2="${tipY}" stroke="#7a9040" stroke-width="1.5" stroke-linecap="round"/>`;
+    // floret spikes — 4 pairs up the stem
+    for (let f = 0; f < 4; f++) {
+      const fy = midY + (tipY - midY) * (f / 3.5);
+      const fw = h * 0.045 * (1 - f*0.12);
+      const fh = h * 0.028 * (1 - f*0.1);
+      const col = f%2===0 ? '#8b5fc8' : '#9f70d8';
+      out += `<ellipse cx="${sx + t*h*0.02}" cy="${fy}" rx="${fw}" ry="${fh}" fill="${col}" opacity="0.92"/>`;
+    }
+  }
+  // base foliage
+  out += `<ellipse cx="${cx}" cy="${gy - h*g*0.12}" rx="${spread*0.8}" ry="${h*g*0.1}" fill="#6a8c3a" opacity="0.75"/>`;
+  if (bloom) out += `<ellipse cx="${cx}" cy="${gy - sh*0.7}" rx="${spread*0.7}" ry="${sh*0.25}" fill="rgba(139,95,200,0.08)"/>`;
+  return out;
+}
+
+function drawBasil(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(1.5, h*0.045);
+  let out = '<!-- basil -->';
+  out += `<line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + sh*0.3}" stroke="#3a7030" stroke-width="${stemW}" stroke-linecap="round"/>`;
+  const nodes = [[0.25, -0.28, -15],[0.25, 0.28, 15],[0.45, -0.25, -20],[0.45, 0.25, 20],[0.65, -0.22, -22],[0.65, 0.22, 22]];
+  nodes.forEach(([frac, xMult, angle]) => {
+    const ny  = gy - sh * frac;
+    const lx  = cx + h * xMult;
+    const lW  = h * (0.11 - frac*0.04);
+    const lH  = h * (0.075 - frac*0.03);
+    out += `<line x1="${cx}" y1="${ny}" x2="${lx}" y2="${ny - h*0.03}" stroke="#4a8038" stroke-width="${stemW*0.55}" stroke-linecap="round"/>`;
+    out += `<ellipse cx="${lx}" cy="${ny - h*0.02}" rx="${lW}" ry="${lH}" fill="#2d7a30" opacity="0.9" transform="rotate(${angle} ${lx} ${ny-h*0.02})"/>`;
+  });
+  // top leaves
+  out += `<ellipse cx="${cx}" cy="${top + sh*0.18}" rx="${h*0.09}" ry="${h*0.065}" fill="#3a8535" opacity="0.95"/>`;
+  if (bloom) {
+    out += `<circle cx="${cx}" cy="${top}" r="${h*0.04}" fill="#e8f0c0"/>`;
+    out += `<circle cx="${cx-h*0.05}" cy="${top+h*0.03}" r="${h*0.03}" fill="#e0e8b0" opacity="0.85"/>`;
+    out += `<circle cx="${cx+h*0.05}" cy="${top+h*0.03}" r="${h*0.03}" fill="#e0e8b0" opacity="0.85"/>`;
+  }
+  return out;
+}
+
+function drawRose(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(2, h*0.05);
+  const br = h * 0.17 * g; // bloom radius
+  let out = '<!-- rose -->';
+  // thorned stem
+  out += `<line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + br}" stroke="#4a7030" stroke-width="${stemW}" stroke-linecap="round"/>`;
+  // leaves
+  [[0.3,-1,-18],[0.45,1,15],[0.6,-1,-22]].forEach(([f,side,a]) => {
+    const ly = gy - sh*f;
+    const lx = cx + side*h*0.18;
+    out += `<line x1="${cx}" y1="${ly}" x2="${lx}" y2="${ly-h*0.04}" stroke="#4a7030" stroke-width="${stemW*0.5}"/>`;
+    out += `<ellipse cx="${lx}" cy="${ly-h*0.03}" rx="${h*0.12}" ry="${h*0.065}" fill="#2a6020" opacity="0.88" transform="rotate(${a} ${lx} ${ly-h*0.03})"/>`;
+  });
+  // bloom — layered petals
+  const layers = [
+    { r: br,      fill:'#b01c35', opacity:0.88 },
+    { r: br*0.82, fill:'#c8203a', opacity:0.92 },
+    { r: br*0.65, fill:'#d93050', opacity:0.95 },
+    { r: br*0.48, fill:'#ee5070', opacity:0.97 },
+    { r: br*0.30, fill:'#f89098', opacity:1.0  },
+  ];
+  layers.forEach(l => out += `<circle cx="${cx}" cy="${top + br}" r="${l.r}" fill="${l.fill}" opacity="${l.opacity}"/>`);
+  // stamens
+  out += `<circle cx="${cx-br*0.18}" cy="${top+br*0.85}" r="${br*0.08}" fill="#f5d060" opacity="0.9"/>`;
+  out += `<circle cx="${cx+br*0.18}" cy="${top+br*0.78}" r="${br*0.08}" fill="#f5d060" opacity="0.9"/>`;
+  if (bloom) out += `<circle cx="${cx}" cy="${top+br}" r="${br*1.5}" fill="none" stroke="#d93050" stroke-width="1.5" opacity="0.2"/>`;
+  return out;
+}
+
+function drawMilkweed(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(2, h*0.055);
+  let out = '<!-- milkweed -->';
+  out += `<line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + sh*0.18}" stroke="#5a8040" stroke-width="${stemW}" stroke-linecap="round"/>`;
+  [[0.28,-1,-12],[0.28,1,12],[0.50,-1,-18],[0.50,1,18],[0.68,-1,-20],[0.68,1,20]].forEach(([f,side,a]) => {
+    const ly = gy - sh*f;
+    const lx = cx + side*h*0.19;
+    out += `<line x1="${cx}" y1="${ly}" x2="${lx}" y2="${ly-h*0.025}" stroke="#5a8040" stroke-width="${stemW*0.55}"/>`;
+    out += `<ellipse cx="${lx}" cy="${ly-h*0.02}" rx="${h*0.13}" ry="${h*0.062}" fill="#4a8040" opacity="0.9" transform="rotate(${a} ${lx} ${ly-h*0.02})"/>`;
+  });
+  // umbel flower
+  const ur = h * 0.14 * g;
+  const ux = cx, uy = top + ur;
+  [[-ur*0.5,-ur*0.9],[ur*0.5,-ur*0.9],[ur*0.9,-ur*0.3],[-ur*0.9,-ur*0.3],[0,-ur*1.1],[ur*0.6,-ur*1.1],[-ur*0.6,-ur*1.1]].forEach(([dx,dy]) => {
+    out += `<circle cx="${ux+dx}" cy="${uy+dy}" r="${ur*0.38}" fill="#d4708a" opacity="0.9"/>`;
+    out += `<circle cx="${ux+dx}" cy="${uy+dy}" r="${ur*0.16}" fill="#fff0f5" opacity="0.7"/>`;
+  });
+  if (bloom) out += `<ellipse cx="${ux}" cy="${uy - ur*0.5}" rx="${ur*1.3}" ry="${ur*0.9}" fill="rgba(212,112,138,0.1)"/>`;
+  return out;
+}
+
+function drawSquash(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  // Squash is wide and low — spread from center
+  const spread = h * 0.9 * g;
+  let out = '<!-- squash -->';
+  // trailing vines
+  [[-0.75,-0.15],[-0.4,-0.3],[0,-0.35],[0.4,-0.28],[0.7,-0.12]].forEach(([xf,yf]) => {
+    const lx = cx + spread*xf;
+    const ly = gy + sh*yf;
+    out += `<line x1="${cx}" y1="${gy}" x2="${lx}" y2="${ly}" stroke="#5a8830" stroke-width="2" stroke-linecap="round" opacity="0.8"/>`;
+  });
+  // big leaves
+  [[-0.65,-0.1,25],[-0.35,-0.25,-15],[0.1,-0.3,5],[0.45,-0.2,20],[0.7,-0.08,-20]].forEach(([xf,yf,a]) => {
+    const lx = cx + spread*xf;
+    const ly = gy + sh*yf - sh*0.05;
+    const lr = h*0.22*g;
+    out += `<ellipse cx="${lx}" cy="${ly}" rx="${lr}" ry="${lr*0.72}" fill="#4a8c30" opacity="0.88" transform="rotate(${a} ${lx} ${ly})"/>`;
+    out += `<ellipse cx="${lx}" cy="${ly}" rx="${lr*0.55}" ry="${lr*0.38}" fill="#5a9c38" opacity="0.5" transform="rotate(${a} ${lx} ${ly})"/>`;
+  });
+  // trumpet flower
+  const fx = cx + spread*0.15, fy = gy - sh*0.32;
+  const fr = h*0.11*g;
+  [0,60,120].forEach(a => out += `<ellipse cx="${fx}" cy="${fy-fr}" rx="${fr*0.7}" ry="${fr*1.1}" fill="#f5c518" opacity="0.95" transform="rotate(${a} ${fx} ${fy})"/>`);
+  out += `<circle cx="${fx}" cy="${fy}" r="${fr*0.65}" fill="#e8a800"/>`;
+  if (bloom) out += `<circle cx="${fx}" cy="${fy}" r="${fr*1.6}" fill="none" stroke="#f5c518" stroke-width="1.5" opacity="0.35"/>`;
+  return out;
+}
+
+function drawBean(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(1.5, h*0.04);
+  let out = '<!-- bean -->';
+  // Two curving vines
+  out += `<path d="M${cx},${gy} Q${cx-h*0.12},${gy-sh*0.5} ${cx-h*0.06},${top+sh*0.08}" stroke="#5a8c40" stroke-width="${stemW}" fill="none" stroke-linecap="round"/>`;
+  out += `<path d="M${cx},${gy} Q${cx+h*0.14},${gy-sh*0.45} ${cx+h*0.08},${top+sh*0.1}" stroke="#5a8c40" stroke-width="${stemW}" fill="none" stroke-linecap="round"/>`;
+  // Trifoliate leaves
+  [[0.25,-0.18,-20],[0.25,0.20,18],[0.48,-0.16,-25],[0.48,0.17,22],[0.68,-0.12,-18],[0.68,0.14,20]].forEach(([f,xf,a]) => {
+    const ly = gy - sh*f;
+    const lx = cx + h*xf;
+    out += `<line x1="${cx+h*xf*0.3}" y1="${ly}" x2="${lx}" y2="${ly-h*0.025}" stroke="#5a8c40" stroke-width="${stemW*0.5}"/>`;
+    out += `<ellipse cx="${lx}" cy="${ly-h*0.02}" rx="${h*0.1}" ry="${h*0.06}" fill="#4a8838" opacity="0.9" transform="rotate(${a} ${lx} ${ly-h*0.02})"/>`;
+  });
+  // White flowers at top
+  [[-h*0.07,0],[0,-h*0.04],[h*0.07,0]].forEach(([dx,dy]) => {
+    out += `<circle cx="${cx+dx}" cy="${top+sh*0.12+dy}" r="${h*0.045}" fill="white" opacity="0.95"/>`;
+    out += `<circle cx="${cx+dx}" cy="${top+sh*0.12+dy}" r="${h*0.02}" fill="#f0e0a0" opacity="0.8"/>`;
+  });
+  // pods
+  [[-h*0.18, gy-sh*0.2, 15],[h*0.2, gy-sh*0.3, -18]].forEach(([px,py,a]) => {
+    out += `<ellipse cx="${cx+px}" cy="${py}" rx="${h*0.04}" ry="${h*0.1}" fill="#5a9030" opacity="0.85" transform="rotate(${a} ${cx+px} ${py})"/>`;
+  });
+  return out;
+}
+
+function drawCarrot(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  let out = '<!-- carrot -->';
+  // Main stem
+  out += `<line x1="${cx}" y1="${gy - sh*0.05}" x2="${cx}" y2="${top + sh*0.08}" stroke="#5a9030" stroke-width="2" stroke-linecap="round"/>`;
+  // Feathery fronds radiating from stem
+  const fronds = [
+    [0.35, -0.28, -35, -45], [0.35, 0.28, 25, 40],
+    [0.55, -0.24, -40, -50], [0.55, 0.24, 30, 45],
+    [0.72, -0.20, -30, -40], [0.72, 0.20, 25, 38],
+  ];
+  fronds.forEach(([f, xf, a1, a2]) => {
+    const fy = gy - sh*f;
+    const fx = cx + h*xf;
+    out += `<path d="M${cx},${fy} Q${(cx+fx)/2},${fy-h*0.04} ${fx},${fy-h*0.06}" stroke="#5aaa45" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+    // tiny sub-fronds
+    const midx = (cx+fx)*0.5+h*xf*0.1, midy = fy-h*0.04;
+    out += `<path d="M${midx},${midy} Q${midx+h*xf*0.12},${midy-h*0.04} ${midx+h*xf*0.2},${midy-h*0.07}" stroke="#6abb50" stroke-width="0.9" fill="none" opacity="0.8"/>`;
+  });
+  // Umbel flower cluster at top
+  const flowerY = top + sh*0.08;
+  const fr = h * 0.07 * g;
+  [[-fr*1.2,-fr*0.5],[-fr*0.5,-fr*1.1],[0,-fr*1.4],[fr*0.5,-fr*1.1],[fr*1.2,-fr*0.5],[-fr*0.7,fr*0.2],[fr*0.7,fr*0.2]].forEach(([dx,dy]) => {
+    out += `<line x1="${cx}" y1="${flowerY}" x2="${cx+dx}" y2="${flowerY+dy}" stroke="#6abb50" stroke-width="0.9"/>`;
+    out += `<circle cx="${cx+dx}" cy="${flowerY+dy}" r="${fr*0.38}" fill="white" opacity="0.95"/>`;
+  });
+  // Orange root peeking from soil
+  out += `<path d="M${cx-h*0.055},${gy-sh*0.04} Q${cx},${gy+sh*0.06} ${cx},${gy+sh*0.1} Q${cx},${gy+sh*0.06} ${cx+h*0.055},${gy-sh*0.04} Z" fill="#e87820" opacity="0.85"/>`;
+  return out;
+}
+
+function drawCucumber(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  let out = '<!-- cucumber -->';
+  // Rambling vine path across width
+  const spread = h * 0.7 * g;
+  out += `<path d="M${cx-spread*0.6},${gy} Q${cx-spread*0.2},${gy-sh*0.4} ${cx},${gy-sh*0.6} Q${cx+spread*0.25},${gy-sh*0.8} ${cx+spread*0.55},${gy-sh*0.9}" stroke="#5a9030" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  // Round leaves along vine
+  [[-0.55,0.05,20],[-0.25,0.35,-15],[0,0.5,5],[0.25,0.72,18],[0.5,0.85,-10]].forEach(([xf,yf,a]) => {
+    const lx = cx + spread*xf;
+    const ly = gy - sh*yf;
+    const lr = h * 0.15 * g;
+    out += `<ellipse cx="${lx}" cy="${ly}" rx="${lr}" ry="${lr*0.85}" fill="#4a8c30" opacity="0.88" transform="rotate(${a} ${lx} ${ly})"/>`;
+    out += `<line x1="${lx}" y1="${ly-lr*0.7}" x2="${lx}" y2="${ly+lr*0.7}" stroke="#2a6020" stroke-width="0.8" opacity="0.35" transform="rotate(${a} ${lx} ${ly})"/>`;
+  });
+  // Fruits
+  [[-0.4,0.15,-20],[0.1,0.58,10]].forEach(([xf,yf,a]) => {
+    const fx = cx + spread*xf;
+    const fy = gy - sh*yf;
+    out += `<ellipse cx="${fx}" cy="${fy}" rx="${h*0.05}" ry="${h*0.12}" fill="#5a9828" opacity="0.9" transform="rotate(${a} ${fx} ${fy})"/>`;
+  });
+  if (bloom) {
+    out += `<circle cx="${cx+spread*0.5}" cy="${gy-sh*0.9}" r="${h*0.06}" fill="#f5c518" opacity="0.95"/>`;
+    out += `<circle cx="${cx+spread*0.5}" cy="${gy-sh*0.9}" r="${h*0.03}" fill="#e8a800"/>`;
+  }
+  return out;
+}
+
+function drawBeeBAlm(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(1.8, h*0.048);
+  const hr = h * 0.13 * g;
+  let out = '<!-- bee_balm -->';
+  out += `<line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + hr}" stroke="#4a7830" stroke-width="${stemW}" stroke-linecap="round"/>`;
+  [[0.3,-0.2,-22],[0.3,0.22,20],[0.52,-0.18,-25],[0.52,0.2,22],[0.70,-0.15,-18]].forEach(([f,xf,a]) => {
+    const ly = gy - sh*f, lx = cx + h*xf;
+    out += `<line x1="${cx}" y1="${ly}" x2="${lx}" y2="${ly-h*0.02}" stroke="#4a7830" stroke-width="${stemW*0.5}"/>`;
+    out += `<ellipse cx="${lx}" cy="${ly-h*0.015}" rx="${h*0.11}" ry="${h*0.06}" fill="#3d7830" opacity="0.9" transform="rotate(${a} ${lx} ${ly-h*0.015})"/>`;
+  });
+  // Shaggy tubular petals radiating from center disk
+  const numPetals = 14;
+  for (let i = 0; i < numPetals; i++) {
+    const angle = (i / numPetals) * 360;
+    const pr = hr * 1.05;
+    const pw = hr * 0.22;
+    const ph = hr * 0.85;
+    const col = i%2===0 ? '#d43060' : '#e83878';
+    out += `<ellipse cx="${cx}" cy="${top + hr*0.15}" rx="${pw}" ry="${ph}" fill="${col}" opacity="0.92" transform="rotate(${angle} ${cx} ${top + hr})"/>`;
+  }
+  // Center disk
+  out += `<circle cx="${cx}" cy="${top + hr}" r="${hr*0.62}" fill="#c02858"/>`;
+  out += `<circle cx="${cx}" cy="${top + hr}" r="${hr*0.40}" fill="#e04070"/>`;
+  if (bloom) out += `<circle cx="${cx}" cy="${top+hr}" r="${hr*1.9}" fill="none" stroke="#d43060" stroke-width="1.5" opacity="0.25"/>`;
+  return out;
+}
+
+function drawBlackEyedSusan(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(1.8, h*0.045);
+  const hr = h * 0.14 * g;
+  let out = '<!-- black_eyed_susan -->';
+  out += `<line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + hr}" stroke="#5a8030" stroke-width="${stemW}" stroke-linecap="round"/>`;
+  [[0.32,-0.22,-20],[0.32,0.24,18],[0.55,-0.18,-24],[0.72,-0.14,-18],[0.72,0.16,18]].forEach(([f,xf,a]) => {
+    const ly = gy - sh*f, lx = cx + h*xf;
+    out += `<line x1="${cx}" y1="${ly}" x2="${lx}" y2="${ly-h*0.02}" stroke="#5a8030" stroke-width="${stemW*0.5}"/>`;
+    out += `<ellipse cx="${lx}" cy="${ly-h*0.015}" rx="${h*0.12}" ry="${h*0.065}" fill="#5a8830" opacity="0.88" transform="rotate(${a} ${lx} ${ly-h*0.015})"/>`;
+  });
+  // Golden petals
+  const numP = 13;
+  for (let i = 0; i < numP; i++) {
+    const angle = (i / numP) * 360;
+    const col = i%2===0 ? '#e8a800' : '#f0b800';
+    out += `<ellipse cx="${cx}" cy="${top + hr*0.2}" rx="${hr*0.42}" ry="${hr*1.05}" fill="${col}" opacity="0.93" transform="rotate(${angle} ${cx} ${top + hr})"/>`;
+  }
+  // Dark brown center
+  out += `<circle cx="${cx}" cy="${top + hr}" r="${hr*0.72}" fill="#1a0c00"/>`;
+  out += `<circle cx="${cx}" cy="${top + hr}" r="${hr*0.52}" fill="#2a1400"/>`;
+  out += `<circle cx="${cx}" cy="${top + hr}" r="${hr*0.30}" fill="#3d2000"/>`;
+  if (bloom) out += `<circle cx="${cx}" cy="${top+hr}" r="${hr*1.8}" fill="none" stroke="#e8a800" stroke-width="1.5" opacity="0.25"/>`;
+  return out;
+}
+
+function drawGeneric(cx, gy, h, g, bloom) {
+  const sh = h * g;
+  const top = gy - sh;
+  const stemW = Math.max(1.5, h*0.04);
+  let out = '<!-- generic -->';
+  out += `<line x1="${cx}" y1="${gy}" x2="${cx}" y2="${top + sh*0.25}" stroke="#5a8030" stroke-width="${stemW}" stroke-linecap="round"/>`;
+  [[0.3,-0.2,-20],[0.3,0.2,18],[0.55,-0.18,-22],[0.55,0.18,20]].forEach(([f,xf,a]) => {
+    const ly = gy - sh*f, lx = cx + h*xf;
+    out += `<ellipse cx="${lx}" cy="${ly}" rx="${h*0.1}" ry="${h*0.058}" fill="#4a8030" opacity="0.88" transform="rotate(${a} ${lx} ${ly})"/>`;
+  });
+  out += `<circle cx="${cx}" cy="${top + sh*0.22}" r="${h*0.12*g}" fill="#5aa840" opacity="0.9"/>`;
+  out += `<circle cx="${cx}" cy="${top + sh*0.18}" r="${h*0.08*g}" fill="#6aba50" opacity="0.9"/>`;
+  return out;
+}
+
+const PLANT_DRAWERS = {
+  sunflower: drawSunflower, lavender: drawLavender, basil: drawBasil,
+  rose: drawRose, milkweed: drawMilkweed, squash: drawSquash,
+  bean: drawBean, carrot: drawCarrot, cucumber: drawCucumber,
+  bee_balm: drawBeeBAlm, black_eyed_susan: drawBlackEyedSusan,
+  generic: drawGeneric,
+};
 
 // ── Scene View state ──────────────────────────
 let _sceneOpen   = false;
-let _sceneSeason = 'summer'; // spring | summer | fall | winter
+let _sceneSeason = 'summer';
 
 function getSeasonFromDay(day) {
   if (day < 80)  return 'spring';
@@ -2622,127 +2757,132 @@ function renderSceneView() {
     return;
   }
 
-  const W = wrap.clientWidth  || 1200;
-  const H = wrap.clientHeight || 500;
+  // Ensure SVG element exists
+  let svgEl = document.getElementById('scene-svg');
+  if (!svgEl) {
+    wrap.innerHTML = '<svg id="scene-svg" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%"></svg>';
+    svgEl = document.getElementById('scene-svg');
+  }
 
-  // Ground line at 85% of height
-  const groundY = H * 0.85;
+  const W = wrap.clientWidth  || window.innerWidth  || 1200;
+  const H = wrap.clientHeight || window.innerHeight * 0.75 || 500;
 
-  // Season sky & ground colors
+  const groundY  = H * 0.82;
+  const maxPlantH = groundY * 0.88; // tallest plant fills 88% of sky
+
+  // Season themes
   const seasonTheme = {
-    spring: { sky1: '#b8d8e8', sky2: '#daeef8', ground: '#5a8c38', soil: '#6b5030', mist: 'rgba(220,240,255,0.15)' },
-    summer: { sky1: '#87ceeb', sky2: '#c8e8f8', ground: '#4a8c28', soil: '#5a4020', mist: 'rgba(255,255,220,0.08)' },
-    fall:   { sky1: '#c8a870', sky2: '#e8c888', ground: '#7a7830', soil: '#4a3018', mist: 'rgba(200,160,80,0.12)'  },
-    winter: { sky1: '#b0c8d8', sky2: '#dce8f0', ground: '#8a9888', soil: '#3a3028', mist: 'rgba(240,248,255,0.2)'  },
+    spring: { sky1:'#c5dff0', sky2:'#e8f4fb', ground:'#6a9c44', soil:'#5a4028', mulch:'#7a6040' },
+    summer: { sky1:'#74b8e8', sky2:'#c0e0f5', ground:'#4a8c28', soil:'#4a3018', mulch:'#6a5030' },
+    fall:   { sky1:'#c8a060', sky2:'#e8c878', ground:'#7a7028', soil:'#3c2810', mulch:'#5a4020' },
+    winter: { sky1:'#b8ccd8', sky2:'#dce8f2', ground:'#8a9880', soil:'#2e2418', mulch:'#4a4038' },
   };
-  const theme = seasonTheme[_sceneSeason] || seasonTheme.summer;
+  const T = seasonTheme[_sceneSeason] || seasonTheme.summer;
 
-  // Sort plants: tall ones at back (small x in rendered scene)
-  // Left-right position from map x coordinate, normalized to canvas width
-  const mapW = VP_W;
-
-  // Get bloom status for each plant
-  const seasonMonthMap = { spring: 5, summer: 7, fall: 9, winter: 12 };
+  const seasonMonthMap = { spring:5, summer:7, fall:9, winter:12 };
   const sceneMonth = seasonMonthMap[_sceneSeason] || 7;
+  const sceneDayApprox = { spring:120, summer:180, fall:240, winter:300 }[_sceneSeason] || 180;
 
+  // Compute max real-world height for scaling
+  const maxRealH = Math.max(...plantData.map(p => PLANT_HEIGHTS[getPlantKey(p.name)] || 22));
+
+  // Build plant scene data
   const scenePlants = plantData.map(p => {
-    const key    = getPlantKey(p.name);
-    const height = PLANT_HEIGHTS[key] || 24;
+    const key     = getPlantKey(p.name);
+    const realH   = PLANT_HEIGHTS[key] || 22;
     const bloomSt = getBloomStatus(p, sceneMonth);
-    const plantedDay = p.plantedDay != null ? p.plantedDay : 60;
-    const sceneDayApprox = { spring:120, summer:180, fall:240, winter:300 }[_sceneSeason] || 180;
-    const age    = sceneDayApprox - plantedDay;
-    const growth = Math.max(0.25, Math.min(1, age / Math.max(1, p.dtm)));
-    return { ...p, key, height, bloomSt, growth };
+    const pdDay   = p.plantedDay != null ? p.plantedDay : 60;
+    const age     = sceneDayApprox - pdDay;
+    const growth  = Math.max(0.25, Math.min(1, age / Math.max(1, p.dtm)));
+    // Scene X: map the plant's map x-position across the full canvas width
+    // with padding on edges
+    const padding = W * 0.06;
+    const sceneX  = padding + (p.x / VP_W) * (W - padding * 2);
+    // Pixel height at full growth for this plant
+    const fullH = (realH / maxRealH) * maxPlantH;
+    return { ...p, key, realH, bloomSt, growth, sceneX, fullH };
   });
 
-  // Sort by height descending (tall plants at back = rendered first)
-  const sorted = [...scenePlants].sort((a, b) => b.height - a.height);
+  // Sort: tallest first so they render behind shorter plants
+  const sorted = [...scenePlants].sort((a, b) => b.realH - a.realH);
 
-  // Scale plant heights to canvas
-  const maxH   = Math.max(...scenePlants.map(p => p.height));
-  const plantAreaH = groundY * 0.85; // max plant height in px
+  // ── Build SVG string ─────────────────────────
+  let s = '';
 
-  // Build SVG
-  let svgContent = '';
-
-  // Sky gradient
-  svgContent += `
-    <defs>
-      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${theme.sky1}"/>
-        <stop offset="100%" stop-color="${theme.sky2}"/>
-      </linearGradient>
-      <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${theme.ground}"/>
-        <stop offset="40%" stop-color="${theme.soil}"/>
-        <stop offset="100%" stop-color="#2a1a08"/>
-      </linearGradient>
-      <filter id="leafBlur">
-        <feGaussianBlur stdDeviation="0.5"/>
-      </filter>
-    </defs>`;
+  // Defs
+  s += `<defs>
+    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${T.sky1}"/>
+      <stop offset="100%" stop-color="${T.sky2}"/>
+    </linearGradient>
+    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${T.ground}"/>
+      <stop offset="35%" stop-color="${T.mulch}"/>
+      <stop offset="100%" stop-color="${T.soil}"/>
+    </linearGradient>
+    <filter id="plantShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.18)"/>
+    </filter>
+    <filter id="bgBlur"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>`;
 
   // Sky
-  svgContent += `<rect width="${W}" height="${groundY}" fill="url(#skyGrad)"/>`;
+  s += `<rect width="${W}" height="${H}" fill="url(#sg)"/>`;
 
-  // Season atmosphere
-  if (_sceneSeason === 'spring') {
-    // Soft haze
-    svgContent += `<rect width="${W}" height="${groundY}" fill="rgba(255,255,255,0.08)"/>`;
-  } else if (_sceneSeason === 'fall') {
-    // Warm cast
-    svgContent += `<rect width="${W}" height="${groundY}" fill="rgba(180,100,20,0.06)"/>`;
-  } else if (_sceneSeason === 'winter') {
-    // Cool blue cast + subtle snow texture
-    svgContent += `<rect width="${W}" height="${groundY}" fill="rgba(180,210,240,0.12)"/>`;
+  // Season atmospheric overlays
+  const atmoColors = { spring:'rgba(255,255,255,0.07)', summer:'rgba(255,252,200,0.04)', fall:'rgba(180,100,20,0.07)', winter:'rgba(200,220,240,0.12)' };
+  s += `<rect width="${W}" height="${H}" fill="${atmoColors[_sceneSeason]||'none'}"/>`;
+
+  // Distant background haze trees (blurred)
+  s += `<g filter="url(#bgBlur)" opacity="0.22">`;
+  for (let i = 0; i < 9; i++) {
+    const bx = W * (i+0.5) / 9;
+    const bh = 40 + (i*37)%60;
+    s += `<rect x="${bx - 5}" y="${groundY - bh - 10}" width="10" height="${bh}" rx="3" fill="#3a6028"/>`;
+    s += `<ellipse cx="${bx}" cy="${groundY - bh - 10}" rx="${25 + i%3*10}" ry="${20 + i%2*12}" fill="#3a7030"/>`;
+  }
+  s += `</g>`;
+
+  // Ground strip
+  s += `<rect x="0" y="${groundY}" width="${W}" height="${H - groundY}" fill="url(#gg)"/>`;
+  // Ground edge highlight
+  s += `<rect x="0" y="${groundY}" width="${W}" height="3" fill="${T.ground}" opacity="0.6"/>`;
+
+  // Ground texture — subtle soil lines
+  for (let i = 1; i < 4; i++) {
+    const gy2 = groundY + (H - groundY) * (i / 5);
+    s += `<line x1="0" y1="${gy2}" x2="${W}" y2="${gy2}" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>`;
   }
 
-  // Ground
-  svgContent += `<rect y="${groundY}" width="${W}" height="${H - groundY}" fill="url(#groundGrad)"/>`;
-
-  // Ground line detail
-  svgContent += `<line x1="0" y1="${groundY}" x2="${W}" y2="${groundY}" stroke="${theme.ground}" stroke-width="2" opacity="0.6"/>`;
-
-  // Background foliage blur — suggests depth
-  svgContent += `<g opacity="0.18" filter="url(#leafBlur)">`;
-  for (let i = 0; i < 8; i++) {
-    const bx = (W / 8) * i + W / 16;
-    const br = 20 + Math.sin(i * 2.3) * 15;
-    svgContent += `<ellipse cx="${bx}" cy="${groundY - br * 0.6}" rx="${br * 1.8}" ry="${br}" fill="#3a7030"/>`;
-  }
-  svgContent += `</g>`;
-
-  // Render each plant
+  // Render plants back to front (sorted by height desc = back first)
   sorted.forEach(plant => {
-    const sceneX = (plant.x / mapW) * W;
-    const plantH = (plant.height / maxH) * plantAreaH * plant.growth;
-    const plantW = plantH * 0.9;
+    const drawer = PLANT_DRAWERS[plant.key] || PLANT_DRAWERS.generic;
+    const seasonFilter =
+      _sceneSeason === 'fall'   ? 'sepia(0.35) saturate(0.75)' :
+      _sceneSeason === 'winter' ? 'grayscale(0.55) brightness(0.82)' :
+      _sceneSeason === 'spring' ? 'saturate(1.12) brightness(1.04)' : 'none';
 
-    // Season color filter
-    const filter = _sceneSeason === 'fall' ? 'sepia(0.4) saturate(0.7)' :
-                   _sceneSeason === 'winter' ? 'grayscale(0.6) brightness(0.85)' :
-                   _sceneSeason === 'spring' ? 'saturate(1.1) brightness(1.05)' : 'none';
+    s += `<g filter="url(#plantShadow)" style="filter:${seasonFilter} drop-shadow(1px 2px 2px rgba(0,0,0,0.18))">`;
+    s += drawer(plant.sceneX, groundY, plant.fullH, plant.growth, plant.bloomSt === 'blooming');
+    s += `</g>`;
 
-    svgContent += `<g transform="translate(${sceneX - plantW/2}, ${groundY - plantH})" style="filter:${filter}">
-      <svg width="${plantW}" height="${plantH}" viewBox="0 0 100 100" overflow="visible">
-        ${getElevationSVG(plant.name, plant.bloomSt, plant.growth, _sceneSeason).replace(/<\/?svg[^>]*>/g, '')}
-      </svg>
-    </g>`;
-
-    // Soft ground shadow
-    svgContent += `<ellipse cx="${sceneX}" cy="${groundY + 4}" rx="${plantW * 0.4}" ry="4" fill="rgba(0,0,0,0.15)"/>`;
+    // Ground shadow ellipse
+    const shadowW = plant.fullH * (PLANT_WIDTHS[plant.key]||0.6) * plant.growth * 0.4;
+    s += `<ellipse cx="${plant.sceneX}" cy="${groundY + 3}" rx="${Math.max(8, shadowW)}" ry="3.5" fill="rgba(0,0,0,0.12)"/>`;
   });
 
-  // Mist overlay for atmosphere
-  svgContent += `<rect width="${W}" height="${H}" fill="${theme.mist}" pointer-events="none"/>`;
+  // Foreground grass tufts
+  for (let i = 0; i < 18; i++) {
+    const gx = W * (i + Math.sin(i*1.7)*0.3) / 17;
+    const gh = 8 + (i*13)%14;
+    s += `<path d="M${gx},${groundY} Q${gx-4},${groundY-gh} ${gx-2},${groundY-gh*1.3}" stroke="${T.ground}" stroke-width="1.5" fill="none" opacity="0.7"/>`;
+    s += `<path d="M${gx},${groundY} Q${gx+3},${groundY-gh*1.1} ${gx+5},${groundY-gh*1.4}" stroke="${T.ground}" stroke-width="1.5" fill="none" opacity="0.6"/>`;
+  }
 
-  // Write SVG
-  const svgEl = document.getElementById('scene-svg');
-  svgEl.setAttribute('width',  W);
+  svgEl.setAttribute('width', W);
   svgEl.setAttribute('height', H);
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = svgContent;
+  svgEl.innerHTML = s;
 
   // Legend
   const legend = document.getElementById('scene-legend');
@@ -2751,8 +2891,7 @@ function renderSceneView() {
     <div class="legend-item">
       <div class="legend-thumb">${getPlantSVG(p.name)}</div>
       <span>${p.name}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 
   updateSceneHeader();
 }
@@ -2767,6 +2906,20 @@ function updateSceneHeader() {
     meta.textContent = `${count} plant${count!==1?'s':''} · ${seasonLabel} · ${dateStr}`;
   }
 }
+
+const _origOnScrub = onScrub;
+onScrub = function() {
+  _origOnScrub();
+  if (_sceneOpen) {
+    _sceneSeason = getSeasonFromDay(simDay);
+    setSceneSeason(_sceneSeason, false);
+    renderSceneView();
+  }
+};
+
+window.addEventListener('resize', () => {
+  if (_sceneOpen) renderSceneView();
+});
 
 // Re-render scene when scrubber changes (if open)
 const _origOnScrub = onScrub;
