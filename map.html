@@ -1657,42 +1657,95 @@ function renderInventory(grid, plants) {
 
 // ── Auth ──────────────────────────────────────
 document.getElementById('btn-login').onclick = async () => {
-  const email = document.getElementById('a-email').value.trim();
-  const pass  = document.getElementById('a-pass').value;
-  document.getElementById('auth-err').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { document.getElementById('auth-err').textContent = error.message; return; }
-  afterAuth();
+  const errEl = document.getElementById('auth-err');
+  const btn   = document.getElementById('btn-login');
+
+  // Read values — force a slight delay to ensure Safari autofill has committed
+  await new Promise(r => setTimeout(r, 80));
+
+  const emailEl = document.getElementById('a-email');
+  const passEl  = document.getElementById('a-pass');
+  const email   = (emailEl.value || '').trim();
+  const pass    = passEl.value || '';
+
+  errEl.style.color   = 'var(--red)';
+  errEl.style.fontSize = '0.72rem';
+
+  if (!email) { errEl.textContent = '✕ Enter your email address'; return; }
+  if (!pass)  { errEl.textContent = '✕ Enter your password'; return; }
+
+  btn.textContent = 'Connecting…';
+  btn.disabled = true;
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+    if (error) {
+      // Show full error so we can debug
+      errEl.textContent = '✕ ' + error.message;
+      console.error('[Auth] Supabase error:', error);
+      btn.textContent = 'Initialize Session';
+      btn.disabled = false;
+      return;
+    }
+
+    if (!data?.user) {
+      errEl.textContent = '✕ No user returned — try again';
+      btn.textContent = 'Initialize Session';
+      btn.disabled = false;
+      return;
+    }
+
+    btn.textContent = 'Session Active ✓';
+    afterAuth(data.user);
+
+  } catch(e) {
+    errEl.textContent = '✕ Network error: ' + (e.message || 'check connection');
+    console.error('[Auth] Login exception:', e);
+    btn.textContent = 'Initialize Session';
+    btn.disabled = false;
+  }
 };
+
 document.getElementById('btn-reg').onclick = async () => {
   const email = document.getElementById('a-email').value.trim();
   const pass  = document.getElementById('a-pass').value;
+  const errEl = document.getElementById('auth-err');
   const { error } = await sb.auth.signUp({ email, password: pass });
-  if (error) { document.getElementById('auth-err').textContent = error.message; }
-  else { document.getElementById('auth-err').style.color='var(--green)'; document.getElementById('auth-err').textContent = 'Check your email to confirm.'; }
+  if (error) { errEl.style.color='var(--red)'; errEl.textContent = error.message; }
+  else { errEl.style.color='var(--green)'; errEl.textContent = 'Check your email to confirm.'; }
 };
 
-async function afterAuth() {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  userId = user.id;
-  document.getElementById('auth-overlay').classList.add('hidden');
-  await Promise.all([loadState(), loadHealthScans(), loadInventory()]);
-  renderAll();
+// Accept user directly to avoid a redundant getUser() call that can fail
+async function afterAuth(user) {
+  try {
+    // If called from checkSession, user comes from session.user
+    // If not passed, fall back to getUser()
+    if (!user) {
+      const { data } = await sb.auth.getUser();
+      user = data?.user;
+    }
+    if (!user) {
+      console.warn('[Auth] afterAuth: no user available');
+      return;
+    }
+    userId = user.id;
+    document.getElementById('auth-overlay').classList.add('hidden');
+    await Promise.all([loadState(), loadHealthScans(), loadInventory()]);
+    renderAll();
+  } catch(e) {
+    console.error('[Auth] afterAuth error:', e);
+    document.getElementById('auth-err').textContent = 'Session error — please log in again.';
+  }
 }
 
 async function checkSession() {
   try {
-    // First try existing session
     const { data: { session } } = await sb.auth.getSession();
-    if (session) { afterAuth(); return; }
-    // If no session, try refreshing the token (handles expired JWTs)
-    const { data: { session: refreshed } } = await sb.auth.refreshSession();
-    if (refreshed) { afterAuth(); return; }
+    if (session?.user) { afterAuth(session.user); return; }
   } catch(e) {
-    console.warn('[Auth] Session check failed:', e);
+    console.warn('[Auth] checkSession error:', e);
   }
-  // No valid session — show login
 }
 
 // ── Utility ───────────────────────────────────
@@ -2310,31 +2363,6 @@ function getPlantSVGThumb(name) {
 //  Plants sorted left→right by their x position
 //  on the map, layered by height (tall = back).
 // ══════════════════════════════════════════════
-
-// Plant height in approximate inches (for back-to-front layering)
-const PLANT_HEIGHTS = {
-  sunflower: 72, lavender: 30, basil: 20, rose: 48, milkweed: 48,
-  squash: 18, bean: 36, carrot: 18, cucumber: 24, bee_balm: 36,
-  black_eyed_susan: 30, generic: 24,
-};
-
-function getPlantKey(name) {
-  const n = (name || '').toLowerCase();
-  if (n.includes('sunflower'))                         return 'sunflower';
-  if (n.includes('lavender'))                          return 'lavender';
-  if (n.includes('basil'))                             return 'basil';
-  if (n.includes('rose'))                              return 'rose';
-  if (n.includes('milkweed'))                          return 'milkweed';
-  if (n.includes('squash') || n.includes('pumpkin'))   return 'squash';
-  if (n.includes('bean') || n.includes('pea'))         return 'bean';
-  if (n.includes('carrot'))                            return 'carrot';
-  if (n.includes('cucumber'))                          return 'cucumber';
-  if (n.includes('bee balm') || n.includes('monarda')) return 'bee_balm';
-  if (n.includes('black') && n.includes('susan'))      return 'black_eyed_susan';
-  if (n.includes('rudbeckia'))                         return 'black_eyed_susan';
-  return 'generic';
-}
-
 
 // ══════════════════════════════════════════════
 //  SCENE VIEW — Rewritten renderer
