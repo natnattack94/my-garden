@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GardenHub — My Garden</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --ink:        #231c14;
+  --paper:      #faf4ea;
+  --cream:      #f5ede0;
+  --border:     #e0d4c0;
+  --moss:       #526f45;
+  --moss-light: #c4d8b0;
+  --moss-pale:  #eaf2e4;
+  --rose:       #b8604a;
+  --rose-pale:  #fdf0ec;
+  --gold:       #b08a28;
+  --gold-pale:  #fdf6e0;
+  --plum:       #7a5898;
+  --plum-pale:  #f5f0fc;
+  --sky:        #4878a0;
+  --sky-pale:   #eef5fc;
+  --muted:      #a09080;
+  --serif:      'Cormorant Garamond', serif;
+  --sans:       'Jost', sans-serif;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--sans);
+  font-weight: 300;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: #c8bca8; border-radius: 2px; }
+
+/* ── AUTH ── */
+#auth-overlay {
+  position: fixed; inset: 0;
+  background: rgba(35,28,20,0.93);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-overlay.hidden { display: none; }
+.auth-box {
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 2.5rem;
+  width: 340px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+}
+.auth-logo {
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink);
+  margin-bottom: 0.2rem;
+}
+.auth-sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.18rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+.auth-input {
+  width: 100%;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 0.6rem 0.75rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  outline: none;
+  margin-bottom: 0.6rem;
+  border-radius: 3px;
+  transition: border-color 0.15s;
+}
+.auth-input:focus { border-color: var(--moss); }
+#auth-err { font-size: 0.7rem; color: var(--rose); min-height: 1rem; margin-bottom: 0.4rem; }
+.auth-btn {
+  width: 100%; padding: 0.65rem;
+  background: var(--ink); color: var(--moss-light);
+  border: none; font-family: var(--sans);
+  font-size: 0.65rem; letter-spacing: 0.15rem;
+  text-transform: uppercase; cursor: pointer;
+  border-radius: 3px; transition: background 0.15s;
+  margin-bottom: 0.4rem;
+}
+.auth-btn:hover { background: #3a3028; }
+.auth-btn.ghost {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border);
+}
+.auth-btn.ghost:hover { color: var(--ink); border-color: #b0a890; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--ink);
+  display: flex; align-items: center;
+  padding: 0 2rem; height: 48px; gap: 0;
+}
+.nav-logo {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.05rem; color: var(--moss-light);
+  font-weight: 300; margin-right: 2rem;
+  text-decoration: none; white-space: nowrap;
+}
+.nav-link {
+  color: #8a7a68; font-size: 0.6rem;
+  letter-spacing: 0.18rem; text-transform: uppercase;
+  text-decoration: none; padding: 0 0.9rem;
+  height: 100%; display: flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s; white-space: nowrap;
+}
+.nav-link:hover  { color: var(--moss-light); }
+.nav-link.active { color: var(--moss-light); border-bottom-color: var(--moss); }
+
+/* ── LAYOUT ── */
+.page {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: calc(100vh - 48px);
+}
+
+/* ── LEFT PANEL: ADD PLANT ── */
+#add-panel {
+  background: #faf7f0;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 48px;
+  height: calc(100vh - 48px);
+  overflow: hidden;
+}
+.panel-head {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-title {
+  font-family: var(--serif);
+  font-size: 1.4rem; font-weight: 300;
+  color: var(--ink); margin-bottom: 0.85rem;
+}
+
+/* Search */
+.search-wrap { position: relative; margin-bottom: 0.6rem; }
+.search-input {
+  width: 100%;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 0.5rem 0.75rem 0.5rem 2rem;
+  font-family: var(--sans); font-size: 0.75rem;
+  outline: none; border-radius: 3px;
+  transition: border-color 0.15s;
+}
+.search-input:focus { border-color: var(--moss); }
+.search-icon {
+  position: absolute; left: 0.6rem; top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem; opacity: 0.45; pointer-events: none;
+}
+
+/* Species grid */
+#species-grid {
+  flex: 1; overflow-y: auto;
+  padding: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  align-content: start;
+}
+.species-tile {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.65rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.14s;
+  position: relative;
+}
+.species-tile:hover {
+  border-color: var(--moss);
+  background: var(--moss-pale);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+.species-tile.selected {
+  border-color: var(--moss);
+  background: var(--moss-pale);
+  box-shadow: 0 0 0 2px var(--moss);
+}
+.species-emoji { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
+.species-name {
+  font-size: 0.65rem; font-weight: 400;
+  color: var(--ink); line-height: 1.3;
+}
+.species-family {
+  font-size: 0.55rem; color: var(--muted);
+  font-style: italic; margin-top: 0.1rem;
+}
+.species-badge {
+  position: absolute; top: 4px; right: 4px;
+  font-size: 0.42rem; padding: 0.05rem 0.3rem;
+  border-radius: 10px; font-weight: 500;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.badge-n { background: var(--moss-pale); color: #2a5820; border: 1px solid #90bb78; }
+
+/* Add form */
+#add-form {
+  padding: 0.85rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--cream);
+  display: none;
+}
+#add-form.show { display: block; }
+.selected-preview {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.selected-emoji { font-size: 1.6rem; }
+.selected-name {
+  font-family: var(--serif);
+  font-size: 1rem; font-weight: 600;
+  color: var(--ink);
+}
+.selected-fam { font-size: 0.65rem; color: var(--muted); font-style: italic; }
+
+.form-row { margin-bottom: 0.55rem; }
+.form-label {
+  display: block; font-size: 0.58rem;
+  letter-spacing: 0.12rem; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.25rem;
+}
+.form-input, .form-select {
+  width: 100%;
+  background: white; border: 1px solid var(--border);
+  color: var(--ink); padding: 0.45rem 0.6rem;
+  font-family: var(--sans); font-size: 0.78rem;
+  outline: none; border-radius: 3px;
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--moss); }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+.add-btn {
+  width: 100%; padding: 0.6rem;
+  background: var(--moss); color: white;
+  border: none; font-family: var(--sans);
+  font-size: 0.62rem; letter-spacing: 0.15rem;
+  text-transform: uppercase; cursor: pointer;
+  border-radius: 3px; margin-top: 0.6rem;
+  transition: background 0.15s;
+}
+.add-btn:hover { background: #3d5a32; }
+.add-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.cancel-link {
+  display: block; text-align: center;
+  font-size: 0.55rem; letter-spacing: 0.1rem;
+  text-transform: uppercase; color: var(--muted);
+  cursor: pointer; margin-top: 0.5rem;
+  transition: color 0.12s;
+}
+.cancel-link:hover { color: var(--ink); }
+
+/* ── RIGHT PANEL: MY GARDEN ── */
+#garden-panel {
+  padding: 2rem 2.5rem;
+  overflow-y: auto;
+}
+
+/* Header */
+.garden-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.garden-title {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 300; font-style: italic;
+  color: var(--ink); line-height: 1;
+}
+.garden-title em { color: var(--moss); font-style: normal; }
+.garden-subtitle {
+  font-size: 0.65rem; letter-spacing: 0.2rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-top: 0.4rem;
+}
+.garden-stats {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+}
+.g-stat {
+  text-align: right;
+}
+.g-stat-num {
+  font-family: var(--serif);
+  font-size: 1.8rem; font-weight: 300; line-height: 1;
+  color: var(--ink);
+}
+.g-stat-label {
+  font-size: 0.56rem; letter-spacing: 0.14rem;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* Filter bar */
+.filter-bar {
+  display: flex; gap: 0.4rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.filter-btn {
+  padding: 0.25rem 0.7rem;
+  font-family: var(--sans); font-size: 0.58rem;
+  letter-spacing: 0.1rem; text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: white; color: var(--muted);
+  cursor: pointer; border-radius: 20px;
+  transition: all 0.12s;
+}
+.filter-btn:hover  { border-color: var(--moss); color: var(--moss); }
+.filter-btn.active {
+  background: var(--moss); color: white;
+  border-color: var(--moss);
+}
+
+/* Group header */
+.group-label {
+  font-size: 0.6rem; letter-spacing: 0.22rem;
+  text-transform: uppercase; color: var(--muted);
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.group-label:first-of-type { margin-top: 0; }
+
+/* Plant cards */
+.plant-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.plant-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  transition: all 0.15s;
+  position: relative;
+  cursor: default;
+}
+.plant-card:hover {
+  border-color: #c8bca0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.plant-card-emoji {
+  font-size: 1.8rem; flex-shrink: 0;
+  line-height: 1; margin-top: 0.1rem;
+}
+.plant-card-body { flex: 1; min-width: 0; }
+.plant-card-name {
+  font-family: var(--serif);
+  font-size: 1rem; font-weight: 600;
+  color: var(--ink); line-height: 1.2;
+}
+.plant-card-where {
+  font-size: 0.62rem; color: var(--muted);
+  margin-top: 0.2rem;
+}
+.plant-card-meta {
+  display: flex; gap: 0.4rem; flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+.meta-chip {
+  font-size: 0.55rem; padding: 0.1rem 0.4rem;
+  border-radius: 10px; display: inline-block;
+}
+.chip-qty      { background: var(--gold-pale);  color: #6a4810; border: 1px solid #d0a850; }
+.chip-date     { background: var(--sky-pale);   color: #1a4060; border: 1px solid #80b0d8; }
+.chip-native   { background: var(--moss-pale);  color: #2a5820; border: 1px solid #90bb78; }
+.chip-host     { background: var(--plum-pale);  color: #4a2870; border: 1px solid #b090d8; }
+.chip-blooming { background: #fef0f8;           color: #8a2858; border: 1px solid #e8a8c8; }
+.chip-location {
+  font-size: 0.55rem; padding: 0.1rem 0.45rem;
+  border-radius: 10px; border: 1px solid var(--border);
+  color: var(--muted); background: var(--cream);
+}
+
+/* Card actions */
+.plant-card-actions {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  opacity: 0; flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.plant-card:hover .plant-card-actions { opacity: 1; }
+.card-action {
+  width: 24px; height: 24px;
+  border: 1px solid var(--border);
+  background: var(--cream); color: var(--muted);
+  border-radius: 3px; font-size: 0.65rem;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.card-action:hover        { border-color: #b0a890; color: var(--ink); }
+.card-action.del:hover    { border-color: var(--rose); color: var(--rose); background: var(--rose-pale); }
+
+/* Bloom indicator strip */
+.bloom-strip {
+  height: 3px; border-radius: 0 0 8px 8px;
+  position: absolute; bottom: 0; left: 0; right: 0;
+}
+
+/* Empty state */
+.empty-garden {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 40vh; gap: 0.75rem;
+  opacity: 0.55;
+}
+.empty-icon { font-size: 3rem; }
+.empty-msg {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.2rem; color: #5a6838;
+}
+.empty-sub {
+  font-size: 0.65rem; letter-spacing: 0.14rem;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* Loading */
+.spinner {
+  width: 28px; height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--moss);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+  margin: 4rem auto;
+  display: block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--ink); color: var(--moss-light);
+  font-family: var(--sans); font-size: 0.68rem;
+  letter-spacing: 0.1rem; text-transform: uppercase;
+  padding: 0.65rem 1.2rem; border-radius: 4px;
+  opacity: 0; transform: translateY(8px);
+  transition: all 0.25s; pointer-events: none;
+  z-index: 500;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+@media(max-width: 720px) {
+  .page { grid-template-columns: 1fr; }
+  #add-panel { position: static; height: auto; }
+  #garden-panel { padding: 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Auth -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">GardenHub</div>
+    <div class="auth-sub">Sign in to your garden</div>
+    <input id="a-email" class="auth-input" type="email" placeholder="Email" autocomplete="email"/>
+    <input id="a-pass"  class="auth-input" type="password" placeholder="Password" autocomplete="current-password"/>
+    <div id="auth-err"></div>
+    <button class="auth-btn" id="btn-login">Sign In</button>
+    <button class="auth-btn ghost" id="btn-guest">Continue without account</button>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <a href="index.html" class="nav-logo">GardenHub</a>
+  <a href="index.html"    class="nav-link">Dashboard</a>
+  <a href="garden.html"   class="nav-link active">My Garden</a>
+  <a href="map.html"      class="nav-link">Map</a>
+  <a href="plan.html"     class="nav-link">Plan</a>
+  <a href="weather.html"  class="nav-link">Weather</a>
+  <a href="companions.html" class="nav-link">Companions</a>
+</nav>
+
+<!-- Page -->
+<div class="page">
+
+  <!-- Left: Add Plant -->
+  <div id="add-panel">
+    <div class="panel-head">
+      <div class="panel-title">Add a Plant</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="species-search" type="text"
+          placeholder="Search species…" oninput="filterSpecies(this.value)" autocomplete="off"/>
+      </div>
+    </div>
+
+    <div id="species-grid">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Add form — shown after selecting a species -->
+    <div id="add-form">
+      <div class="selected-preview">
+        <span class="selected-emoji" id="sel-emoji">🌱</span>
+        <div>
+          <div class="selected-name" id="sel-name">—</div>
+          <div class="selected-fam"  id="sel-fam">—</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Location / Bed</label>
+        <select class="form-select" id="f-location">
+          <option value="">Select location…</option>
+          <option>Patio Bed</option>
+          <option>Fence Border</option>
+          <option>Front Garden</option>
+          <option>Back Garden</option>
+          <option>Container / Pot</option>
+          <option>Raised Bed</option>
+          <option>Window Box</option>
+          <option>Cutting Garden</option>
+          <option>Shade Border</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="f-qty" type="number" min="1" value="1" placeholder="1"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">Date Planted</label>
+          <input class="form-input" id="f-date" type="date"/>
+        </div>
+      </div>
+
+      <button class="add-btn" id="btn-add" onclick="addPlant()">+ Add to Garden</button>
+      <span class="cancel-link" onclick="cancelAdd()">Cancel</span>
+    </div>
+  </div>
+
+  <!-- Right: Garden -->
+  <div id="garden-panel">
+
+    <div class="garden-header">
+      <div>
+        <div class="garden-title">My <em>Garden</em></div>
+        <div class="garden-subtitle" id="garden-subtitle">West Simsbury, CT · Zone 6b</div>
+      </div>
+      <div class="garden-stats">
+        <div class="g-stat">
+          <div class="g-stat-num" id="stat-total">—</div>
+          <div class="g-stat-label">Plants</div>
+        </div>
+        <div class="g-stat">
+          <div class="g-stat-num" id="stat-blooming">—</div>
+          <div class="g-stat-label">Blooming</div>
+        </div>
+        <div class="g-stat">
+          <div class="g-stat-num" id="stat-native">—</div>
+          <div class="g-stat-label">Native</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all"      onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn"        data-filter="blooming"  onclick="setFilter('blooming', this)">🌸 Blooming</button>
+      <button class="filter-btn"        data-filter="native"    onclick="setFilter('native', this)">Native</button>
+      <button class="filter-btn"        data-filter="patio"     onclick="setFilter('patio', this)">Patio Bed</button>
+      <button class="filter-btn"        data-filter="fence"     onclick="setFilter('fence', this)">Fence Border</button>
+      <button class="filter-btn"        data-filter="container" onclick="setFilter('container', this)">Containers</button>
+    </div>
+
+    <!-- Plant list -->
+    <div id="plant-list-wrap">
+      <div class="spinner"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Config ─────────────────────────────────────
+const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let userId      = null;
+let myPlants    = [];   // plants in my garden (from garden_plants table or localStorage)
+let library     = [];   // full species library
+let _selSpecies = null; // currently selected species in the picker
+let _filter     = 'all';
+
+// Storage key for guest mode
+const STORE_KEY = 'ghub_my_garden';
+
+// ── Bloom data ─────────────────────────────────
+const BLOOM_WIN = {
+  'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
+  'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
+  'coneflower':[7,9],'black-eyed':[7,9],'bee balm':[7,8],'catmint':[5,9],
+  'salvia':[6,9],'dill':[7,8],'fennel':[7,8],'chives':[5,6],'allium':[5,7],
+  'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
+  'thyme':[5,7],'oregano':[7,8],'basil':[7,9],'tomato':[6,9],
+  'pepper':[6,9],'bean':[6,8],'squash':[6,9],'cucumber':[6,9],
+  'foxglove':[6,7],'forget-me-not':[4,5],'bachelor':[5,7],
+  'verbena':[5,9],'milkweed':[6,8],'calendula':[5,10],'poppy':[5,6],
+  'phlox':[6,8],'sedum':[8,10],'aster':[8,10],'goldenrod':[8,10],
+};
+const BLOOM_FAM = {
+  Asteraceae:[6,10],Lamiaceae:[5,9],Rosaceae:[5,9],Boraginaceae:[5,9],
+  Tropaeolaceae:[6,10],Scrophulariaceae:[6,9],Violaceae:[4,6],
+  Ranunculaceae:[4,6],Papaveraceae:[5,7],Solanaceae:[6,9],
+  Cucurbitaceae:[6,9],Fabaceae:[6,8],Apocynaceae:[6,8],
+};
+const BLOOM_COLORS = {
+  'sunflower':'#f5c518','lavender':'#9878c8','basil':'#6aaa38',
+  'rose':'#e06070','milkweed':'#d4708a','squash':'#f0a830',
+  'zinnia':'#f06080','marigold':'#f0a030','cosmos':'#d878c8',
+  'salvia':'#9878c8','catmint':'#a088d8','tomato':'#e05040',
+  'echinacea':'#d080a8','foxglove':'#b070d0','calendula':'#f0b030',
+  'bachelor':'#6090e0','forget-me-not':'#78a8e8','verbena':'#b090d8',
+  'poppy':'#e87878','aster':'#c878d0','goldenrod':'#e8c030',
+};
+
+const CUR_MONTH = new Date().getMonth() + 1;
+
+function bloomWin(name, family) {
+  const n = (name||'').toLowerCase();
+  for (const [k,w] of Object.entries(BLOOM_WIN)) { if (n.includes(k)) return w; }
+  const f = family||'';
+  for (const [k,w] of Object.entries(BLOOM_FAM)) { if (f.includes(k)) return w; }
+  return null;
+}
+function isBlooming(name, family) {
+  const w = bloomWin(name, family);
+  return w && CUR_MONTH >= w[0] && CUR_MONTH <= w[1];
+}
+function bloomColor(name) {
+  const n = (name||'').toLowerCase();
+  for (const [k,c] of Object.entries(BLOOM_COLORS)) { if (n.includes(k)) return c; }
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h*31 + n.charCodeAt(i)) & 0xfffffff;
+  return `hsl(${(h%200)+100},50%,60%)`;
+}
+function monthName(m) {
+  return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]||'';
+}
+
+// ── Utility ────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Auth ───────────────────────────────────────
+document.getElementById('btn-login').onclick = async () => {
+  const errEl = document.getElementById('auth-err');
+  const btn   = document.getElementById('btn-login');
+  await new Promise(r => setTimeout(r, 80));
+  const email = (document.getElementById('a-email').value||'').trim();
+  const pass  = document.getElementById('a-pass').value||'';
+  errEl.textContent = '';
+  if (!email) { errEl.textContent = 'Enter your email'; return; }
+  if (!pass)  { errEl.textContent = 'Enter your password'; return; }
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { errEl.textContent = error.message; btn.textContent = 'Sign In'; btn.disabled = false; return; }
+    afterAuth(data.user);
+  } catch(e) {
+    errEl.textContent = e.message || 'Network error';
+    btn.textContent = 'Sign In'; btn.disabled = false;
+  }
+};
+
+document.getElementById('btn-guest').onclick = () => {
+  userId = 'guest';
+  document.getElementById('auth-overlay').classList.add('hidden');
+  loadData();
+};
+
+async function afterAuth(user) {
+  if (!user) return;
+  userId = user.id;
+  document.getElementById('auth-overlay').classList.add('hidden');
+  await loadData();
+}
+
+async function checkSession() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) { afterAuth(session.user); return; }
+  } catch(e) {}
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('plant-list-wrap').innerHTML = '';
+  document.getElementById('species-grid').innerHTML = '';
+}
+
+// ── Load data ──────────────────────────────────
+async function loadData() {
+  try {
+    // Load species library
+    const { data: lib } = await sb.from('garden_library')
+      .select('id,common_name,emoji,plant_family,spread_in,maturity_days,bloom_start_day,is_native,is_host_plant')
+      .order('common_name');
+    library = lib || FALLBACK_LIB;
+  } catch(e) {
+    library = FALLBACK_LIB;
+  }
+
+  // Load my garden plants
+  if (userId === 'guest') {
+    myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+  } else {
+    try {
+      const { data: state } = await sb.from('garden_plants')
+        .select('*').eq('user_id', userId).order('created_at');
+      myPlants = state || [];
+      // If garden_plants table doesn't exist yet, fall back to localStorage
+      if (!state) myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+    } catch(e) {
+      // Table may not exist yet — use localStorage as fallback
+      myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+    }
+  }
+
+  renderSpeciesGrid(library);
+  renderGarden();
+}
+
+function saveLocal() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(myPlants)); } catch(e) {}
+}
+
+async function savePlant(plant) {
+  saveLocal();
+  if (userId === 'guest') return;
+  try {
+    await sb.from('garden_plants').upsert({ ...plant, user_id: userId });
+  } catch(e) {
+    // Table may not exist — silently use localStorage
+  }
+}
+
+async function deletePlantRemote(id) {
+  saveLocal();
+  if (userId === 'guest') return;
+  try {
+    await sb.from('garden_plants').delete().eq('id', id).eq('user_id', userId);
+  } catch(e) {}
+}
+
+// ── Species grid ───────────────────────────────
+let _allSpecies = [];
+
+function renderSpeciesGrid(species) {
+  _allSpecies = species;
+  const grid = document.getElementById('species-grid');
+  if (!species.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;font-size:0.7rem;color:var(--muted);padding:1rem;text-align:center;">No plants found</div>';
+    return;
+  }
+  grid.innerHTML = species.map(s => {
+    const badge = s.is_native ? '<span class="species-badge badge-n">Native</span>' : '';
+    return `<div class="species-tile" onclick="selectSpecies('${s.id}')" data-id="${s.id}">
+      ${badge}
+      <span class="species-emoji">${s.emoji||'🌱'}</span>
+      <div class="species-name">${s.common_name}</div>
+      <div class="species-family">${s.plant_family||''}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterSpecies(q) {
+  const filtered = q.trim()
+    ? _allSpecies.filter(s =>
+        s.common_name.toLowerCase().includes(q.toLowerCase()) ||
+        (s.plant_family||'').toLowerCase().includes(q.toLowerCase())
+      )
+    : _allSpecies;
+  renderSpeciesGrid(filtered);
+}
+
+function selectSpecies(id) {
+  const s = _allSpecies.find(x => x.id === id);
+  if (!s) return;
+  _selSpecies = s;
+
+  // Highlight tile
+  document.querySelectorAll('.species-tile').forEach(t => t.classList.remove('selected'));
+  document.querySelector(`.species-tile[data-id="${id}"]`)?.classList.add('selected');
+
+  // Populate form
+  document.getElementById('sel-emoji').textContent = s.emoji || '🌱';
+  document.getElementById('sel-name').textContent  = s.common_name;
+  document.getElementById('sel-fam').textContent   = s.plant_family || '';
+  document.getElementById('f-qty').value  = 1;
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-location').value = '';
+
+  document.getElementById('add-form').classList.add('show');
+}
+
+function cancelAdd() {
+  _selSpecies = null;
+  document.querySelectorAll('.species-tile').forEach(t => t.classList.remove('selected'));
+  document.getElementById('add-form').classList.remove('show');
+}
+
+// ── Add plant ──────────────────────────────────
+async function addPlant() {
+  if (!_selSpecies) return;
+  const btn      = document.getElementById('btn-add');
+  const location = document.getElementById('f-location').value;
+  const qty      = parseInt(document.getElementById('f-qty').value) || 1;
+  const dateVal  = document.getElementById('f-date').value;
+
+  btn.disabled = true; btn.textContent = 'Adding…';
+
+  const plant = {
+    id:         uid(),
+    name:       _selSpecies.common_name,
+    emoji:      _selSpecies.emoji || '🌱',
+    family:     _selSpecies.plant_family || 'Unknown',
+    is_native:  _selSpecies.is_native || false,
+    is_host:    _selSpecies.is_host_plant || false,
+    spread:     _selSpecies.spread_in || 12,
+    dtm:        _selSpecies.maturity_days || 60,
+    location:   location || '',
+    qty:        qty,
+    date_planted: dateVal || new Date().toISOString().slice(0,10),
+    created_at: new Date().toISOString(),
+  };
+
+  myPlants.push(plant);
+  await savePlant(plant);
+
+  toast(`${plant.emoji} ${plant.name} added`);
+  cancelAdd();
+  renderGarden();
+
+  btn.disabled = false; btn.textContent = '+ Add to Garden';
+}
+
+// ── Delete plant ───────────────────────────────
+async function deletePlant(id) {
+  myPlants = myPlants.filter(p => p.id !== id);
+  await deletePlantRemote(id);
+  saveLocal();
+  toast('Plant removed');
+  renderGarden();
+}
+
+// ── Filter ─────────────────────────────────────
+function setFilter(f, btn) {
+  _filter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGarden();
+}
+
+// ── Render garden ──────────────────────────────
+function renderGarden() {
+  // Stats
+  const blooming = myPlants.filter(p => isBlooming(p.name, p.family)).length;
+  const native   = myPlants.filter(p => p.is_native).length;
+  document.getElementById('stat-total').textContent    = myPlants.length;
+  document.getElementById('stat-blooming').textContent = blooming;
+  document.getElementById('stat-native').textContent   = native;
+
+  const subtitle = `West Simsbury, CT · Zone 6b · ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}`;
+  document.getElementById('garden-subtitle').textContent = subtitle;
+
+  // Filter plants
+  let filtered = [...myPlants];
+  if (_filter === 'blooming')  filtered = filtered.filter(p => isBlooming(p.name, p.family));
+  if (_filter === 'native')    filtered = filtered.filter(p => p.is_native);
+  if (_filter === 'patio')     filtered = filtered.filter(p => (p.location||'').toLowerCase().includes('patio'));
+  if (_filter === 'fence')     filtered = filtered.filter(p => (p.location||'').toLowerCase().includes('fence'));
+  if (_filter === 'container') filtered = filtered.filter(p => (p.location||'').toLowerCase().includes('container') || (p.location||'').toLowerCase().includes('pot'));
+
+  const wrap = document.getElementById('plant-list-wrap');
+
+  if (!myPlants.length) {
+    wrap.innerHTML = `<div class="empty-garden">
+      <div class="empty-icon">🌱</div>
+      <div class="empty-msg">Your garden is empty</div>
+      <div class="empty-sub">Search for a plant on the left to get started</div>
+    </div>`;
+    return;
+  }
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="empty-garden">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-msg">No plants match this filter</div>
+      <div class="empty-sub" style="cursor:pointer;text-decoration:underline;" onclick="setFilter('all', document.querySelector('[data-filter=all]'))">Show all plants</div>
+    </div>`;
+    return;
+  }
+
+  // Group by location
+  const groups = {};
+  filtered.forEach(p => {
+    const loc = p.location || 'Unassigned';
+    if (!groups[loc]) groups[loc] = [];
+    groups[loc].push(p);
+  });
+
+  const locationOrder = ['Patio Bed','Fence Border','Front Garden','Back Garden','Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border','Other','Unassigned'];
+  const sortedGroups = Object.entries(groups).sort(([a],[b]) => {
+    const ai = locationOrder.indexOf(a), bi = locationOrder.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  wrap.innerHTML = sortedGroups.map(([loc, plants]) => {
+    const cards = plants.map(p => plantCard(p)).join('');
+    return `<div class="group-label">${loc} <span style="opacity:0.5;font-weight:300">(${plants.length})</span></div>
+      <div class="plant-list">${cards}</div>`;
+  }).join('');
+}
+
+function plantCard(p) {
+  const blooming  = isBlooming(p.name, p.family);
+  const color     = bloomColor(p.name);
+  const w         = bloomWin(p.name, p.family);
+  const bloomStr  = w ? `${monthName(w[0])}–${monthName(w[1])}` : null;
+  const dateStr   = p.date_planted
+    ? new Date(p.date_planted).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+    : null;
+
+  const chips = [
+    p.qty > 1     ? `<span class="meta-chip chip-qty">×${p.qty}</span>` : '',
+    dateStr       ? `<span class="meta-chip chip-date">Planted ${dateStr}</span>` : '',
+    p.is_native   ? `<span class="meta-chip chip-native">Native</span>` : '',
+    p.is_host     ? `<span class="meta-chip chip-host">Host plant</span>` : '',
+    blooming      ? `<span class="meta-chip chip-blooming">🌸 Blooming</span>` : '',
+    bloomStr && !blooming ? `<span class="meta-chip" style="background:var(--gold-pale);color:#6a4810;border:1px solid #d0a850;">Blooms ${bloomStr}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const strip = blooming
+    ? `<div class="bloom-strip" style="background:${color};opacity:0.55;"></div>`
+    : '';
+
+  return `<div class="plant-card">
+    ${strip}
+    <div class="plant-card-emoji">${p.emoji}</div>
+    <div class="plant-card-body">
+      <div class="plant-card-name">${p.name}</div>
+      <div class="plant-card-where">${p.family}</div>
+      <div class="plant-card-meta">${chips}</div>
+    </div>
+    <div class="plant-card-actions">
+      <button class="card-action del" onclick="deletePlant('${p.id}')" title="Remove">✕</button>
+    </div>
+  </div>`;
+}
+
+// ── Fallback library ───────────────────────────
+const FALLBACK_LIB = [
+  { id:'t1', common_name:'Tomato',           emoji:'🍅', plant_family:'Solanaceae',    spread_in:24, maturity_days:75,  is_native:false, is_host_plant:false },
+  { id:'z1', common_name:'Zinnia',           emoji:'🌸', plant_family:'Asteraceae',    spread_in:12, maturity_days:60,  is_native:false, is_host_plant:true  },
+  { id:'m1', common_name:'Marigold',         emoji:'🌼', plant_family:'Asteraceae',    spread_in:12, maturity_days:50,  is_native:false, is_host_plant:true  },
+  { id:'b1', common_name:'Bean',             emoji:'🫘', plant_family:'Fabaceae',      spread_in:8,  maturity_days:55,  is_native:false, is_host_plant:false },
+  { id:'c1', common_name:'Carrot',           emoji:'🥕', plant_family:'Apiaceae',      spread_in:4,  maturity_days:70,  is_native:false, is_host_plant:false },
+  { id:'s1', common_name:'Squash',           emoji:'🥒', plant_family:'Cucurbitaceae', spread_in:36, maturity_days:60,  is_native:false, is_host_plant:false },
+  { id:'p1', common_name:'Purple Coneflower',emoji:'🌺', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, is_native:true,  is_host_plant:true  },
+  { id:'o1', common_name:'Milkweed',         emoji:'🌿', plant_family:'Apocynaceae',   spread_in:24, maturity_days:365, is_native:true,  is_host_plant:true  },
+  { id:'l1', common_name:'Lavender',         emoji:'💜', plant_family:'Lamiaceae',     spread_in:24, maturity_days:365, is_native:false, is_host_plant:false },
+  { id:'e1', common_name:'Echinacea',        emoji:'🌸', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, is_native:true,  is_host_plant:true  },
+  { id:'r1', common_name:'Rose',             emoji:'🌹', plant_family:'Rosaceae',      spread_in:36, maturity_days:365, is_native:false, is_host_plant:false },
+  { id:'bb', common_name:'Bee Balm',         emoji:'🌺', plant_family:'Lamiaceae',     spread_in:24, maturity_days:365, is_native:true,  is_host_plant:true  },
+  { id:'sf', common_name:'Sunflower',        emoji:'🌻', plant_family:'Asteraceae',    spread_in:18, maturity_days:80,  is_native:false, is_host_plant:true  },
+  { id:'ca', common_name:'Calendula',        emoji:'🟠', plant_family:'Asteraceae',    spread_in:12, maturity_days:50,  is_native:false, is_host_plant:false },
+  { id:'co', common_name:'Cosmos',           emoji:'🌸', plant_family:'Asteraceae',    spread_in:12, maturity_days:60,  is_native:false, is_host_plant:false },
+  { id:'bk', common_name:'Black-eyed Susan', emoji:'🌼', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, is_native:true,  is_host_plant:false },
+];
+
+// ── Boot ───────────────────────────────────────
+// Set today's date as default
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+checkSession();
+</script>
+</body>
+</html>
