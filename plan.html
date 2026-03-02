@@ -318,7 +318,16 @@ header h1 em { color: var(--moss-light); font-style: normal; }
   font-size: 0.7rem;
   letter-spacing: 0.08rem;
   text-align: left;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.12s;
 }
+.plant-table thead th:hover { background: #3a3028; }
+.plant-table thead th.sort-asc::after  { content: ' ↑'; opacity: 0.7; }
+.plant-table thead th.sort-desc::after { content: ' ↓'; opacity: 0.7; }
+.plant-table thead th.no-sort { cursor: default; }
+.plant-table thead th.no-sort:hover { background: var(--ink); }
 .plant-table tbody td {
   padding: 0.65rem 0.75rem;
   border-bottom: 1px solid #ede5d8;
@@ -558,7 +567,7 @@ footer strong { color: var(--moss-light); font-weight: 400; }
 
   <!-- Bloom timeline -->
   <h2 class="sec-title">Bloom Timeline</h2>
-  <p class="sec-sub">April through October · colored bars show bloom window</p>
+  <p class="sec-sub">March through November · colored bars show bloom window · current month highlighted</p>
   <div class="timing-visual">
     <div class="month-bars" id="bloom-timeline"></div>
   </div>
@@ -571,14 +580,14 @@ footer strong { color: var(--moss-light); font-weight: 400; }
   <table class="plant-table">
     <thead>
       <tr>
-        <th style="width:36px"></th>
-        <th>Plant</th>
-        <th>Family</th>
-        <th>Blooms</th>
-        <th>Matures</th>
-        <th>Spread</th>
-        <th>Status</th>
-        <th>This Month</th>
+        <th class="no-sort" style="width:36px"></th>
+        <th onclick="sortTable('name')">Plant</th>
+        <th onclick="sortTable('family')">Family</th>
+        <th onclick="sortTable('bloom')">Blooms</th>
+        <th onclick="sortTable('dtm')">Matures</th>
+        <th onclick="sortTable('spread')">Spread</th>
+        <th class="no-sort">Status</th>
+        <th onclick="sortTable('status')" id="th-status">This Month</th>
       </tr>
     </thead>
     <tbody id="plant-table-body"></tbody>
@@ -607,10 +616,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let userId    = null;
-let plantData = [];   // placed plants from map_state
-let library   = [];   // full garden_library
+let plantData = [];  // plants from garden_plants (source of truth)
+let library   = [];
+let _planPlants = []; // deduplicated for rendering
+let _sortCol  = 'name';
+let _sortDir  = 1; // 1=asc, -1=desc
 
-// Current month (1-based)
 const NOW       = new Date();
 const CUR_MONTH = NOW.getMonth() + 1;
 const CUR_YEAR  = NOW.getFullYear();
@@ -618,7 +629,7 @@ const CUR_YEAR  = NOW.getFullYear();
 document.getElementById('plan-year').textContent  = CUR_YEAR;
 document.getElementById('footer-year').textContent = CUR_YEAR;
 
-// ── Bloom data (mirrors map.html) ─────────────
+// ── Bloom data ─────────────────────────────────
 const BLOOM_NAME_WIN = {
   'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
   'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
@@ -627,18 +638,18 @@ const BLOOM_NAME_WIN = {
   'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
   'thyme':[5,7],'oregano':[7,8],'basil':[7,9],'tomato':[6,9],
   'pepper':[6,9],'bean':[6,8],'squash':[6,9],'cucumber':[6,9],
-  'foxglove':[6,7],'catmint':[5,9],'forget-me-not':[4,5],'bachelor':[5,7],
+  'foxglove':[6,7],'forget-me-not':[3,5],'bachelor':[4,7],
   'love-in':[5,6],'moss rose':[6,9],'portulaca':[6,9],'verbena':[5,9],
-  'milkweed':[6,8],'butterfly':[6,8],'calendula':[5,10],'poppy':[5,6],
+  'milkweed':[6,8],'butterfly':[6,8],'calendula':[4,10],'poppy':[4,6],
+  'hellebore':[3,4],'snowdrop':[3,4],'crocus':[3,4],'pansy':[3,5],
+  'phlox':[6,8],'sedum':[8,10],'aster':[8,10],'goldenrod':[8,10],
 };
 const BLOOM_FAM_WIN = {
-  Asteraceae:[6,10],Lamiaceae:[5,9],Rosaceae:[5,9],Boraginaceae:[5,9],
-  Tropaeolaceae:[6,10],Caprifoliaceae:[5,8],Scrophulariaceae:[6,9],
-  Violaceae:[4,6],Ranunculaceae:[4,6],Papaveraceae:[5,7],
+  Asteraceae:[5,10],Lamiaceae:[5,9],Rosaceae:[4,9],Boraginaceae:[5,9],
+  Tropaeolaceae:[6,10],Caprifoliaceae:[5,8],Scrophulariaceae:[5,9],
+  Violaceae:[3,6],Ranunculaceae:[3,6],Papaveraceae:[4,7],
   Solanaceae:[6,9],Cucurbitaceae:[6,9],Fabaceae:[6,8],Apocynaceae:[6,8],
 };
-
-// Color palette per plant family / type for timeline pills
 const BLOOM_COLORS = {
   'sunflower':'#f5c518','lavender':'#9878c8','basil':'#6aaa38',
   'rose':'#e06070','milkweed':'#d4708a','squash':'#f0a830',
@@ -648,40 +659,29 @@ const BLOOM_COLORS = {
   'salvia':'#9878c8','catmint':'#a088d8','tomato':'#e05040',
   'foxglove':'#b070d0','calendula':'#f0b030','bachelor':'#6090e0',
   'forget-me-not':'#78a8e8','verbena':'#b090d8','poppy':'#e87878',
-  'default':'#90b878',
+  'aster':'#c878d0','goldenrod':'#e8c030','hellebore':'#b090c8',
 };
 
 function getBloomWin(name, family) {
   const n = (name||'').toLowerCase();
-  for (const [k,w] of Object.entries(BLOOM_NAME_WIN)) {
-    if (n.includes(k)) return w;
-  }
+  for (const [k,w] of Object.entries(BLOOM_NAME_WIN)) { if (n.includes(k)) return w; }
   const f = family||'';
-  for (const [k,w] of Object.entries(BLOOM_FAM_WIN)) {
-    if (f.includes(k)) return w;
-  }
+  for (const [k,w] of Object.entries(BLOOM_FAM_WIN)) { if (f.includes(k)) return w; }
   return null;
 }
-
 function bloomStatus(win, month) {
   if (!win) return 'unknown';
   if (month >= win[0] && month <= win[1]) return 'blooming';
   if (month < win[0]) return 'upcoming';
   return 'gap';
 }
-
 function getBloomColor(name) {
   const n = (name||'').toLowerCase();
-  for (const [k,c] of Object.entries(BLOOM_COLORS)) {
-    if (n.includes(k)) return c;
-  }
-  // Derive a pleasing color from name hash
+  for (const [k,c] of Object.entries(BLOOM_COLORS)) { if (n.includes(k)) return c; }
   let h = 0;
-  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) & 0xfffffff;
-  const hue = (h % 240) + 60; // warm 60–300
-  return `hsl(${hue},55%,62%)`;
+  for (let i = 0; i < n.length; i++) h = (h*31 + n.charCodeAt(i)) & 0xfffffff;
+  return `hsl(${(h%240)+60},55%,62%)`;
 }
-
 function monthName(m) {
   return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]||'';
 }
@@ -696,8 +696,7 @@ document.getElementById('btn-login').onclick = async () => {
   errEl.textContent = '';
   if (!email) { errEl.textContent = 'Enter your email'; return; }
   if (!pass)  { errEl.textContent = 'Enter your password'; return; }
-  btn.textContent = 'Signing in…';
-  btn.disabled = true;
+  btn.textContent = 'Signing in…'; btn.disabled = true;
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) { errEl.textContent = error.message; btn.textContent = 'Sign In'; btn.disabled = false; return; }
@@ -707,20 +706,17 @@ document.getElementById('btn-login').onclick = async () => {
     btn.textContent = 'Sign In'; btn.disabled = false;
   }
 };
-
 document.getElementById('btn-guest').onclick = () => {
   userId = 'guest';
   document.getElementById('auth-overlay').classList.add('hidden');
-  loadGuestData();
+  loadData();
 };
-
 async function afterAuth(user) {
   if (!user) return;
   userId = user.id;
   document.getElementById('auth-overlay').classList.add('hidden');
   await loadData();
 }
-
 async function checkSession() {
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -729,257 +725,300 @@ async function checkSession() {
   document.getElementById('loading-state').style.display = 'none';
 }
 
-// ── Data loading ──────────────────────────────
+// ── Data: garden_plants is source of truth ────
 async function loadData() {
   document.getElementById('loading-state').style.display = 'flex';
   try {
-    // Load library
     const { data: lib } = await sb.from('garden_library')
       .select('id,common_name,emoji,plant_family,spread_in,maturity_days,bloom_start_day,is_native,is_host_plant')
       .order('common_name');
     library = lib || FALLBACK_LIBRARY;
+  } catch(e) { library = FALLBACK_LIBRARY; }
 
-    // Load map state (placed plants)
-    if (userId !== 'guest') {
-      const { data: state } = await sb.from('map_state').select('plant_data').eq('user_id', userId).single();
-      plantData = state?.plant_data || [];
+  if (userId === 'guest') {
+    // Guest: try garden_plants localStorage first, fall back to map_state
+    const stored = localStorage.getItem('ghub_my_garden');
+    plantData = stored ? JSON.parse(stored) : JSON.parse(localStorage.getItem('ghub_plants') || '[]');
+  } else {
+    // Auth: try garden_plants table first (new source of truth)
+    try {
+      const { data: gp, error } = await sb.from('garden_plants')
+        .select('*').eq('user_id', userId).order('created_at');
+      if (!error && gp && gp.length > 0) {
+        plantData = gp;
+      } else {
+        // Fall back to map_state for backwards compatibility
+        const { data: state } = await sb.from('map_state').select('plant_data').eq('user_id', userId).single();
+        plantData = state?.plant_data || [];
+      }
+    } catch(e) {
+      plantData = [];
     }
-  } catch(e) {
-    library   = FALLBACK_LIBRARY;
-    plantData = [];
   }
+
   document.getElementById('loading-state').style.display = 'none';
   renderPlan();
 }
 
-function loadGuestData() {
-  library   = FALLBACK_LIBRARY;
-  plantData = JSON.parse(localStorage.getItem('ghub_plants') || '[]');
-  document.getElementById('loading-state').style.display = 'none';
-  renderPlan();
-}
-
-// Fallback if Supabase is unavailable
 const FALLBACK_LIBRARY = [
-  { id:'t1', common_name:'Tomato',             emoji:'🍅', plant_family:'Solanaceae',    spread_in:24, maturity_days:75,  bloom_start_day:130, is_native:false, is_host_plant:false },
-  { id:'z1', common_name:'Zinnia',             emoji:'🌸', plant_family:'Asteraceae',    spread_in:12, maturity_days:60,  bloom_start_day:130, is_native:false, is_host_plant:true  },
-  { id:'m1', common_name:'Marigold',           emoji:'🌼', plant_family:'Asteraceae',    spread_in:12, maturity_days:50,  bloom_start_day:120, is_native:false, is_host_plant:true  },
-  { id:'b1', common_name:'Bean',               emoji:'🫘', plant_family:'Fabaceae',      spread_in:8,  maturity_days:55,  bloom_start_day:140, is_native:false, is_host_plant:false },
-  { id:'c1', common_name:'Carrot',             emoji:'🥕', plant_family:'Apiaceae',      spread_in:4,  maturity_days:70,  bloom_start_day:999, is_native:false, is_host_plant:false },
-  { id:'s1', common_name:'Squash',             emoji:'🥒', plant_family:'Cucurbitaceae', spread_in:36, maturity_days:60,  bloom_start_day:135, is_native:false, is_host_plant:false },
-  { id:'p1', common_name:'Purple Coneflower',  emoji:'🌺', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, bloom_start_day:170, is_native:true,  is_host_plant:true  },
-  { id:'o1', common_name:'Milkweed',           emoji:'🌿', plant_family:'Apocynaceae',   spread_in:24, maturity_days:365, bloom_start_day:160, is_native:true,  is_host_plant:true  },
+  { id:'t1', common_name:'Tomato',            emoji:'🍅', plant_family:'Solanaceae',    spread_in:24, maturity_days:75,  bloom_start_day:130, is_native:false, is_host_plant:false },
+  { id:'z1', common_name:'Zinnia',            emoji:'🌸', plant_family:'Asteraceae',    spread_in:12, maturity_days:60,  bloom_start_day:130, is_native:false, is_host_plant:true  },
+  { id:'m1', common_name:'Marigold',          emoji:'🌼', plant_family:'Asteraceae',    spread_in:12, maturity_days:50,  bloom_start_day:120, is_native:false, is_host_plant:true  },
+  { id:'s1', common_name:'Squash',            emoji:'🥒', plant_family:'Cucurbitaceae', spread_in:36, maturity_days:60,  bloom_start_day:135, is_native:false, is_host_plant:false },
+  { id:'p1', common_name:'Purple Coneflower', emoji:'🌺', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, bloom_start_day:170, is_native:true,  is_host_plant:true  },
+  { id:'o1', common_name:'Milkweed',          emoji:'🌿', plant_family:'Apocynaceae',   spread_in:24, maturity_days:365, bloom_start_day:160, is_native:true,  is_host_plant:true  },
 ];
 
 // ── Render ────────────────────────────────────
 function renderPlan() {
-  // Determine which plants to show:
-  // - if user has placed plants on map, use those (deduplicated by name)
-  // - otherwise fall back to full library
+  // Build plan plants: garden_plants rows OR library fallback
+  // garden_plants has: name, emoji, family, is_native, is_host, spread, dtm, qty, location, notes
+  // map_state plants have: name, emoji, family, isNative, isHost, spread, dtm
   let planPlants;
   if (plantData.length > 0) {
-    // Deduplicate by name, enrich with library data
     const seen = new Map();
     plantData.forEach(p => {
-      if (!seen.has(p.name)) {
-        const libEntry = library.find(l => l.common_name === p.name);
-        seen.set(p.name, {
-          name:     p.name,
+      const name = p.name || p.common_name;
+      if (!name) return;
+      const libEntry = library.find(l => l.common_name === name);
+      if (!seen.has(name)) {
+        seen.set(name, {
+          name,
           emoji:    p.emoji || libEntry?.emoji || '🌱',
-          family:   p.family || libEntry?.plant_family || 'Unknown',
-          spread:   p.spread || libEntry?.spread_in || 12,
-          dtm:      p.dtm   || libEntry?.maturity_days || 60,
-          isNative: p.isNative || libEntry?.is_native || false,
-          isHost:   p.isHost   || libEntry?.is_host_plant || false,
-          count:    1,
+          family:   p.family || p.plant_family || libEntry?.plant_family || 'Unknown',
+          spread:   p.spread || p.spread_in || libEntry?.spread_in || 12,
+          dtm:      p.dtm || p.maturity_days || libEntry?.maturity_days || 60,
+          isNative: p.is_native ?? p.isNative ?? libEntry?.is_native ?? false,
+          isHost:   p.is_host  ?? p.isHost   ?? libEntry?.is_host_plant ?? false,
+          qty:      p.qty || 1,
+          location: p.location || '',
         });
       } else {
-        seen.get(p.name).count++;
+        seen.get(name).qty = (seen.get(name).qty || 1) + (p.qty || 1);
       }
     });
     planPlants = [...seen.values()];
   } else {
     planPlants = library.map(l => ({
-      name: l.common_name, emoji: l.emoji || '🌱',
-      family: l.plant_family || 'Unknown',
-      spread: l.spread_in || 12, dtm: l.maturity_days || 60,
-      isNative: l.is_native, isHost: l.is_host_plant, count: 0,
+      name: l.common_name, emoji: l.emoji||'🌱',
+      family: l.plant_family||'Unknown',
+      spread: l.spread_in||12, dtm: l.maturity_days||60,
+      isNative: l.is_native, isHost: l.is_host_plant, qty: 0,
     }));
   }
+
+  _planPlants = planPlants;
 
   planPlants.sort((a,b) => a.name.localeCompare(b.name));
 
   // Header tags
-  const tags = document.getElementById('header-tags');
-  tags.innerHTML = planPlants.slice(0,12).map(p =>
-    `<span class="header-tag">${p.emoji} ${p.name}</span>`
-  ).join('') + (planPlants.length > 12
-    ? `<span class="header-tag">+${planPlants.length - 12} more</span>`
-    : '');
+  document.getElementById('header-tags').innerHTML =
+    planPlants.slice(0,12).map(p => `<span class="header-tag">${p.emoji} ${p.name}</span>`).join('') +
+    (planPlants.length > 12 ? `<span class="header-tag">+${planPlants.length-12} more</span>` : '');
 
   // Stats
-  const blooming = planPlants.filter(p => {
-    const w = getBloomWin(p.name, p.family);
-    return w && CUR_MONTH >= w[0] && CUR_MONTH <= w[1];
-  }).length;
-  const native   = planPlants.filter(p => p.isNative).length;
-  const families = new Set(planPlants.map(p => p.family)).size;
-
-  // Weeks of bloom coverage Apr–Oct
-  const months = [4,5,6,7,8,9,10];
-  const bloomWeeks = months.filter(m =>
-    planPlants.some(p => { const w = getBloomWin(p.name,p.family); return w && m >= w[0] && m <= w[1]; })
+  const blooming   = planPlants.filter(p => { const w=getBloomWin(p.name,p.family); return w&&CUR_MONTH>=w[0]&&CUR_MONTH<=w[1]; }).length;
+  const native     = planPlants.filter(p => p.isNative).length;
+  const families   = new Set(planPlants.map(p => p.family)).size;
+  const bloomMonths = [3,4,5,6,7,8,9,10,11].filter(m =>
+    planPlants.some(p => { const w=getBloomWin(p.name,p.family); return w&&m>=w[0]&&m<=w[1]; })
   ).length * 4;
 
-  document.getElementById('stat-total').textContent     = plantData.length || planPlants.length;
-  document.getElementById('stat-blooming').textContent  = blooming;
-  document.getElementById('stat-native').textContent    = native;
-  document.getElementById('stat-families').textContent  = families;
-  document.getElementById('stat-bloom-weeks').textContent = bloomWeeks + '+';
+  document.getElementById('stat-total').textContent       = plantData.length || planPlants.length;
+  document.getElementById('stat-blooming').textContent    = blooming;
+  document.getElementById('stat-native').textContent      = native;
+  document.getElementById('stat-families').textContent    = families;
+  document.getElementById('stat-bloom-weeks').textContent = bloomMonths + '+';
 
-  // What's happening now
   renderNow(planPlants);
-
-  // Bloom timeline
   renderTimeline(planPlants);
-
-  // Plant table
   renderTable(planPlants);
-
-  // Show content
   document.getElementById('main-content').style.display = 'block';
 }
 
+// ── Smarter "Right Now" ───────────────────────
 function renderNow(plants) {
-  const sub = document.getElementById('now-sub');
-  const monthStr = monthName(CUR_MONTH);
-  sub.textContent = `${monthStr} · what's blooming, what's coming, what needs attention`;
+  document.getElementById('now-sub').textContent =
+    `${monthName(CUR_MONTH)} · blooming now · coming soon · what needs attention`;
 
-  const grid = document.getElementById('now-grid');
-  const cards = [];
+  const blooming  = [];
+  const soonItems = []; // blooming within 2 months
+  const gapItems  = [];
+  const pastItems = [];
 
   plants.forEach(p => {
-    const w = getBloomWin(p.name, p.family);
+    const w  = getBloomWin(p.name, p.family);
     const st = bloomStatus(w, CUR_MONTH);
     const color = getBloomColor(p.name);
 
     if (st === 'blooming') {
-      cards.push(`<div class="now-card blooming" style="border-left-color:${color}40;border-left-width:4px">
-        <div class="now-card-label">🌸 Blooming now</div>
-        <div class="now-card-name">${p.emoji} ${p.name}</div>
-        <div class="now-card-detail">${p.family} · until ${monthName(w[1])}</div>
-      </div>`);
+      blooming.push({ p, w, color });
     } else if (st === 'upcoming') {
-      cards.push(`<div class="now-card upcoming">
-        <div class="now-card-label">⏳ Coming in ${monthName(w[0])}</div>
-        <div class="now-card-name">${p.emoji} ${p.name}</div>
-        <div class="now-card-detail">${p.family} · blooms ${monthName(w[0])}–${monthName(w[1])}</div>
-      </div>`);
+      const monthsAway = w[0] - CUR_MONTH;
+      if (monthsAway <= 2) soonItems.push({ p, w, color, monthsAway });
+      // further upcoming: skip (too early to show)
+    } else if (st === 'gap') {
+      pastItems.push({ p, w });
     }
   });
 
-  const gapCount = plants.filter(p => {
-    const w = getBloomWin(p.name, p.family);
-    return bloomStatus(w, CUR_MONTH) === 'gap';
-  }).length;
+  const cards = [];
 
-  if (gapCount > 0) {
+  // Blooming now — show all, sorted by when they end
+  blooming.sort((a,b) => a.w[1] - b.w[1]).forEach(({ p, w, color }) => {
+    cards.push(`<div class="now-card blooming" style="border-left-color:${color};border-left-width:3px">
+      <div class="now-card-label">🌸 Blooming now</div>
+      <div class="now-card-name">${p.emoji} ${p.name}</div>
+      <div class="now-card-detail">${p.family} · until ${monthName(w[1])}</div>
+    </div>`);
+  });
+
+  // Coming within 2 months — most useful attention item
+  soonItems.sort((a,b) => a.monthsAway - b.monthsAway).forEach(({ p, w, color, monthsAway }) => {
+    const label = monthsAway === 0 ? 'This month' : monthsAway === 1 ? 'Next month' : `In ${monthsAway} months`;
+    cards.push(`<div class="now-card upcoming" style="border-left-color:${color}99;border-left-width:3px">
+      <div class="now-card-label">⏳ ${label} — ${monthName(w[0])}</div>
+      <div class="now-card-name">${p.emoji} ${p.name}</div>
+      <div class="now-card-detail">Blooms ${monthName(w[0])}–${monthName(w[1])}</div>
+    </div>`);
+  });
+
+  // Past bloom — summarize as one card, not one per plant
+  if (pastItems.length > 0) {
+    const names = pastItems.slice(0,3).map(({p}) => p.name).join(', ');
+    const more  = pastItems.length > 3 ? ` +${pastItems.length-3} more` : '';
     cards.push(`<div class="now-card gap">
-      <div class="now-card-label">⚠ Bloom gap</div>
-      <div class="now-card-name">${gapCount} plant${gapCount>1?'s':''} past bloom</div>
-      <div class="now-card-detail">Consider succession planting for continuous color</div>
+      <div class="now-card-label">⚠ Past bloom this season</div>
+      <div class="now-card-name">${pastItems.length} plant${pastItems.length>1?'s':''} finished</div>
+      <div class="now-card-detail">${names}${more} · consider succession planting</div>
     </div>`);
   }
 
   if (!cards.length) {
-    grid.innerHTML = `<div class="empty-state">
+    document.getElementById('now-grid').innerHTML = `<div class="empty-state">
       <p>No plants in your garden yet</p>
-      <small>Add plants on the map and they'll appear here</small>
-      <br><a href="map.html" class="empty-link">Open the Map →</a>
+      <small>Add plants in My Garden and they'll appear here</small>
+      <br><a href="garden.html" class="empty-link">Open My Garden →</a>
     </div>`;
     return;
   }
 
-  grid.innerHTML = cards.join('');
+  document.getElementById('now-grid').innerHTML = cards.join('');
 }
 
+// ── Timeline: March → November ────────────────
 function renderTimeline(plants) {
-  const MONTHS = [
-    [4,'Apr'],[5,'May'],[6,'Jun'],[7,'Jul'],[8,'Aug'],[9,'Sep'],[10,'Oct'],[11,'Nov'],[12,'Dec']
-  ];
+  const MONTHS = [[3,'Mar'],[4,'Apr'],[5,'May'],[6,'Jun'],[7,'Jul'],[8,'Aug'],[9,'Sep'],[10,'Oct'],[11,'Nov']];
 
-  let html = '';
-  // Headers
-  html += `<div class="mb-header plant-h">Plant</div>`;
-  MONTHS.forEach(([,label]) => html += `<div class="mb-header">${label}</div>`);
+  let h = `<div class="mb-header plant-h">Plant</div>`;
+  MONTHS.forEach(([m, label]) => {
+    const isCur = m === CUR_MONTH;
+    h += `<div class="mb-header" style="${isCur ? 'background:#3d5a32;color:#c4d8b0;' : ''}">${label}${isCur ? ' ●' : ''}</div>`;
+  });
 
-  // One row per plant
   plants.forEach(p => {
     const w     = getBloomWin(p.name, p.family);
     const color = getBloomColor(p.name);
-    html += `<div class="mb-name">${p.emoji} ${p.name}</div>`;
+    h += `<div class="mb-name">${p.emoji} ${p.name}</div>`;
     MONTHS.forEach(([m]) => {
-      if (!w) {
-        html += `<div class="mb-cell"></div>`;
-        return;
-      }
-      const isBlooming = m >= w[0] && m <= w[1];
-      const isFading   = m === w[1];
+      const isCur      = m === CUR_MONTH;
+      const isBlooming = w && m >= w[0] && m <= w[1];
+      const isFading   = w && m === w[1];
+      const bgStyle    = isCur ? 'background:rgba(82,111,69,0.06);' : '';
       if (isBlooming) {
-        const opacity = isFading ? '0.4' : '1';
-        html += `<div class="mb-cell"><span class="bloom-pill" style="background:${color};opacity:${opacity}"></span></div>`;
+        h += `<div class="mb-cell" style="${bgStyle}"><span class="bloom-pill" style="background:${color};opacity:${isFading?0.4:1}"></span></div>`;
       } else {
-        html += `<div class="mb-cell"></div>`;
+        h += `<div class="mb-cell" style="${bgStyle}"></div>`;
       }
     });
   });
 
-  document.getElementById('bloom-timeline').innerHTML = html;
+  document.getElementById('bloom-timeline').innerHTML = h;
+  // Update grid columns for 9 months
+  document.querySelector('.month-bars').style.gridTemplateColumns = '160px repeat(9, 1fr)';
+}
+
+// ── Sortable table ────────────────────────────
+let _tableData = [];
+
+function sortTable(col) {
+  if (_sortCol === col) { _sortDir *= -1; }
+  else { _sortCol = col; _sortDir = 1; }
+
+  // Update header classes
+  document.querySelectorAll('.plant-table thead th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+  });
+  const thMap = { name:1, family:2, bloom:3, dtm:4, spread:5, status:7 };
+  const thIdx = thMap[col];
+  if (thIdx) {
+    const ths = document.querySelectorAll('.plant-table thead th');
+    if (ths[thIdx]) ths[thIdx].classList.add(_sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  }
+
+  renderTable(_planPlants);
 }
 
 function renderTable(plants) {
-  const tbody = document.getElementById('plant-table-body');
+  _tableData = [...plants];
 
-  if (!plants.length) {
+  // Sort
+  _tableData.sort((a, b) => {
+    let av, bv;
+    if (_sortCol === 'name')   { av = a.name;   bv = b.name;   return _sortDir * av.localeCompare(bv); }
+    if (_sortCol === 'family') { av = a.family;  bv = b.family; return _sortDir * av.localeCompare(bv); }
+    if (_sortCol === 'bloom')  {
+      const aw = getBloomWin(a.name,a.family), bw = getBloomWin(b.name,b.family);
+      av = aw ? aw[0] : 99; bv = bw ? bw[0] : 99;
+      return _sortDir * (av - bv);
+    }
+    if (_sortCol === 'dtm')    { return _sortDir * ((a.dtm||0) - (b.dtm||0)); }
+    if (_sortCol === 'spread') { return _sortDir * ((a.spread||0) - (b.spread||0)); }
+    if (_sortCol === 'status') {
+      const order = { blooming:0, upcoming:1, gap:2, unknown:3 };
+      const aw = getBloomWin(a.name,a.family), bw = getBloomWin(b.name,b.family);
+      av = order[bloomStatus(aw, CUR_MONTH)] ?? 3;
+      bv = order[bloomStatus(bw, CUR_MONTH)] ?? 3;
+      return _sortDir * (av - bv);
+    }
+    return 0;
+  });
+
+  const tbody = document.getElementById('plant-table-body');
+  if (!_tableData.length) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:#a09080;font-style:italic;">
-      No plants yet — <a href="map.html" style="color:var(--moss)">add some on the map</a>
+      No plants yet — <a href="garden.html" style="color:var(--moss)">add some in My Garden</a>
     </td></tr>`;
     return;
   }
 
-  tbody.innerHTML = plants.map(p => {
-    const w  = getBloomWin(p.name, p.family);
-    const st = bloomStatus(w, CUR_MONTH);
-
-    const bloomStr = w ? `${monthName(w[0])}–${monthName(w[1])}` : '—';
-    const daysStr  = p.dtm >= 300 ? 'Perennial' : `${p.dtm} days`;
-    const spreadStr = `${p.spread}"`;
-
-    const badges = [
+  tbody.innerHTML = _tableData.map(p => {
+    const w   = getBloomWin(p.name, p.family);
+    const st  = bloomStatus(w, CUR_MONTH);
+    const bloomStr  = w ? `${monthName(w[0])}–${monthName(w[1])}` : '—';
+    const daysStr   = (p.dtm >= 300 || !p.dtm) ? 'Perennial' : `${p.dtm}d`;
+    const spreadStr = `${p.spread || '—'}"`;
+    const badges    = [
       p.isNative ? `<span class="chip chip-native">Native</span>` : '',
       p.isHost   ? `<span class="chip chip-host">Host</span>`     : '',
     ].filter(Boolean).join(' ');
-
     const nowChip = st === 'blooming'
       ? `<span class="chip chip-blooming">🌸 Blooming</span>`
       : st === 'upcoming'
-      ? `<span class="chip" style="background:#fdf6e0;color:#6a4810;border:1px solid #d0a850">⏳ Coming</span>`
+      ? `<span class="chip" style="background:#fdf6e0;color:#6a4810;border:1px solid #d0a850">⏳ Coming ${monthName(w[0])}</span>`
       : st === 'gap'
       ? `<span class="chip chip-gap">Past bloom</span>`
       : `<span class="chip chip-offseason">Off season</span>`;
-
-    const countStr = p.count > 1
-      ? `<span style="font-size:0.65rem;color:#a09080;margin-left:0.3rem">×${p.count}</span>`
-      : '';
+    const qtyStr = p.qty > 1 ? `<span style="font-size:0.62rem;color:#a09080;margin-left:0.3rem">×${p.qty}</span>` : '';
 
     return `<tr>
       <td class="pt-emoji">${p.emoji}</td>
-      <td><span class="pt-name">${p.name}</span>${countStr}</td>
+      <td><span class="pt-name">${p.name}</span>${qtyStr}</td>
       <td class="pt-family">${p.family}</td>
       <td>${bloomStr}</td>
       <td>${daysStr}</td>
       <td>${spreadStr}</td>
-      <td>${badges || '<span style="color:#c0b8a8;font-size:0.72rem">Cultivated</span>'}</td>
+      <td>${badges||'<span style="color:#c0b8a8;font-size:0.7rem">Cultivated</span>'}</td>
       <td>${nowChip}</td>
     </tr>`;
   }).join('');
