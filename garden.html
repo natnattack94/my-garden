@@ -461,6 +461,96 @@ nav {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Edit drawer on card */
+.edit-drawer {
+  display: none;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 0.6rem;
+  gap: 0.5rem;
+}
+.edit-drawer.open { display: flex; flex-direction: column; }
+.edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.edit-input, .edit-select {
+  background: var(--cream); border: 1px solid var(--border);
+  color: var(--ink); padding: 0.35rem 0.5rem;
+  font-family: var(--sans); font-size: 0.75rem;
+  outline: none; border-radius: 3px; width: 100%;
+  transition: border-color 0.12s;
+}
+.edit-input:focus, .edit-select:focus { border-color: var(--moss); }
+.edit-textarea {
+  background: var(--cream); border: 1px solid var(--border);
+  color: var(--ink); padding: 0.35rem 0.5rem;
+  font-family: var(--sans); font-size: 0.75rem;
+  outline: none; border-radius: 3px; width: 100%;
+  resize: vertical; min-height: 52px; line-height: 1.5;
+  transition: border-color 0.12s;
+}
+.edit-textarea:focus { border-color: var(--moss); }
+.edit-label {
+  font-size: 0.55rem; letter-spacing: 0.1rem;
+  text-transform: uppercase; color: var(--muted);
+  display: block; margin-bottom: 0.2rem;
+}
+.edit-save {
+  padding: 0.35rem 0.7rem;
+  background: var(--moss); color: white;
+  border: none; font-family: var(--sans);
+  font-size: 0.6rem; letter-spacing: 0.1rem;
+  text-transform: uppercase; cursor: pointer;
+  border-radius: 3px; align-self: flex-start;
+  transition: background 0.12s;
+}
+.edit-save:hover { background: #3d5a32; }
+
+/* Notes display on card */
+.plant-card-notes {
+  font-size: 0.7rem; color: #7a6858;
+  font-style: italic; margin-top: 0.35rem;
+  line-height: 1.4;
+}
+
+/* Custom plant section in picker */
+.custom-plant-toggle {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.6rem; letter-spacing: 0.12rem;
+  text-transform: uppercase; color: var(--moss);
+  cursor: pointer; text-align: center;
+  border-top: 1px solid var(--border);
+  transition: background 0.12s; flex-shrink: 0;
+}
+.custom-plant-toggle:hover { background: var(--moss-pale); }
+#custom-form {
+  display: none;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--cream);
+  flex-shrink: 0;
+}
+#custom-form.show { display: block; }
+#custom-form .form-label { margin-top: 0.4rem; }
+#custom-form .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.custom-title {
+  font-family: var(--serif); font-size: 0.95rem;
+  color: var(--ink); margin-bottom: 0.6rem; font-style: italic;
+}
+
+/* Notes field in add form */
+#f-notes {
+  width: 100%;
+  background: white; border: 1px solid var(--border);
+  color: var(--ink); padding: 0.4rem 0.6rem;
+  font-family: var(--sans); font-size: 0.78rem;
+  outline: none; border-radius: 3px;
+  resize: vertical; min-height: 52px; line-height: 1.5;
+  transition: border-color 0.15s;
+}
+#f-notes:focus { border-color: var(--moss); }
+
+/* Card action edit button */
+.card-action.edit:hover { border-color: var(--moss); color: var(--moss); background: var(--moss-pale); }
+
 /* Toast */
 #toast {
   position: fixed; bottom: 2rem; right: 2rem;
@@ -525,6 +615,26 @@ nav {
       <div class="spinner"></div>
     </div>
 
+    <div class="custom-plant-toggle" onclick="toggleCustomForm()">＋ Add a custom plant not in the list</div>
+    <div id="custom-form">
+      <div class="custom-title">Custom Plant</div>
+      <div class="form-row">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="cf-name" type="text" placeholder="e.g. Grandma's Peonies"/>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="form-label">Emoji</label>
+          <input class="form-input" id="cf-emoji" type="text" placeholder="🌸" maxlength="2"/>
+        </div>
+        <div>
+          <label class="form-label">Family</label>
+          <input class="form-input" id="cf-family" type="text" placeholder="e.g. Rosaceae"/>
+        </div>
+      </div>
+      <button class="add-btn" style="margin-top:0.5rem" onclick="addCustomPlant()">Use this plant →</button>
+    </div>
+
     <!-- Add form — shown after selecting a species -->
     <div id="add-form">
       <div class="selected-preview">
@@ -563,6 +673,10 @@ nav {
         </div>
       </div>
 
+      <div class="form-row">
+        <label class="form-label">Notes (optional)</label>
+        <textarea class="form-input" id="f-notes" placeholder="E.g. from farmer's market, struggling in shade…" rows="2"></textarea>
+      </div>
       <button class="add-btn" id="btn-add" onclick="addPlant()">+ Add to Garden</button>
       <span class="cancel-link" onclick="cancelAdd()">Cancel</span>
     </div>
@@ -852,6 +966,7 @@ async function addPlant() {
   const location = document.getElementById('f-location').value;
   const qty      = parseInt(document.getElementById('f-qty').value) || 1;
   const dateVal  = document.getElementById('f-date').value;
+  const notes    = (document.getElementById('f-notes').value||'').trim();
 
   btn.disabled = true; btn.textContent = 'Adding…';
 
@@ -866,6 +981,7 @@ async function addPlant() {
     dtm:        _selSpecies.maturity_days || 60,
     location:   location || '',
     qty:        qty,
+    notes:      notes,
     date_planted: dateVal || new Date().toISOString().slice(0,10),
     created_at: new Date().toISOString(),
   };
@@ -878,6 +994,64 @@ async function addPlant() {
   renderGarden();
 
   btn.disabled = false; btn.textContent = '+ Add to Garden';
+}
+
+// ── Custom plant ───────────────────────────────
+function toggleCustomForm() {
+  const f = document.getElementById('custom-form');
+  f.classList.toggle('show');
+  if (f.classList.contains('show')) {
+    document.getElementById('cf-name').focus();
+    cancelAdd(); // close library form if open
+  }
+}
+
+function addCustomPlant() {
+  const name   = (document.getElementById('cf-name').value||'').trim();
+  const emoji  = (document.getElementById('cf-emoji').value||'🌱').trim();
+  const family = (document.getElementById('cf-family').value||'').trim();
+  if (!name) { document.getElementById('cf-name').focus(); return; }
+
+  // Treat as a synthetic species entry and open the add form
+  _selSpecies = {
+    common_name: name,
+    emoji: emoji || '🌱',
+    plant_family: family || 'Unknown',
+    spread_in: 12, maturity_days: 60,
+    is_native: false, is_host_plant: false,
+    _custom: true,
+  };
+
+  document.getElementById('sel-emoji').textContent = _selSpecies.emoji;
+  document.getElementById('sel-name').textContent  = _selSpecies.common_name;
+  document.getElementById('sel-fam').textContent   = _selSpecies.plant_family;
+  document.getElementById('f-qty').value  = 1;
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-location').value = '';
+  document.getElementById('add-form').classList.add('show');
+  document.getElementById('custom-form').classList.remove('show');
+}
+
+// ── Inline edit ────────────────────────────────
+function toggleEdit(id) {
+  const drawer = document.getElementById(`edit-${id}`);
+  if (!drawer) return;
+  const isOpen = drawer.classList.contains('open');
+  // Close all other open drawers
+  document.querySelectorAll('.edit-drawer.open').forEach(d => d.classList.remove('open'));
+  if (!isOpen) drawer.classList.add('open');
+}
+
+async function saveEdit(id) {
+  const plant = myPlants.find(p => p.id === id);
+  if (!plant) return;
+  plant.qty      = parseInt(document.getElementById(`eq-${id}`).value) || 1;
+  plant.location = document.getElementById(`el-${id}`).value;
+  plant.notes    = (document.getElementById(`en-${id}`).value||'').trim();
+  await savePlant(plant);
+  toast('✓ Saved');
+  renderGarden();
 }
 
 // ── Delete plant ───────────────────────────────
@@ -980,16 +1154,40 @@ function plantCard(p) {
     ? `<div class="bloom-strip" style="background:${color};opacity:0.55;"></div>`
     : '';
 
-  return `<div class="plant-card">
+  const notesHtml = p.notes
+    ? `<div class="plant-card-notes">${p.notes}</div>` : '';
+
+  const locationOpts = ['Patio Bed','Fence Border','Front Garden','Back Garden','Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border','Other']
+    .map(o => `<option${o === p.location ? ' selected' : ''}>${o}</option>`).join('');
+
+  return `<div class="plant-card" id="card-${p.id}">
     ${strip}
     <div class="plant-card-emoji">${p.emoji}</div>
     <div class="plant-card-body">
       <div class="plant-card-name">${p.name}</div>
       <div class="plant-card-where">${p.family}</div>
       <div class="plant-card-meta">${chips}</div>
+      ${notesHtml}
+      <div class="edit-drawer" id="edit-${p.id}">
+        <div class="edit-row">
+          <div><label class="edit-label">Quantity</label>
+            <input class="edit-input" id="eq-${p.id}" type="number" min="1" value="${p.qty||1}"/>
+          </div>
+          <div><label class="edit-label">Location</label>
+            <select class="edit-select" id="el-${p.id}">
+              <option value="">—</option>${locationOpts}
+            </select>
+          </div>
+        </div>
+        <div><label class="edit-label">Notes</label>
+          <textarea class="edit-textarea" id="en-${p.id}" placeholder="Any notes about this plant…">${p.notes||''}</textarea>
+        </div>
+        <button class="edit-save" onclick="saveEdit('${p.id}')">Save changes</button>
+      </div>
     </div>
     <div class="plant-card-actions">
-      <button class="card-action del" onclick="deletePlant('${p.id}')" title="Remove">✕</button>
+      <button class="card-action edit" onclick="toggleEdit('${p.id}')" title="Edit">✎</button>
+      <button class="card-action del"  onclick="deletePlant('${p.id}')" title="Remove">✕</button>
     </div>
   </div>`;
 }
