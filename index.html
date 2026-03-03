@@ -1,997 +1,720 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GardenHub OS | Mission Control v10.6</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GardenHub — Home</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="weather-engine.js"></script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet"/>
 <style>
-/* ════════════════════════════════════════════
-   GardenHub OS — Design System (inlined)
-   Warm cream palette · Fraunces serif
-   ════════════════════════════════════════════ */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --bg:        #f0ead9;
-  --bg2:       #e8e0cc;
-  --surface:   #faf6ee;
-  --surface2:  #ede8dd;
-  --surface3:  #e4ddd0;
-  --border:    #d5ccb8;
-  --border2:   #bfb5a0;
-  --text:      #1c2419;
-  --text2:     #3a4a36;
-  --muted:     #7a7060;
-  --green:     #2d6a42;
-  --green-lt:  #e2ede6;
-  --green-mid: #4a8c62;
-  --green-dim: #4a7a5a;
-  --green-vv:  #1a9450;
-  --amber:     #a05c14;
-  --amber-lt:  #fcefd8;
-  --amber-mid: #c47820;
-  --red:       #b82018;
-  --red-lt:    #faeae8;
-  --blue:      #1a4d8c;
-  --blue-lt:   #e4edf8;
-  --pink:      #a01850;
-  --pink-lt:   #faeaf0;
-  --serif: 'Fraunces', Georgia, serif;
-  --mono:  'DM Mono', monospace;
-  --sans:  'DM Sans', sans-serif;
+  --ink:        #231c14;
+  --paper:      #faf4ea;
+  --cream:      #f5ede0;
+  --border:     #e0d4c0;
+  --moss:       #526f45;
+  --moss-light: #c4d8b0;
+  --moss-pale:  #eaf2e4;
+  --rose:       #b8604a;
+  --rose-pale:  #fdf0ec;
+  --gold:       #b08a28;
+  --gold-pale:  #fdf6e0;
+  --gold-light: #f0e0a8;
+  --plum:       #7a5898;
+  --plum-pale:  #f5f0fc;
+  --sky:        #4878a0;
+  --sky-pale:   #eef5fc;
+  --sky-light:  #c0d8f0;
+  --muted:      #a09080;
+  --serif:      'Cormorant Garamond', serif;
+  --sans:       'Jost', sans-serif;
 }
 
-html { font-size: 16px; }
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  background:  var(--bg);
-  color:       var(--text);
   font-family: var(--sans);
-  font-weight: 400;
-  line-height: 1.6;
-  min-height:  100vh;
-  overflow-x:  hidden;
+  font-weight: 300;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar              { width: 5px; height: 5px; }
-::-webkit-scrollbar-track        { background: var(--bg2); }
-::-webkit-scrollbar-thumb        { background: var(--border2); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover  { background: var(--muted); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: #c8bca8; border-radius: 2px; }
 
-/* ── Top bar ──────────────────────────────────── */
-.top-bar {
-  position: sticky; top: 0; z-index: 200;
-  background: rgba(240,234,217,0.97);
-  border-bottom: 2px solid var(--border);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex; align-items: center;
-  justify-content: space-between;
-  padding: 0 1.75rem;
-  height: 54px;
-  gap: 1rem;
-}
-
-/* ── Logo ─────────────────────────────────────── */
-.logo-block {
-  display: flex; align-items: baseline;
-  gap: 0.55rem; flex-shrink: 0;
-}
-.logo-eye {
-  font-family: var(--mono);
-  font-size: 0.45rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.logo-name {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--text);
-  line-height: 1;
-}
-.logo-name em { font-weight: 700; font-style: italic; color: var(--green); }
-
-/* ── Nav links ────────────────────────────────── */
-nav {
-  display: flex; align-items: center;
-  gap: 0.15rem; flex-wrap: wrap;
-}
-.nav-link {
-  font-family:     var(--mono);
-  font-size:       0.5rem;
-  letter-spacing:  0.07em;
-  text-transform:  uppercase;
-  text-decoration: none;
-  padding:         0.28rem 0.55rem;
-  border:          1px solid transparent;
-  color:           var(--muted);
-  background:      transparent;
-  cursor:          pointer;
-  transition:      color 0.12s, border-color 0.12s, background 0.12s;
-  white-space:     nowrap;
-  line-height:     1;
-  display:         inline-block;
-}
-.nav-link:hover {
-  color:        var(--green);
-  border-color: var(--green-lt);
-  background:   var(--green-lt);
-}
-.nav-link.active {
-  color:        var(--green);
-  border-color: var(--green);
-  font-weight:  500;
-}
-.nav-link.danger:hover {
-  color:        var(--red);
-  border-color: var(--red-lt);
-  background:   var(--red-lt);
-}
-
-/* ── Shared card base ─────────────────────────── */
-.card {
-  background: var(--surface);
-  border:     1px solid var(--border);
-  padding:    1rem 1.2rem;
-}
-
-/* ── Eyebrow label ────────────────────────────── */
-.card-eyebrow, .eyebrow {
-  font-family:     var(--mono);
-  font-size:       0.48rem;
-  letter-spacing:  0.18em;
-  text-transform:  uppercase;
-  color:           var(--muted);
-}
-
-/* ── Progress bar ─────────────────────────────── */
-.progress-track {
-  height: 4px; background: var(--surface3);
-  border-radius: 2px; overflow: hidden; margin: 0.4rem 0;
-}
-.progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
-.progress-fill.fill-growing { background: var(--green); }
-.progress-fill.fill-harvest { background: var(--amber); }
-
-/* ── Badge ────────────────────────────────────── */
-.badge {
-  display: inline-flex; align-items: center;
-  font-family: var(--mono); font-size: 0.42rem;
-  letter-spacing: 0.09em; text-transform: uppercase;
-  padding: 0.14rem 0.42rem; border: 1px solid; line-height: 1.4;
-}
-.badge-green  { color: var(--green); border-color: var(--green-lt); background: var(--green-lt); }
-.badge-amber  { color: var(--amber); border-color: #e8c88a;         background: var(--amber-lt); }
-.badge-red    { color: var(--red);   border-color: #e8b4b0;         background: var(--red-lt);   }
-.badge-muted  { color: var(--muted); border-color: var(--border);   background: var(--surface2); }
-
-/* ── Skeleton loader ──────────────────────────── */
-.skel {
-  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
-  background-size: 400% 100%;
-  animation: skel-sweep 1.4s ease infinite;
-}
-@keyframes skel-sweep { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
-
-@media (max-width: 900px) {
-  .top-bar { padding: 0 1rem; height: 48px; }
-}
-@media (max-width: 600px) {
-  .logo-eye { display: none; }
-  nav { gap: 0.1rem; }
-  .nav-link { font-size: 0.46rem; padding: 0.25rem 0.4rem; }
-}
-
-/* ── Tokens ──────────────────────────────────── */
-/* subtle dot grid background */
-.page-wrap { position: relative; z-index: 1; max-width: 1380px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
-
-/* ── Auth Overlay ────────────────────────────── */
+/* ── AUTH ── */
 #auth-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(30,43,30,0.92);
-  backdrop-filter: blur(12px);
+  position: fixed; inset: 0;
+  background: rgba(35,28,20,0.93);
+  z-index: 1000;
   display: flex; align-items: center; justify-content: center;
 }
 #auth-overlay.hidden { display: none; }
-
-.auth-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+.auth-box {
+  background: var(--paper);
+  border-radius: 10px;
   padding: 2.5rem;
-  width: 360px;
-  position: relative;
+  width: 340px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45);
 }
 .auth-logo {
+  font-family: var(--serif); font-size: 1.8rem;
+  font-weight: 300; font-style: italic;
+  color: var(--ink); margin-bottom: 0.2rem;
+}
+.auth-sub {
+  font-size: 0.65rem; letter-spacing: 0.18rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+.auth-input {
+  width: 100%; background: var(--cream);
+  border: 1px solid var(--border); color: var(--ink);
+  padding: 0.6rem 0.75rem; font-family: var(--sans);
+  font-size: 0.82rem; outline: none; margin-bottom: 0.6rem;
+  border-radius: 3px; transition: border-color 0.15s;
+}
+.auth-input:focus { border-color: var(--moss); }
+#auth-error { font-size: 0.7rem; min-height: 1rem; margin-bottom: 0.4rem; }
+.auth-btn {
+  width: 100%; padding: 0.65rem; background: var(--ink);
+  color: var(--moss-light); border: none; font-family: var(--sans);
+  font-size: 0.65rem; letter-spacing: 0.15rem;
+  text-transform: uppercase; cursor: pointer;
+  border-radius: 3px; transition: background 0.15s; margin-bottom: 0.4rem;
+}
+.auth-btn:hover { background: #3a3028; }
+.auth-btn.ghost {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border);
+}
+.auth-btn.ghost:hover { color: var(--ink); border-color: #b0a890; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--ink);
+  display: flex; align-items: center;
+  padding: 0 2rem; height: 48px; gap: 0;
+}
+.nav-logo {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.05rem; color: var(--moss-light);
+  font-weight: 300; margin-right: 2rem;
+  text-decoration: none; white-space: nowrap;
+}
+.nav-link {
+  color: #8a7a68; font-size: 0.6rem;
+  letter-spacing: 0.18rem; text-transform: uppercase;
+  text-decoration: none; padding: 0 0.9rem;
+  height: 100%; display: flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s; white-space: nowrap;
+}
+.nav-link:hover  { color: var(--moss-light); }
+.nav-link.active { color: var(--moss-light); border-bottom-color: var(--moss); }
+.nav-logout {
+  margin-left: auto;
+  color: #5a4a38; font-size: 0.55rem;
+  letter-spacing: 0.15rem; text-transform: uppercase;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--sans); transition: color 0.12s;
+  padding: 0 0.5rem;
+}
+.nav-logout:hover { color: var(--moss-light); }
+
+/* ── HERO ── */
+.hero {
+  background: var(--ink);
+  padding: 4rem 2rem 3rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 60%, rgba(82,111,69,0.28) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 25%, rgba(122,88,152,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 95%, rgba(184,96,74,0.15) 0%, transparent 50%);
+}
+.hero-eyebrow {
+  font-size: 0.62rem; letter-spacing: 0.35rem;
+  text-transform: uppercase; color: var(--moss-light);
+  margin-bottom: 0.75rem; position: relative;
+}
+.hero-title {
   font-family: var(--serif);
-  font-size: 1.75rem;
-  color: var(--text);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 300; color: var(--paper);
+  font-style: italic; line-height: 1.1;
+  position: relative;
+}
+.hero-title em { color: var(--moss-light); font-style: normal; }
+.hero-date {
+  font-size: 0.65rem; letter-spacing: 0.2rem;
+  text-transform: uppercase; color: #6a5a48;
+  margin-top: 0.85rem; position: relative;
+}
+/* Season greeting strip */
+.season-strip {
+  display: flex; justify-content: center;
+  gap: 0.4rem; flex-wrap: wrap;
+  margin-top: 1.1rem; position: relative;
+}
+.season-tag {
+  font-size: 0.67rem; padding: 0.2rem 0.7rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.07);
+  color: #c8b898; letter-spacing: 0.04rem;
+  border: 1px solid rgba(255,255,255,0.11);
+}
+.season-tag.live {
+  background: rgba(82,111,69,0.25);
+  color: var(--moss-light);
+  border-color: rgba(82,111,69,0.4);
+}
+
+/* ── CONTAINER ── */
+.container { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+/* ── QUICK NAV CARDS ── */
+.quick-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+.quick-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  text-decoration: none;
+  color: var(--ink);
+  display: flex; flex-direction: column;
+  gap: 0.3rem;
+  transition: all 0.15s;
+  border-top: 3px solid var(--border);
+}
+.quick-card:hover {
+  border-color: var(--moss);
+  border-top-color: var(--moss);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  transform: translateY(-1px);
+}
+.quick-card.garden  { border-top-color: var(--moss); }
+.quick-card.map     { border-top-color: var(--sky); }
+.quick-card.plan    { border-top-color: var(--gold); }
+.quick-card.weather { border-top-color: var(--rose); }
+.qc-icon { font-size: 1.4rem; }
+.qc-title {
+  font-family: var(--serif); font-size: 1rem;
+  font-weight: 600; color: var(--ink);
+}
+.qc-sub { font-size: 0.65rem; color: var(--muted); }
+
+/* ── SECTION TITLES ── */
+.sec-title {
+  font-family: var(--serif);
+  font-size: 1.8rem; font-weight: 300;
   margin-bottom: 0.25rem;
 }
-.auth-logo span { color: var(--green); font-style: italic; }
-.auth-sub { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.75rem; }
-.auth-input {
-  width: 100%; padding: 0.75rem 0.9rem;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--sans); font-size: 0.85rem;
-  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
+.sec-sub {
+  font-size: 0.68rem; letter-spacing: 0.18rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 1.5rem;
 }
-.auth-input:focus { border-color: var(--green); }
-.auth-btns { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
-.auth-btn {
-  flex: 1; padding: 0.75rem;
-  font-family: var(--mono); font-size: 0.65rem; font-weight: 500;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  cursor: pointer; border: none; transition: opacity 0.15s;
+.section-divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
 }
-.auth-btn.primary { background: var(--green); color: white; }
-.auth-btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
-.auth-btn:hover { opacity: 0.85; }
-#auth-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1.2rem; margin-top: 0.6rem; }
 
-/* ── Header ──────────────────────────────────── */
-
-.logo-block .wordmark em { color: var(--green); font-style: italic; }
-.logo-block .datestamp {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  color: var(--muted);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+/* ── STATS ROW ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+.stat-card {
+  background: white; border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-top: 3px solid var(--moss);
+}
+.stat-card:nth-child(2) { border-top-color: var(--rose); }
+.stat-card:nth-child(3) { border-top-color: var(--gold); }
+.stat-card:nth-child(4) { border-top-color: var(--plum); }
+.stat-card:nth-child(5) { border-top-color: var(--sky);  }
+.stat-num {
+  font-family: var(--serif); font-size: 2.2rem;
+  font-weight: 300; line-height: 1; color: var(--ink);
+}
+.stat-label {
+  font-size: 0.62rem; letter-spacing: 0.14rem;
+  text-transform: uppercase; color: var(--muted);
   margin-top: 0.3rem;
 }
 
-
-/* ── Top Stats Row ───────────────────────────── */
-.top-row {
+/* ── TWO COL LAYOUT ── */
+.two-col {
   display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
-/* ── Climate Engine Card ─────────────────────── */
-.climate-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
+/* ── BLOOM CLOCK ── */
+.clock-card {
+  background: white; border-radius: 10px;
+  padding: 1.75rem;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.06);
 }
+.clock-inner {
+  display: flex; align-items: center;
+  gap: 1.5rem; flex-wrap: wrap;
+}
+.clock-svg-wrap {
+  flex-shrink: 0;
+  position: relative;
+}
+#bloom-clock-svg {
+  display: block; overflow: visible;
+}
+.clock-legend {
+  flex: 1; min-width: 120px;
+}
+.clock-legend-item {
+  display: flex; align-items: center;
+  gap: 0.5rem; font-size: 0.7rem;
+  color: var(--ink); margin-bottom: 0.5rem;
+}
+.clock-dot {
+  width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+}
+.clock-gaps {
+  margin-top: 0.75rem; padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.gap-label {
+  font-size: 0.58rem; letter-spacing: 0.12rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+#bloom-gaps-list {
+  font-size: 0.72rem; color: var(--rose); line-height: 1.6;
+}
+#bloom-clock-tip {
+  position: absolute;
+  background: var(--ink); color: var(--paper);
+  font-size: 0.65rem; padding: 0.3rem 0.6rem;
+  border-radius: 3px; pointer-events: none;
+  white-space: nowrap; z-index: 50;
+  opacity: 0; transition: opacity 0.12s;
+  top: -32px; left: 50%; transform: translateX(-50%);
+}
+#bloom-clock-tip.show { opacity: 1; }
 
-.card-eyebrow {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+/* ── WEATHER CARD ── */
+.weather-card {
+  background: white; border-radius: 10px;
+  padding: 1.75rem;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.06);
+}
+.weather-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap; gap: 0.5rem;
+}
+.weather-title {
+  font-family: var(--serif); font-size: 1.1rem;
+  font-weight: 400; color: var(--ink);
+}
+.weather-updated {
+  font-size: 0.6rem; letter-spacing: 0.1rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-top: 0.15rem;
 }
 .refresh-btn {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.25rem 0.6rem;
-  background: var(--amber-lt); border: 1px solid #fcd34d;
-  color: var(--amber); cursor: pointer; transition: opacity 0.15s;
+  font-size: 0.58rem; padding: 0.25rem 0.65rem;
+  background: var(--cream); border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer; border-radius: 3px;
+  font-family: var(--sans); transition: all 0.12s; flex-shrink: 0;
 }
-.refresh-btn:hover { opacity: 0.75; }
-.refresh-btn.loading { opacity: 0.5; cursor: wait; }
-
-.climate-cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
-.climate-cell {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+.refresh-btn:hover { border-color: var(--moss); color: var(--moss); }
+.weather-cells {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.wx-cell {
+  background: var(--cream); border-radius: 6px;
   padding: 0.75rem 0.85rem;
-  text-align: center;
 }
-.climate-label { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
-.climate-val   { font-family: var(--serif); font-size: 1.1rem; color: var(--text); }
-.climate-val.good   { color: var(--green); }
-.climate-val.warn   { color: var(--amber); }
-.climate-val.danger { color: var(--red); }
+.wx-label {
+  font-size: 0.58rem; letter-spacing: 0.12rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+.wx-val {
+  font-family: var(--serif); font-size: 1.2rem;
+  font-weight: 300; color: var(--ink);
+}
+.wx-val.good   { color: var(--moss); }
+.wx-val.warn   { color: var(--gold); }
+.wx-val.danger { color: var(--rose); }
+.frost-banner {
+  margin-top: 0.75rem; padding: 0.6rem 0.85rem;
+  background: var(--sky-pale); border-radius: 6px;
+  border-left: 3px solid var(--sky);
+  font-size: 0.72rem; color: #1a4060;
+  display: none;
+}
+.frost-banner.show { display: block; }
 
-/* ── Biological Pulse ────────────────────────── */
-.bio-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--green);
-  padding: 1.1rem 1.25rem;
-  display: flex; flex-direction: column; justify-content: space-between;
-}
-.bio-pct {
-  font-family: var(--serif);
-  font-size: 3rem;
-  color: var(--green);
-  line-height: 1;
-  font-style: italic;
-}
-.bio-label {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
-  margin-bottom: 0.25rem;
-}
-.bio-title {
-  font-family: var(--serif); font-size: 1.2rem; color: var(--text);
-}
-.pulse-dot {
-  display: inline-block; width: 6px; height: 6px;
-  background: var(--green-vv); border-radius: 50%;
-  margin-right: 0.4rem;
-  animation: pulse-anim 2s ease-in-out infinite;
-}
-@keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
-
-/* ── Main Grid ───────────────────────────────── */
-.main-grid {
+/* ── WATER + POLLINATOR ROW ── */
+.bottom-row {
   display: grid;
-  grid-template-columns: 280px 1fr 260px;
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
 }
-
-/* ── Left Column Cards ───────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
+.bottom-card {
+  background: white; border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.06);
 }
-.card + .card { margin-top: 0.75rem; }
-.card-title {
-  font-family: var(--mono); font-size: 0.55rem;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 0.75rem;
-}
-.card-value {
-  font-family: var(--serif); font-size: 1.6rem; color: var(--text);
-}
-
-/* Diagnostic intake */
-.diag-card {
-  background: var(--text);
-  border: 1px solid #2a3d2a;
-  padding: 1.1rem 1.25rem;
-}
-.diag-card .card-title { color: #4a6a4a; }
-.diag-drop {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 0.5rem; padding: 1.5rem;
-  border: 1.5px dashed #2a3d2a;
-  cursor: pointer; transition: border-color 0.2s;
-}
-.diag-drop:hover, .diag-drop.dragover { border-color: var(--green-vv); }
-.diag-icon { font-size: 1.5rem; opacity: 0.4; }
-.diag-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase; color: #4a6a4a; }
-.diag-preview {
-  width: 100%; aspect-ratio: 4/3; object-fit: cover;
-  display: none; border: 1px solid #2a3d2a;
-}
-.diag-submit {
-  width: 100%; margin-top: 0.6rem;
-  background: var(--green); color: white;
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
-  text-transform: uppercase; padding: 0.55rem;
-  border: none; cursor: pointer; display: none;
-  transition: opacity 0.15s;
-}
-.diag-submit:hover { opacity: 0.85; }
-
-/* Water pulse */
-.water-card { border-left: 3px solid var(--blue); }
-.water-val  { font-family: var(--serif); font-size: 1.8rem; color: var(--blue); font-style: italic; }
-
-/* Pollinator IQ */
-.poll-card  { background: var(--text); border: 1px solid #2a3d2a; border-left: 3px solid var(--pink); }
-.poll-card .card-title { color: var(--pink); }
-.poll-iq    { font-family: var(--serif); font-size: 2.5rem; color: white; font-style: italic; line-height:1; }
-.poll-sub   { font-family: var(--mono); font-size: 0.55rem; color: #4a5a4a; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.3rem; }
-
-/* ── Center Column ───────────────────────────── */
-
-.section-title {
-  font-family: var(--serif); font-size: 1.4rem; font-style: italic; color: var(--text);
-}
-
-.add-btn {
-  background: var(--green); color: white;
-  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 0.5rem 0.9rem; border: none; cursor: pointer;
-  transition: opacity 0.15s;
-}
-.add-btn:hover { opacity: 0.85; }
-
-/* Log feed */
-.log-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border2);
-  padding: 1rem 1.25rem;
+.bottom-card-title {
+  font-family: var(--serif); font-size: 1.1rem;
+  font-weight: 400; color: var(--ink);
   margin-bottom: 0.75rem;
 }
-.log-entry {
-  display: flex; align-items: flex-start; gap: 0.75rem;
-  padding: 0.45rem 0;
-  border-bottom: 1px solid var(--surface2);
-  font-size: 0.75rem; color: var(--muted);
+.big-num {
+  font-family: var(--serif); font-size: 3rem;
+  font-weight: 300; line-height: 1; color: var(--ink);
 }
-.log-entry:last-child { border-bottom: none; }
-.log-time { font-family: var(--mono); font-size: 0.55rem; color: var(--border2); white-space: nowrap; margin-top: 0.1rem; }
-.log-empty { font-family: var(--mono); font-size: 0.65rem; color: var(--border2); padding: 0.75rem 0; letter-spacing: 0.08em; }
-
-/* Plant grid */
-.plant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-.plant-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 0.85rem 1rem;
-  transition: border-color 0.15s;
-}
-.plant-card:hover { border-color: var(--green); }
-.plant-name { font-weight: 600; font-size: 0.82rem; color: var(--text); margin-bottom: 0.2rem; }
-.plant-meta { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.55rem; }
-.plant-badges { display: flex; gap: 0.3rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
-.badge {
-  font-family: var(--mono); font-size: 0.48rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.15rem 0.4rem;
-  border-radius: 2px; font-weight: 500;
-}
-.badge-native { background: var(--green-lt); color: var(--green); border: 1px solid #bbddc8; }
-.badge-host   { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #bfdbfe; }
-.badge-harvest{ background: var(--amber-lt); color: var(--amber); border: 1px solid #fcd34d; animation: pulse-anim 2s infinite; }
-.badge-penalty{ background: var(--red-lt);   color: var(--red);   border: 1px solid #fecaca; }
-
-/* Progress bar */
-.progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
-.progress-fill  { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-.fill-growing  { background: var(--green-vv); }
-.fill-harvest  { background: var(--amber); animation: pulse-anim 2s infinite; }
-
-.forecast-item {
-  padding: 0.7rem 0;
-  border-bottom: 1px solid var(--surface2);
-  display: flex; flex-direction: column; gap: 0.3rem;
-}
-.forecast-item:last-child { border-bottom: none; }
-.forecast-name { font-weight: 600; font-size: 0.78rem; color: var(--text); }
-.forecast-date { font-family: var(--mono); font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; }
-.forecast-status {
-  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em;
-  text-transform: uppercase; align-self: flex-start;
-  padding: 0.15rem 0.4rem;
-}
-.status-ready   { color: var(--amber); border: 1px solid #fcd34d; background: var(--amber-lt); }
-.status-soon    { color: var(--green); border: 1px solid #bbddc8; background: var(--green-lt); }
-.status-growing { color: var(--muted); border: 1px solid var(--border); }
-.forecast-pct   { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); }
-
-/* ── Add Plant Modal ─────────────────────────── */
-#add-modal {
-  position: fixed; inset: 0; z-index: 500;
-  background: rgba(30,43,30,0.7); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
-}
-#add-modal.hidden { display: none; }
-.modal-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 2rem; width: 400px; max-width: 90vw;
-  position: relative;
-}
-.modal-title { font-family: var(--serif); font-size: 1.4rem; font-style: italic; margin-bottom: 1.25rem; }
-.modal-input {
-  width: 100%; padding: 0.65rem 0.8rem;
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--sans); font-size: 0.82rem;
-  margin-bottom: 0.6rem; outline: none; transition: border-color 0.15s;
-}
-.modal-input:focus { border-color: var(--green); }
-.modal-check-row { display: flex; gap: 1.5rem; padding: 0.35rem 0; margin-bottom: 0.5rem; }
-.modal-check-row label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--muted); cursor: pointer; }
-.modal-btns { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-.modal-btn {
-  flex: 1; padding: 0.65rem;
-  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
-  text-transform: uppercase; border: none; cursor: pointer; transition: opacity 0.15s;
-}
-.modal-btn.primary  { background: var(--green); color: white; }
-.modal-btn.ghost    { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
-.modal-btn:hover    { opacity: 0.85; }
-.modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-#modal-error { font-family: var(--mono); font-size: 0.6rem; color: var(--red); min-height: 1rem; margin-top: 0.3rem; }
-.modal-success { color: var(--green) !important; }
-
-/* ── Responsive ──────────────────────────────── */
-@media (max-width: 1100px) {
-  .main-grid { grid-template-columns: 1fr 1fr; }
-  .main-grid > :last-child { grid-column: span 2; }
-}
-@media (max-width: 700px) {
-  .top-row { grid-template-columns: 1fr; }
-  .climate-cells { grid-template-columns: 1fr 1fr; }
-  .main-grid { grid-template-columns: 1fr; }
-  .main-grid > :last-child { grid-column: span 1; }
-  .plant-grid { grid-template-columns: 1fr; }
-  .pulse-strip { gap: 0.5rem; }
-  .bloom-grid  { grid-template-columns: repeat(13,1fr); }
-}
-
-/* ── Predictive pulse strip ───────────────────── */
-.pulse-strip {
-  display: flex; gap: 0.65rem; flex-wrap: wrap;
-  padding: 0.75rem 1.5rem 0;
-}
-.pulse-chip {
-  display: flex; align-items: center; gap: 0.55rem;
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 0.6rem 0.9rem; flex: 1; min-width: 130px; cursor: default;
-  transition: border-color 0.18s, transform 0.18s;
-  animation: chipIn 0.4s cubic-bezier(0.16,1,0.3,1) both;
-}
-.pulse-chip:hover { border-color: var(--green); transform: translateY(-1px); }
-@keyframes chipIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-.chip-icon { font-size: 1.3rem; flex-shrink: 0; }
-.chip-.chip-num  { font-family: var(--serif); font-size: 1.45rem; line-height: 1; font-style: italic; }
-.chip-lbl  { font-family: var(--mono); font-size: 0.43rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-.chip-sub  { font-family: var(--sans); font-size: 0.6rem; color: var(--muted); }
-.pulse-chip.is-bloom   { border-color: var(--pink);  background: var(--pink-lt);  }
-.pulse-chip.is-harvest { border-color: var(--green); background: var(--green-lt); }
-.pulse-chip.is-urgent  { border-color: var(--amber); background: var(--amber-lt); }
-.pulse-chip.is-alert   { border-color: var(--red);   background: var(--red-lt);   }
-
-/* Predictive insight banner */
-.predict-banner {
-  margin: 0.6rem 1.5rem 0;
-  background: var(--surface); border: 1px solid var(--border);
-  border-left: 3px solid var(--green);
-  padding: 0.65rem 0.9rem;
-  display: flex; align-items: flex-start; gap: 0.65rem;
-  animation: chipIn 0.45s 0.15s both;
-}
-.predict-icon { font-size: 1.1rem; flex-shrink: 0; padding-top: 1px; }
-.predict-.predict-text { font-family: var(--serif); font-size: 0.84rem; font-style: italic; color: var(--text); line-height: 1.55; }
-.predict-meta { font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
-
-/* ── Native Alternatives Drawer ──────────────── */
-.native-drawer {
-  margin: 0 1.5rem 0;
-  border: 1px solid var(--border);
-  border-top: none;
-  background: var(--surface);
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height 0.38s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
-  opacity: 0;
-}
-.native-drawer.open {
-  max-height: 900px;
-  opacity: 1;
-}
-.native-drawer-inner {
-  padding: 1rem 1.25rem 1.25rem;
-}
-.native-drawer-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 0.85rem;
-  border-bottom: 1px solid var(--surface2);
-  padding-bottom: 0.6rem;
-}
-.native-drawer-title {
-  font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--text);
-}
-.native-drawer-sub {
-  font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--muted); margin-top: 2px;
-}
-.native-close {
-  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted); cursor: pointer;
-  background: none; padding: 0.15rem 0.4rem;
-  border: 1px solid var(--border); transition: color 0.12s, border-color 0.12s;
-}
-.native-close:hover { color: var(--green); border-color: var(--green); }
-.swap-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.6rem;
-}
-.swap-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 0.75rem 0.9rem;
-  transition: border-color 0.15s;
-  position: relative;
-}
-.swap-card:hover { border-color: var(--green); }
-.swap-card.in-library {
-  border-color: var(--green);
-  background: var(--green-lt);
-}
-.swap-card.in-library::after {
-  content: '✓ In your library';
-  position: absolute; top: 0.5rem; right: 0.6rem;
-  font-family: var(--mono); font-size: 0.4rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--green); opacity: 0.8;
-}
-.swap-common { font-family: var(--sans); font-size: 0.7rem; font-weight: 600; color: var(--text); }
-.swap-arrow  { font-family: var(--mono); font-size: 0.55rem; color: var(--green); margin: 0.25rem 0; }
-.swap-native { font-family: var(--serif); font-size: 0.88rem; font-style: italic; color: var(--green); }
-.swap-why    { font-family: var(--sans); font-size: 0.6rem; color: var(--muted); line-height: 1.45; margin-top: 0.3rem; }
-.swap-badge  {
-  display: inline-flex; align-items: center;
-  font-family: var(--mono); font-size: 0.38rem; letter-spacing: 0.1em;
-  text-transform: uppercase; padding: 0.1rem 0.35rem;
-  border: 1px solid #bbddc8; background: var(--green-lt); color: var(--green);
+.big-unit {
+  font-size: 0.65rem; letter-spacing: 0.12rem;
+  text-transform: uppercase; color: var(--muted);
   margin-top: 0.35rem;
 }
-.predict-banner.clickable { cursor: pointer; }
-.predict-banner.clickable:hover { border-color: var(--pink); background: var(--pink-lt); }
-.predict-banner .native-cue {
-  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--pink); margin-top: 4px; display: none;
+.iq-bar-wrap {
+  margin-top: 0.75rem; height: 6px;
+  background: var(--cream); border-radius: 3px;
+  overflow: hidden;
 }
-.predict-banner.clickable .native-cue { display: block; }
-
-/* ── Bloom gap detector — Circular Clock ──────── */
-.bloom-card { background: var(--surface); border: 1px solid var(--border); margin-top: 0.75rem; }
-.bloom-card-head {
-  padding: 0.75rem 1rem 0.35rem;
-  display: flex; align-items: baseline; justify-content: space-between;
+.iq-bar {
+  height: 100%; background: var(--moss);
+  border-radius: 3px; transition: width 0.6s ease;
 }
-/* Legacy selector kept for mobile fallback */
-.bloom-grid { display: none; }
-
-/* Clock container */
-.bloom-clock-wrap {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 0.5rem 1rem 0.25rem;
-  position: relative;
-}
-#bloom-clock-svg { width: 100%; max-width: 220px; height: auto; overflow: visible; }
-.bloom-clock-legend {
-  display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center;
-  padding: 0.3rem 1rem 0.5rem;
-}
-.bloom-legend-item {
-  display: flex; align-items: center; gap: 0.35rem;
-  font-family: var(--mono); font-size: 0.43rem; letter-spacing: 0.08em; color: var(--muted);
-}
-.legend-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-/* Tooltip for clock */
-#bloom-clock-tip {
-  display: none; position: absolute; z-index: 30; pointer-events: none;
-  background: var(--text); color: var(--surface);
-  font-family: var(--mono); font-size: 0.42rem; letter-spacing: 0.06em;
-  padding: 0.22rem 0.5rem; white-space: nowrap;
-  top: 0; left: 50%; transform: translateX(-50%);
+.iq-sub {
+  font-size: 0.68rem; color: var(--muted);
+  margin-top: 0.5rem;
 }
 
-.bloom-gaps-list { padding: 0 1rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
-.gap-row {
-  display: flex; align-items: flex-start; gap: 0.6rem;
-  padding: 0.5rem 0.7rem; border: 1px solid rgba(220,38,38,0.18);
-  border-left: 3px solid var(--red); background: rgba(220,38,38,0.03);
+/* ── INSIGHT BANNER ── */
+.insight-banner {
+  background: white; border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.06);
+  border-left: 4px solid var(--moss);
+  display: none; gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
 }
-.gap-date  { font-family: var(--mono); font-size: 0.47rem; color: var(--muted); white-space: nowrap; min-width: 58px; padding-top: 2px; }
-.gap-label { font-family: var(--serif); font-size: 0.8rem; font-style: italic; color: var(--text); }
-.gap-sugg  { font-family: var(--sans); font-size: 0.62rem; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+.insight-banner.show { display: flex; }
+.insight-icon { font-size: 1.6rem; flex-shrink: 0; line-height: 1; margin-top: 0.1rem; }
+.insight-body { flex: 1; }
+.insight-text { font-size: 0.85rem; color: var(--ink); line-height: 1.6; }
+.insight-meta {
+  font-size: 0.6rem; letter-spacing: 0.12rem;
+  text-transform: uppercase; color: var(--muted);
+  margin-top: 0.3rem;
+}
 
-/* ── Temporal Pulse line graph ────────────────── */
-.temporal-card {
-  background: var(--surface); border: 1px solid var(--border);
-  padding: 1.1rem 1.25rem;
-  position: sticky; top: 1.5rem;
+/* ── SPINNER ── */
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border);
+  border-top-color: var(--moss);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+  margin: 2rem auto; display: block;
 }
-.growth-graph-wrap {
-  margin-bottom: 0.85rem;
-  border-bottom: 1px solid var(--surface2);
-  padding-bottom: 0.75rem;
-}
-.growth-graph-label {
-  font-family: var(--mono); font-size: 0.45rem;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 0.4rem;
-}
-#growth-canvas {
-  width: 100%; display: block;
-  cursor: crosshair;
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESPONSIVE ── */
+@media(max-width: 680px) {
+  .two-col   { grid-template-columns: 1fr; }
+  .bottom-row { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
-<script src="season-bar.js"></script>
 </head>
-
 <body>
 
-<!-- ══════════ AUTH OVERLAY (shown by default) ══════════ -->
+<!-- Auth -->
 <div id="auth-overlay">
-  <div class="auth-card">
-    <div class="auth-logo">GardenHub <em>OS</em></div>
-    <div class="auth-sub">Mission Control v10.6 // Fairfield, CT</div>
-    <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
-    <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password"/>
-    <div class="auth-btns">
-      <button class="auth-btn primary" id="btn-signin">Login</button>
-      <button class="auth-btn secondary" id="btn-signup">Register</button>
-    </div>
+  <div class="auth-box">
+    <div class="auth-logo">GardenHub</div>
+    <div class="auth-sub">West Simsbury, CT · Zone 6b</div>
+    <input id="auth-email"    class="auth-input" type="email"    placeholder="Email"    autocomplete="email"/>
+    <input id="auth-password" class="auth-input" type="password" placeholder="Password" autocomplete="current-password"/>
     <div id="auth-error"></div>
+    <button class="auth-btn" id="btn-signin">Sign In</button>
+    <button class="auth-btn ghost" id="btn-signup">Create Account</button>
   </div>
 </div>
 
-<!-- ══════════ ADD PLANT MODAL ══════════ -->
-<div id="add-modal" class="hidden">
-  <div class="modal-card">
-    <div class="modal-title">Plant Resident 🌱</div>
-    <input class="modal-input" id="p-name" type="text" placeholder="Common name (e.g. Tomato)" />
-    <input class="modal-input" id="p-scientific" type="text" placeholder="Scientific name (optional)" />
-    <input class="modal-input" id="p-days" type="number" placeholder="Days to maturity" min="1" max="999"/>
-    <input class="modal-input" id="p-planted" type="date" />
-    <input class="modal-input" id="p-emoji" type="text" placeholder="Emoji (e.g. 🍅)" maxlength="4"/>
-    <div class="modal-check-row">
-      <label><input type="checkbox" id="p-native" /> Native species</label>
-      <label><input type="checkbox" id="p-host" /> Host plant</label>
-    </div>
-    <div id="modal-error"></div>
-    <div class="modal-btns">
-      <button class="modal-btn ghost" onclick="closeModal()">Cancel</button>
-      <button class="modal-btn primary" id="btn-save-plant" onclick="saveNewPlant()">Record Plant</button>
-    </div>
-  </div>
-</div>
+<!-- Nav -->
+<nav>
+  <a href="index.html" class="nav-logo">GardenHub</a>
+  <a href="index.html"      class="nav-link active">Home</a>
+  <a href="garden.html"     class="nav-link">My Garden</a>
+  <a href="map.html"        class="nav-link">Map</a>
+  <a href="plan.html"       class="nav-link">Plan</a>
+  <a href="insights.html"   class="nav-link">Insights</a>
+  <a href="clinic.html"     class="nav-link">Clinic</a>
+  <a href="library.html"    class="nav-link">Library</a>
+  <a href="calendar.html"   class="nav-link">Calendar</a>
+  <a href="achievements.html" class="nav-link">Medals</a>
+  <a href="journal.html"    class="nav-link">Journal</a>
+  <a href="snapshot.html"   class="nav-link">Snapshot</a>
+  <a href="weather.html"    class="nav-link">Weather</a>
+  <a href="companions.html" class="nav-link">Companions</a>
+  <button class="nav-logout" onclick="handleLogout()">Sign out</button>
+</nav>
 
-<!-- ══════════ PAGE ══════════ -->
-<div class="page-wrap">
-
-  <!-- Header -->
-  <div class="top-bar">
-    <div class="logo-block">
-      <div class="logo-eye">GardenHub OS // v10.6</div>
-      <div class="logo-name">Mission <em>Control</em></div>
-    </div>
-    <div class="datestamp" id="current-date" style="font-family:var(--mono);font-size:0.46rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);position:absolute;left:50%;transform:translateX(-50%);"></div>
-    <nav>
-      <a href="map.html" class="nav-link">Map View</a>
-      <a href="plan.html" class="nav-link">Garden Plan</a>
-      <a href="insights.html" class="nav-link">Insights</a>
-      <a href="clinic.html" class="nav-link">Plant Clinic</a>
-      <a href="library.html" class="nav-link">Library</a>
-      <a href="calendar.html" class="nav-link">Calendar</a>
-      <a href="achievements.html" class="nav-link">Medals</a>
-      <a href="journal.html" class="nav-link">Journal</a>
-      <a href="snapshot.html" class="nav-link">Snapshot</a>
-      <a href="weather.html" class="nav-link">Weather</a>
-      <a href="companions.html" class="nav-link">Companions</a>
-      <button onclick="handleLogout()" class="nav-link danger">Logout</button>
-    </nav>
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-eyebrow">GardenHub · West Simsbury, CT · Zone 6b</div>
+  <h1 class="hero-title">Good <em id="time-greeting">morning</em>,<br>your garden is waiting</h1>
+  <div class="hero-date" id="hero-date"></div>
+  <div class="season-strip" id="season-strip">
+    <span class="season-tag">Loading garden…</span>
   </div>
-  <div id="season-bar-mount"></div>
+</header>
 
-  <!-- ═══ PREDICTIVE PULSE STRIP ═══ -->
-  <div class="pulse-strip" id="pulse-strip">
-    <!-- populated by renderPulse() -->
-  </div>
-  <!-- ═══ PREDICTIVE INSIGHT BANNER ═══ -->
-  <div class="predict-banner" id="predict-banner" style="display:none;" onclick="toggleNativeDrawer()">
-    <div class="predict-icon" id="predict-icon">🌱</div>
-    <div class="predict-body">
-      <div class="predict-text" id="predict-text">Loading garden intelligence…</div>
-      <div class="predict-meta" id="predict-meta">Computed from your library</div>
-      <div class="native-cue">↓ Click to explore native alternatives</div>
+<!-- Main -->
+<main class="container">
+
+  <!-- Insight banner (shown when there's something actionable) -->
+  <div class="insight-banner" id="insight-banner">
+    <div class="insight-icon" id="insight-icon">🌱</div>
+    <div class="insight-body">
+      <div class="insight-text" id="insight-text"></div>
+      <div class="insight-meta" id="insight-meta"></div>
     </div>
   </div>
 
-  <!-- ═══ NATIVE ALTERNATIVES DRAWER ═══ -->
-  <div class="native-drawer" id="native-drawer">
-    <div class="native-drawer-inner">
-      <div class="native-drawer-head">
-        <div>
-          <div class="native-drawer-title">Native Plant Alternatives</div>
-          <div class="native-drawer-sub">Zone 6b · Connecticut · Swap common cultivars for native species</div>
-        </div>
-        <button class="native-close" onclick="toggleNativeDrawer(event)">✕ Close</button>
-      </div>
-      <div class="swap-grid" id="swap-grid">
-        <!-- populated by renderNativeDrawer() -->
-      </div>
-    </div>
+  <!-- Quick nav -->
+  <div class="quick-nav">
+    <a href="garden.html" class="quick-card garden">
+      <span class="qc-icon">🌿</span>
+      <span class="qc-title">My Garden</span>
+      <span class="qc-sub">Add plants · view your collection</span>
+    </a>
+    <a href="map.html" class="quick-card map">
+      <span class="qc-icon">🗺</span>
+      <span class="qc-title">Map</span>
+      <span class="qc-sub">Place plants · plan beds</span>
+    </a>
+    <a href="plan.html" class="quick-card plan">
+      <span class="qc-icon">📋</span>
+      <span class="qc-title">Garden Plan</span>
+      <span class="qc-sub">Bloom timeline · reference</span>
+    </a>
+    <a href="weather.html" class="quick-card weather">
+      <span class="qc-icon">🌤</span>
+      <span class="qc-title">Weather</span>
+      <span class="qc-sub">Forecast · frost dates</span>
+    </a>
   </div>
 
-  <!-- Top Row: Biological Pulse + Climate Engine -->
-  <div class="top-row">
-    <div class="bio-card">
-      <div>
-        <div class="bio-label">Biological Pulse</div>
-        <div class="bio-title">Active Growth</div>
-      </div>
-      <div class="bio-pct" id="health-pct">0%</div>
-      <div style="font-family:var(--mono);font-size:0.55rem;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;">
-        <span class="pulse-dot"></span><span>Memory Engine Active</span>
-      </div>
-    </div>
-
-    <div class="climate-card">
-      <div class="climate-header">
-        <div class="card-eyebrow">Climate Engine V10.6 — Zone 6b (Fairfield, CT)</div>
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <span class="card-eyebrow" id="weather-updated">--</span>
-          <button class="refresh-btn" id="weather-refresh-btn" onclick="refreshWeather()">↻ Refresh</button>
-        </div>
-      </div>
-      <div class="climate-cells">
-        <div class="climate-cell">
-          <div class="climate-label">Zone</div>
-          <div class="climate-val">6b (CT)</div>
-        </div>
-        <div class="climate-cell">
-          <div class="climate-label">Solar Hours</div>
-          <div class="climate-val" id="w-solar">--</div>
-        </div>
-        <div class="climate-cell">
-          <div class="climate-label">Live Temp</div>
-          <div class="climate-val" id="w-temp">--</div>
-        </div>
-        <div class="climate-cell">
-          <div class="climate-label">Risk</div>
-          <div class="climate-val" id="w-risk">--</div>
-        </div>
-      </div>
-    </div>
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="stat-plants">—</div><div class="stat-label">Plants</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-blooming">—</div><div class="stat-label">Blooming</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-native">—</div><div class="stat-label">Native</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-families">—</div><div class="stat-label">Families</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-iq">—</div><div class="stat-label">Pollinator IQ</div></div>
   </div>
 
-  <!-- Main Grid -->
-  <div class="main-grid">
+  <!-- Bloom clock + Weather -->
+  <div class="two-col">
 
-    <!-- ── Left Column ── -->
-    <div>
-      <!-- Diagnostic Intake -->
-      <div class="diag-card card" style="margin-bottom:0.75rem;">
-        <div class="card-title">Diagnostic Intake</div>
-        <div class="diag-drop" id="diag-drop" onclick="document.getElementById('diag-file').click()">
-          <div class="diag-icon">📷</div>
-          <div class="diag-label">Capture Observation</div>
-          <div style="font-family:var(--mono);font-size:0.5rem;color:#2a4a2a;letter-spacing:0.1em;">Click or drag an image</div>
-        </div>
-        <img class="diag-preview" id="diag-preview" alt="Scan preview"/>
-        <button class="diag-submit" id="diag-submit" onclick="submitDiagnostic()" style="opacity:0.5;cursor:not-allowed;">→ Analyze</button>
-        <input type="file" id="diag-file" accept="image/*" capture="environment" style="display:none" onchange="onDiagFile(event)"/>
-      </div>
-
-      <!-- Water Pulse -->
-      <div class="card water-card" style="margin-bottom:0.75rem;">
-        <div class="card-title">Water Pulse</div>
-        <div class="water-val" id="water-stat">--</div>
-        <div style="font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;" id="water-sub">Last 7 days</div>
-      </div>
-
-      <!-- Garden Plan quick link -->
-      <a href="plan.html" style="text-decoration:none;display:block;margin-bottom:0.75rem;">
-        <div class="card" style="border-left:3px solid #526f45;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#78a858'" onmouseout="this.style.borderColor='#526f45'">
-          <div class="card-title" style="color:#6a9858;">Garden Plan</div>
-          <div style="font-family:var(--mono);font-size:0.58rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;">Bloom timeline · plant reference · what's blooming now →</div>
-        </div>
-      </a>
-
-      <!-- Pollinator IQ -->
-      <div class="poll-card card">
-        <div class="card-title">Pollinator IQ</div>
-        <div class="poll-iq" id="native-iq-count">0</div>
-        <div class="poll-sub" id="native-species-label">0 native · 0 host</div>
-      </div>
-    </div>
-
-    <!-- ── Center Column ── -->
-    <div>
-      <div class="section-header">
-        <div class="section-title">Active Growth</div>
-        <button class="add-btn" onclick="openModal()">+ Plant Resident</button>
-      </div>
-
-      <!-- Log feed -->
-      <div class="log-card">
-        <div class="card-eyebrow" style="margin-bottom:0.5rem;">Tactical Briefing & Logs</div>
-        <div id="log-feed"><div class="log-empty">No recent activity.</div></div>
-      </div>
-
-      <!-- Plant cards -->
-      <div id="seed-grid" class="plant-grid"></div>
-
-      <div id="empty-state" style="display:none;padding:2rem;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;border:1px dashed var(--border);margin-top:0.5rem;">
-        No plants recorded yet. Add your first resident above.
-      </div>
-    </div>
-
-    <!-- ── Right Column: Temporal Pulse ── -->
-    <div>
-      <div class="temporal-card">
-        <div class="card-eyebrow" style="margin-bottom:0.75rem;">Temporal Pulse</div>
-        <!-- 14-day growth projection graph -->
-        <div class="growth-graph-wrap">
-          <div class="growth-graph-label">14-Day Growth Projection</div>
-          <canvas id="growth-canvas" height="90"></canvas>
-        </div>
-        <div id="harvest-forecast">
-          <div class="log-empty">Loading forecast…</div>
-        </div>
-      </div>
-
-      <!-- ═══ BLOOM GAP DETECTOR — Circular Clock ═══ -->
-      <div class="bloom-card" id="bloom-card">
-        <div class="bloom-card-head">
-          <div class="card-eyebrow">Bloom Gap Detector</div>
-          <a href="calendar.html" style="font-family:var(--mono);font-size:0.44rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);text-decoration:none;opacity:0.7;">↗ Calendar</a>
-        </div>
-        <!-- Hidden div kept for JS compatibility (gap list renderer reads bloom-grid id) -->
-        <div id="bloom-grid" style="display:none;"></div>
-        <div class="bloom-clock-wrap">
+    <!-- Bloom clock -->
+    <div class="clock-card">
+      <h2 class="sec-title" style="font-size:1.3rem;margin-bottom:0.2rem;">Bloom Clock</h2>
+      <p class="sec-sub" style="margin-bottom:1.25rem;">12-month bloom coverage</p>
+      <div class="clock-inner">
+        <div class="clock-svg-wrap">
+          <svg id="bloom-clock-svg" width="200" height="200" viewBox="-100 -100 200 200">
+            <circle cx="0" cy="0" r="34" fill="white" stroke="#e0d4c0" stroke-width="1"/>
+            <text x="0" y="-5" text-anchor="middle" font-family="'Cormorant Garamond',serif"
+              font-size="11" font-style="italic" fill="#a09080">bloom</text>
+            <text x="0" y="8" text-anchor="middle" font-family="'Cormorant Garamond',serif"
+              font-size="11" font-style="italic" fill="#a09080">clock</text>
+          </svg>
           <div id="bloom-clock-tip"></div>
-          <svg id="bloom-clock-svg" viewBox="-110 -110 220 220" aria-label="Bloom gap clock"></svg>
         </div>
-        <div class="bloom-clock-legend">
-          <div class="bloom-legend-item"><div class="legend-swatch" style="background:var(--pink);opacity:0.7;"></div>Blooming</div>
-          <div class="bloom-legend-item"><div class="legend-swatch" style="background:var(--red);opacity:0.5;"></div>Gap</div>
-          <div class="bloom-legend-item"><div class="legend-swatch" style="background:var(--surface3);border:1px solid var(--border);"></div>Off-season</div>
+        <div class="clock-legend">
+          <div class="clock-legend-item">
+            <div class="clock-dot" style="background:#c87890;"></div>
+            <span>Blooming</span>
+          </div>
+          <div class="clock-legend-item">
+            <div class="clock-dot" style="background:#b8604a;opacity:0.5;"></div>
+            <span>Bloom gap</span>
+          </div>
+          <div class="clock-legend-item">
+            <div class="clock-dot" style="background:#e0d4c0;"></div>
+            <span>Off season</span>
+          </div>
+          <div class="clock-gaps">
+            <div class="gap-label">Gap months</div>
+            <div id="bloom-gaps-list" style="font-size:0.72rem;color:var(--rose);">Loading…</div>
+          </div>
         </div>
-        <div class="bloom-gaps-list" id="bloom-gaps-list"></div>
       </div>
     </div>
 
-  </div><!-- /main-grid -->
-</div><!-- /page-wrap -->
+    <!-- Weather -->
+    <div class="weather-card">
+      <div class="weather-header">
+        <div>
+          <div class="weather-title">Climate Engine</div>
+          <div class="weather-updated" id="weather-updated">—</div>
+        </div>
+        <button class="refresh-btn" id="weather-refresh-btn" onclick="fetchWeather()">↻ Refresh</button>
+      </div>
+      <div class="weather-cells">
+        <div class="wx-cell">
+          <div class="wx-label">Zone</div>
+          <div class="wx-val">6b (CT)</div>
+        </div>
+        <div class="wx-cell">
+          <div class="wx-label">Temperature</div>
+          <div class="wx-val" id="w-temp">—</div>
+        </div>
+        <div class="wx-cell">
+          <div class="wx-label">Solar Hours</div>
+          <div class="wx-val" id="w-solar">—</div>
+        </div>
+        <div class="wx-cell">
+          <div class="wx-label">Risk</div>
+          <div class="wx-val" id="w-risk">—</div>
+        </div>
+      </div>
+      <div class="frost-banner" id="frost-banner"></div>
+    </div>
+
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- Water Pulse + Pollinator IQ -->
+  <div class="bottom-row">
+
+    <div class="bottom-card">
+      <div class="bottom-card-title">Water Pulse</div>
+      <div class="big-num" id="water-stat">—</div>
+      <div class="big-unit">gallons this week</div>
+      <div class="iq-sub" id="water-sub" style="margin-top:0.5rem;">Loading…</div>
+    </div>
+
+    <div class="bottom-card">
+      <div class="bottom-card-title">Pollinator IQ</div>
+      <div class="big-num" id="pollinator-iq">—</div>
+      <div class="big-unit">out of 100</div>
+      <div class="iq-bar-wrap"><div class="iq-bar" id="iq-bar" style="width:0%"></div></div>
+      <div class="iq-sub" id="iq-sub">Native + host plant ratio</div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer style="background:var(--ink);color:#6a5a48;text-align:center;padding:2rem;font-family:var(--serif);font-style:italic;font-size:0.95rem;">
+  <span style="color:var(--moss-light);">Everything blooms. Everything has a place.</span><br>
+  <span style="font-size:0.62rem;font-style:normal;letter-spacing:0.18rem;text-transform:uppercase;color:#4a3a28;margin-top:0.5rem;display:block;">West Simsbury CT · Zone 6b · GardenHub</span>
+</footer>
 
 <script>
-// ══════════════════════════════════════════════════
-//  GardenHub OS — Mission Control v10.6
-//  Bugs fixed: BUG-01 through BUG-06, ISSUE-01 through ISSUE-08
-// ══════════════════════════════════════════════════
-
 const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let _userId = null;
-let _diagFile = null;    // pending diagnostic image
 
-// ── Date header ───────────────────────────────
-document.getElementById('current-date').textContent =
-  new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+// ── Bloom data ─────────────────────────────────
+const NAME_BLOOM = {
+  'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
+  'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
+  'coneflower':[7,9],'black-eyed':[7,9],'bee balm':[7,8],'catmint':[5,9],
+  'salvia':[6,9],'dill':[7,8],'fennel':[7,8],'chives':[5,6],'allium':[5,7],
+  'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
+  'thyme':[5,7],'oregano':[7,8],'basil':[7,9],'tomato':[6,9],
+  'calendula':[4,10],'forget-me-not':[3,5],'poppy':[4,6],'aster':[8,10],'goldenrod':[8,10],
+};
+const FAM_BLOOM = {
+  Asteraceae:[5,10],Lamiaceae:[5,9],Rosaceae:[4,9],Boraginaceae:[5,9],
+  Tropaeolaceae:[6,10],Scrophulariaceae:[5,9],Violaceae:[3,6],
+  Ranunculaceae:[3,6],Papaveraceae:[4,7],Solanaceae:[6,9],
+  Cucurbitaceae:[6,9],Fabaceae:[6,8],Apocynaceae:[6,8],
+};
 
-// ══════════════════════════════════════════════
-//  AUTH  (FIX: overlay shown by default; gates
-//         on SIGNED_IN event only — BUG-06)
-// ══════════════════════════════════════════════
-document.getElementById('btn-signin').addEventListener('click', handleSignIn);
-document.getElementById('btn-signup').addEventListener('click', handleSignUp);
+function bloomWin(name, fam) {
+  const n = (name||'').toLowerCase();
+  for (const [k,w] of Object.entries(NAME_BLOOM)) { if (n.includes(k)) return w; }
+  const f = fam||'';
+  for (const [k,w] of Object.entries(FAM_BLOOM))  { if (f.includes(k)) return w; }
+  return null;
+}
 
-async function handleSignIn() {
-  clearAuthError();
+const CUR_MONTH = new Date().getMonth() + 1;
+const MONTHS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ── Date / greeting ───────────────────────────
+const NOW = new Date();
+const hour = NOW.getHours();
+document.getElementById('time-greeting').textContent =
+  hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+document.getElementById('hero-date').textContent =
+  NOW.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+
+// ── Auth ──────────────────────────────────────
+document.getElementById('btn-signin').addEventListener('click', async () => {
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
   const { error } = await sb.auth.signInWithPassword({
     email:    document.getElementById('auth-email').value.trim(),
     password: document.getElementById('auth-password').value,
   });
-  if (error) showAuthError(error.message);
-}
+  if (error) { errEl.style.color='var(--rose)'; errEl.textContent = error.message; }
+});
 
-async function handleSignUp() {
-  clearAuthError();
+document.getElementById('btn-signup').addEventListener('click', async () => {
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
   const { error } = await sb.auth.signUp({
     email:    document.getElementById('auth-email').value.trim(),
     password: document.getElementById('auth-password').value,
   });
-  if (error) showAuthError(error.message);
-  else       showAuthError('Check your email to confirm your account.', true);
-}
+  if (error) { errEl.style.color='var(--rose)'; errEl.textContent = error.message; }
+  else { errEl.style.color='var(--moss)'; errEl.textContent = 'Check your email to confirm.'; }
+});
 
 async function handleLogout() {
   await sb.auth.signOut();
   location.reload();
 }
 
-function showAuthError(msg, success=false) {
-  const el = document.getElementById('auth-error');
-  el.textContent = msg;
-  el.style.color = success ? 'var(--green)' : 'var(--red)';
-}
-function clearAuthError() { document.getElementById('auth-error').textContent = ''; }
-
-// FIX BUG-06: only react to SIGNED_IN, not TOKEN_REFRESHED etc.
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
     _userId = session.user.id;
@@ -1002,7 +725,6 @@ sb.auth.onAuthStateChange((event, session) => {
   }
 });
 
-// On hard reload, restore existing session silently
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
@@ -1012,1065 +734,318 @@ sb.auth.onAuthStateChange((event, session) => {
   }
 })();
 
-// ══════════════════════════════════════════════
-//  WEATHER — delegates to shared WeatherEngine
-//  which also detects frost/heat/rain events and
-//  writes them to weather_events with scan links.
-// ══════════════════════════════════════════════
-async function fetchWeather() {
-  const btn = document.getElementById('weather-refresh-btn');
-  btn.classList.add('loading');
-  btn.textContent = '…';
-
-  try {
-    const wx = await WeatherEngine.run(sb);
-
-    const riskMap = {
-      FROST:    { label:'❄️ FROST',    cls:'danger' },
-      HEAT:     { label:'🔥 HEAT',     cls:'danger' },
-      MODERATE: { label:'⚠️ MODERATE', cls:'warn'   },
-      LOW:      { label:'✅ LOW',       cls:'good'   },
-    };
-    const { label: riskLabel, cls: riskClass } = riskMap[wx.risk] || riskMap.LOW;
-
-    document.getElementById('w-temp').textContent  = `${wx.icon} ${wx.tempF}°F`;
-    document.getElementById('w-solar').textContent = `${wx.solarHours} hrs`;
-    document.getElementById('w-risk').textContent  = riskLabel;
-    document.getElementById('w-risk').className    = `climate-val ${riskClass}`;
-    document.getElementById('weather-updated').textContent =
-      new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
-
-    // Show event badge if any events fired today
-    const todayEvents = (wx.events||[]).filter(e => e.event_date === WeatherEngine.today());
-    if (todayEvents.length) {
-      const existing = document.getElementById('wx-event-badge');
-      const badge = existing || document.createElement('span');
-      badge.id = 'wx-event-badge';
-      badge.textContent = ` · ${todayEvents.length} event${todayEvents.length>1?'s':''} logged`;
-      badge.style.cssText = 'font-size:0.65rem;color:#f5a623;margin-left:4px;';
-      if (!existing) document.getElementById('weather-updated').after(badge);
-    }
-  } catch(e) {
-    document.getElementById('w-temp').textContent = '⚠️ Offline';
-    console.warn('[Weather] engine error:', e.message);
-  }
-
-  btn.classList.remove('loading');
-  btn.textContent = '↻ Refresh';
-}
-
-function refreshWeather() { fetchWeather(); }
-
-// ══════════════════════════════════════════════
-//  MATURITY CALC  (FIX BUG-05: includes recovery_days)
-// ══════════════════════════════════════════════
-function calculateMaturity(planted, maturityDays, recoveryDays = 0) {
-  if (!planted || !maturityDays) return 0;
-  const daysGrown = (Date.now() - new Date(planted).getTime()) / 86400000;
-  const effective = maturityDays + (recoveryDays || 0);
-  return Math.min(100, Math.max(0, Math.floor((daysGrown / effective) * 100)));
-}
-
-function harvestDate(planted, maturityDays, recoveryDays = 0) {
-  if (!planted || !maturityDays) return null;
-  const effective = maturityDays + (recoveryDays || 0);
-  const d = new Date(new Date(planted).getTime() + effective * 86400000);
-  return d;
-}
-
-function daysUntil(date) {
-  return Math.ceil((date.getTime() - Date.now()) / 86400000);
-}
-
-// ══════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════
+// ── Init ──────────────────────────────────────
 async function init() {
-  fetchWeather(); // FIX BUG-01
-  await Promise.all([
-    renderDashboard(),
-    loadLogFeed(),
-    loadWaterPulse(),
-    renderPulse(),      // predictive chip strip
-  ]);
+  fetchWeather();
+  await Promise.all([loadGardenData(), loadWaterPulse()]);
 }
 
-// ══════════════════════════════════════════════
-//  DASHBOARD  (FIX BUG-04, BUG-05, ISSUE-01,
-//              ISSUE-02, ISSUE-04)
-// ══════════════════════════════════════════════
-async function renderDashboard() {
-  const { data: plants, error } = await sb
-    .from('garden_library')
-    .select('id, common_name, scientific_name, emoji, maturity_days, recovery_days, planted_date, is_native, is_host_plant')
-    .order('common_name');
+// ── Load garden data ──────────────────────────
+async function loadGardenData() {
+  let plants = [];
 
-  if (error || !plants) return;
-
-  // ── Pollinator IQ (FIX ISSUE-01: native + host) ──────
-  const nativeCount = plants.filter(p => p.is_native).length;
-  const hostCount   = plants.filter(p => p.is_host_plant).length;
-  const total       = plants.length || 1;
-  const iqScore     = Math.min(100, Math.round(((nativeCount * 1.5 + hostCount * 1.0) / total) * 50));
-  document.getElementById('native-iq-count').textContent     = iqScore;
-  document.getElementById('native-species-label').textContent = `${nativeCount} native · ${hostCount} host`;
-
-  // ── Biological Pulse ──────────────────────────────────
-  if (plants.length > 0) {
-    // FIX BUG-05: pass recovery_days to calculateMaturity
-    const avg = Math.floor(
-      plants.reduce((acc, p) => acc + calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days), 0)
-      / plants.length
-    );
-    document.getElementById('health-pct').textContent = `${avg}%`;
-  }
-
-  // ── Plant cards (FIX ISSUE-04: build once, set once) ─
-  const grid     = document.getElementById('seed-grid');
-  const forecast = document.getElementById('harvest-forecast');
-
-  if (plants.length === 0) {
-    grid.innerHTML = '';
-    document.getElementById('empty-state').style.display = 'block';
-    forecast.innerHTML = '<div class="log-empty">No plants recorded yet.</div>';
-    return;
-  }
-
-  document.getElementById('empty-state').style.display = 'none';
-
-  // Sort forecast by harvest date
-  const sorted = [...plants].sort((a, b) => {
-    const da = harvestDate(a.planted_date, a.maturity_days, a.recovery_days);
-    const db = harvestDate(b.planted_date, b.maturity_days, b.recovery_days);
-    if (!da) return 1; if (!db) return -1;
-    return da - db;
-  });
-
-  // Build plant cards (FIX ISSUE-04)
-  grid.innerHTML = plants.map(p => {
-    const pct     = calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days);
-    const hDate   = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-    const ready   = pct >= 100;
-    const penalty = (p.recovery_days || 0) > 0;
-
-    const badges = [
-      p.is_native    ? `<span class="badge badge-native">Native</span>` : '',
-      p.is_host_plant? `<span class="badge badge-host">Host</span>`   : '',
-      ready          ? `<span class="badge badge-harvest">Ready</span>`: '',
-      penalty        ? `<span class="badge badge-penalty">+${p.recovery_days}d penalty</span>` : '',
-    ].filter(Boolean).join('');
-
-    const hDateStr = hDate
-      ? hDate.toLocaleDateString('en-US', { month:'short', day:'numeric' })
-      : 'Unknown';
-
-    return `
-      <div class="plant-card">
-        <div class="plant-name">${p.emoji || '🌱'} ${p.common_name || 'Unknown'}</div>
-        <div class="plant-meta">${p.scientific_name || ''} · Harvest ~${hDateStr}</div>
-        ${badges ? `<div class="plant-badges">${badges}</div>` : ''}
-        <div class="progress-track">
-          <div class="progress-fill ${ready ? 'fill-harvest' : 'fill-growing'}" style="width:${pct}%"></div>
-        </div>
-        <div style="font-family:var(--mono);font-size:0.55rem;color:var(--muted);margin-top:0.3rem;letter-spacing:0.08em;">${pct}% mature</div>
-      </div>`;
-  }).join('');
-
-  // ── Temporal Pulse (FIX ISSUE-02: real dates) ─────────
-  forecast.innerHTML = sorted.map(p => {
-    const pct   = calculateMaturity(p.planted_date, p.maturity_days, p.recovery_days);
-    const hDate = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-    const days  = hDate ? daysUntil(hDate) : null;
-
-    let statusClass = 'status-growing', statusLabel = 'Growing';
-    if (pct >= 100) { statusClass = 'status-ready';  statusLabel = 'Ready Now'; }
-    else if (days !== null && days <= 14) { statusClass = 'status-soon'; statusLabel = `In ${days}d`; }
-
-    const dateStr = hDate
-      ? hDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
-      : '—';
-
-    return `
-      <div class="forecast-item">
-        <div class="forecast-name">${p.emoji || '🌱'} ${p.common_name || 'Unknown'}</div>
-        <div class="forecast-date">Harvest: ${dateStr}</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-          <span class="forecast-status ${statusClass}">${statusLabel}</span>
-          <span class="forecast-pct">${pct}%</span>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════════
-//  LOG FEED  (FIX BUG-03: actually queries garden_logs)
-// ══════════════════════════════════════════════
-async function loadLogFeed() {
-  const { data: logs } = await sb
-    .from('garden_logs')
-    .select('activity_type, notes, log_date, plant_name')
-    .order('log_date', { ascending: false })
-    .limit(5);
-
-  const feed = document.getElementById('log-feed');
-  if (!logs || logs.length === 0) {
-    feed.innerHTML = '<div class="log-empty">No recent activity.</div>';
-    return;
-  }
-
-  const icons = { watering:'💧', fertilizing:'🌿', pruning:'✂️', observation:'👁', harvest:'🌾', treatment:'💊' };
-
-  feed.innerHTML = logs.map(log => {
-    const icon    = icons[log.activity_type] || '📋';
-    const dateStr = log.log_date
-      ? new Date(log.log_date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })
-      : '';
-    return `
-      <div class="log-entry">
-        <span style="font-size:1rem;flex-shrink:0;">${icon}</span>
-        <div style="flex:1;">
-          <span style="color:var(--text);font-weight:500;">${log.plant_name || 'Garden'}</span>
-          ${log.activity_type ? ` — ${log.activity_type}` : ''}
-          ${log.notes ? `<br/><span style="font-size:0.7rem;color:var(--muted);">${log.notes}</span>` : ''}
-        </div>
-        <div class="log-time">${dateStr}</div>
-      </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════════
-//  WATER PULSE  (FIX ISSUE-03: queries garden_logs)
-// ══════════════════════════════════════════════
-async function loadWaterPulse() {
-  const past7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10);
-
-  const { data: logs } = await sb
-    .from('garden_logs')
-    .select('quantity_gal, activity_type')
-    .eq('activity_type', 'watering')
-    .gte('log_date', past7);
-
-  const total = (logs || []).reduce((acc, l) => acc + (parseFloat(l.quantity_gal) || 0), 0);
-  const count = (logs || []).length;
-
-  document.getElementById('water-stat').textContent = `${total.toFixed(1)} gal/wk`;
-  document.getElementById('water-sub').textContent  =
-    count > 0 ? `${count} watering session${count>1?'s':''} this week` : 'No watering logged this week';
-}
-
-// ══════════════════════════════════════════════
-//  DIAGNOSTIC INTAKE  (FIX BUG-02: wired up)
-// ══════════════════════════════════════════════
-function onDiagFile(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  _diagFile = file;
-
-  const preview = document.getElementById('diag-preview');
-  const submit  = document.getElementById('diag-submit');
-  const reader  = new FileReader();
-  reader.onload = e => {
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    submit.style.display  = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-
-// Drag and drop support for diagnostic
-const diagDrop = document.getElementById('diag-drop');
-diagDrop.addEventListener('dragover',  e => { e.preventDefault(); diagDrop.classList.add('dragover'); });
-diagDrop.addEventListener('dragleave', () => diagDrop.classList.remove('dragover'));
-diagDrop.addEventListener('drop', e => {
-  e.preventDefault();
-  diagDrop.classList.remove('dragover');
-  const file = e.dataTransfer.files?.[0];
-  if (file && file.type.startsWith('image/')) {
-    // Simulate the file input change
-    _diagFile = file;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      document.getElementById('diag-preview').src = ev.target.result;
-      document.getElementById('diag-preview').style.display = 'block';
-      document.getElementById('diag-submit').style.display  = 'block';
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-async function submitDiagnostic() {
-  if (!_diagFile || !_userId) return;
-
-  const btn = document.getElementById('diag-submit');
-  btn.textContent = 'Uploading…';
-  btn.disabled    = true;
-
+  // Try garden_plants first (new source of truth)
   try {
-    const ext  = _diagFile.name.split('.').pop();
-    const path = `diagnostics/${_userId}/${Date.now()}.${ext}`;
+    const { data: gp, error } = await sb.from('garden_plants')
+      .select('name,emoji,family,is_native,is_host,qty').eq('user_id', _userId);
+    if (!error && gp && gp.length > 0) {
+      plants = gp.map(p => ({
+        common_name: p.name, emoji: p.emoji, plant_family: p.family,
+        is_native: p.is_native, is_host_plant: p.is_host, qty: p.qty||1,
+      }));
+    }
+  } catch(e) {}
 
-    // Upload to Supabase Storage (bucket: "plant-scans")
-    const { error: upErr } = await sb.storage.from('plant-scans').upload(path, _diagFile);
-    if (upErr) throw upErr;
-
-    const { data: { publicUrl } } = sb.storage.from('plant-scans').getPublicUrl(path);
-
-    // Create a pending scan record in plant_health_scans
-    await sb.from('plant_health_scans').insert({
-      user_id:    _userId,
-      image_url:  publicUrl,
-      scan_date:  new Date().toISOString().slice(0,10),
-      status:     'pending',
-      severity:   'unknown',
-    });
-
-    // Redirect to clinic for review
-    window.location.href = `clinic.html?scan=new`;
-  } catch(e) {
-    btn.textContent = '→ Analyze';
-    btn.disabled    = false;
-    alert('Upload failed: ' + e.message);
-  }
-}
-
-// ══════════════════════════════════════════════
-//  ADD PLANT MODAL  (FIX BUG-04: correct column names
-//                   FIX ISSUE-05: validation + error handling)
-// ══════════════════════════════════════════════
-function openModal() {
-  // Set today's date as default planted date
-  document.getElementById('p-planted').value = new Date().toISOString().slice(0,10);
-  document.getElementById('add-modal').classList.remove('hidden');
-  document.getElementById('modal-error').textContent = '';
-  document.getElementById('p-name').focus();
-}
-function closeModal() {
-  document.getElementById('add-modal').classList.add('hidden');
-  // Reset
-  ['p-name','p-scientific','p-days','p-emoji'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('p-native').checked = false;
-  document.getElementById('p-host').checked   = false;
-  document.getElementById('modal-error').textContent = '';
-  document.getElementById('btn-save-plant').disabled = false;
-}
-
-async function saveNewPlant() {
-  const nameEl  = document.getElementById('p-name');
-  const daysEl  = document.getElementById('p-days');
-  const errEl   = document.getElementById('modal-error');
-  const saveBtn = document.getElementById('btn-save-plant');
-  errEl.textContent = '';
-  errEl.classList.remove('modal-success');
-
-  // FIX ISSUE-05: validation
-  if (!nameEl.value.trim()) { errEl.textContent = 'Plant name is required.'; return; }
-  if (!daysEl.value || parseInt(daysEl.value) < 1) { errEl.textContent = 'Valid maturity days required.'; return; }
-
-  saveBtn.disabled    = true;
-  saveBtn.textContent = 'Recording…';
-
-  // FIX BUG-04: correct column names matching Supabase schema
-  const { error } = await sb.from('garden_library').insert({
-    user_id:        _userId,
-    common_name:    nameEl.value.trim(),                             // was: name
-    scientific_name:document.getElementById('p-scientific').value.trim() || null,
-    emoji:          document.getElementById('p-emoji').value.trim() || null,
-    maturity_days:  parseInt(daysEl.value),                          // was: days_to_mature
-    recovery_days:  0,                                               // new v10.6 column, default 0
-    planted_date:   document.getElementById('p-planted').value || new Date().toISOString().slice(0,10), // was: date_planted
-    is_native:      document.getElementById('p-native').checked,
-    is_host_plant:  document.getElementById('p-host').checked,       // was: is_host
-  });
-
-  saveBtn.disabled    = false;
-  saveBtn.textContent = 'Record Plant';
-
-  if (error) {
-    errEl.textContent = error.message;
-  } else {
-    errEl.classList.add('modal-success');
-    errEl.textContent = `✓ ${nameEl.value.trim()} recorded!`;
-    setTimeout(() => { closeModal(); renderDashboard(); }, 800);
-  }
-}
-
-
-// ══════════════════════════════════════════════
-//  PREDICTIVE PULSE STRIP
-//  5 live signals computed from garden_library
-//  and plant_health_scans. Fires on every load.
-// ══════════════════════════════════════════════
-async function renderPulse() {
-  const today = new Date();
-  const in14  = new Date(today.getTime() + 14 * 86400000);
-  const in7   = new Date(today.getTime() +  7 * 86400000);
-  const past3 = new Date(today.getTime() -  3 * 86400000).toISOString().slice(0,10);
-
-  const [libRes, scanRes] = await Promise.all([
-    sb.from('garden_library')
-      .select('id,common_name,emoji,maturity_days,recovery_days,planted_date,is_native,is_host_plant,plant_family'),
-    sb.from('plant_health_scans')
-      .select('id,status,severity,scan_date')
-      .in('status', ['active','monitoring'])
-      .gte('scan_date', new Date(today.getTime() - 30*86400000).toISOString().slice(0,10)),
-  ]);
-
-  const plants = libRes.data  || [];
-  const scans  = scanRes.data || [];
-
+  // Fall back to garden_library
   if (!plants.length) {
-    document.getElementById('pulse-strip').innerHTML =
-      '<div style="font-family:var(--mono);font-size:0.55rem;color:var(--muted);padding:0.5rem 0;letter-spacing:0.1em;">Add plants to your library to activate the pulse strip.</div>';
-    return;
+    try {
+      const { data: lib } = await sb.from('garden_library')
+        .select('common_name,emoji,plant_family,is_native,is_host_plant');
+      plants = lib || [];
+    } catch(e) {}
   }
 
-  // ── Compute signals ─────────────────────────
-  const activePlants   = plants.length;
-  const nativeCount    = plants.filter(p => p.is_native).length;
-  const hostCount      = plants.filter(p => p.is_host_plant).length;
-  const pollinatorIQ   = Math.min(100, Math.round(((nativeCount*1.5 + hostCount) / (activePlants||1)) * 50));
-
-  // Plants harvest-ready in next 14 days
-  const imminentHarvest = plants.filter(p => {
-    const hd = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-    return hd && hd >= today && hd <= in14;
-  });
-
-  // Plants in bloom (Asteraceae, Lamiaceae, Rosaceae, ornamentals with harvest window now)
-  const bloomFamilies = ['Asteraceae','Lamiaceae','Rosaceae','Caprifoliaceae','Boraginaceae'];
-  const bloomKeywords = ['marigold','zinnia','borage','lavender','rose','nasturtium','sunflower','cosmos','echinacea','coneflower'];
-  const blooming = plants.filter(p => {
-    const fam = (p.plant_family||'').toLowerCase();
-    const nm  = (p.common_name||'').toLowerCase();
-    return bloomFamilies.some(f => fam.includes(f.toLowerCase())) ||
-           bloomKeywords.some(k => nm.includes(k));
-  });
-
-  // Active health issues (last 30d, active/monitoring)
-  const activeIssues  = scans.length;
-  const criticalCount = scans.filter(s => s.severity === 'high' || s.severity === 'critical').length;
-
-  // Days until first frost (Oct 15, Zone 6b)
-  const year       = today.getFullYear();
-  const firstFrost = new Date(year, 9, 15);
-  const daysToFrost= Math.ceil((firstFrost - today) / 86400000);
-  const lastFrost  = new Date(year, 3, 15);
-  const daysFromFrost = Math.ceil((today - lastFrost) / 86400000);
-  const frostNote  = daysToFrost > 0 && daysToFrost <= 45
-    ? `${daysToFrost}d to first frost`
-    : daysToFrost > 45
-    ? `Frost-free window: ${Math.max(0,daysToFrost)}d`
-    : `${Math.abs(daysToFrost)}d past first frost`;
-
-  // ── Render chips ─────────────────────────────
-  const chips = [
-    {
-      icon: '🌱', num: activePlants,
-      lbl: 'Active Plants',
-      sub: `${nativeCount} native · ${hostCount} host`,
-      cls: '',
-      delay: 0,
-    },
-    {
-      icon: '🌸', num: blooming.length,
-      lbl: 'In Bloom',
-      sub: blooming.length ? blooming.slice(0,2).map(p=>p.emoji+' '+p.common_name).join(' · ') : 'No bloom data yet',
-      cls: blooming.length ? 'is-bloom' : '',
-      delay: 60,
-    },
-    {
-      icon: '🌾', num: imminentHarvest.length,
-      lbl: 'Harvest Soon',
-      sub: imminentHarvest.length
-        ? imminentHarvest[0].emoji + ' ' + imminentHarvest[0].common_name + (imminentHarvest.length>1 ? ` +${imminentHarvest.length-1} more` : '')
-        : 'Nothing in 14-day window',
-      cls: imminentHarvest.length ? 'is-harvest' : '',
-      delay: 120,
-    },
-    {
-      icon: activeIssues ? '⚠️' : '✅',
-      num: activeIssues || '✓',
-      lbl: 'Health Issues',
-      sub: criticalCount > 0 ? `${criticalCount} high/critical` : activeIssues ? 'Active monitoring' : 'No active issues',
-      cls: criticalCount > 0 ? 'is-alert' : activeIssues ? 'is-urgent' : '',
-      delay: 180,
-    },
-    {
-      icon: '🐝', num: pollinatorIQ,
-      lbl: 'Pollinator IQ',
-      sub: frostNote,
-      cls: pollinatorIQ >= 60 ? 'is-harvest' : pollinatorIQ >= 30 ? 'is-urgent' : '',
-      delay: 240,
-    },
-  ];
-
-  document.getElementById('pulse-strip').innerHTML = chips.map(c => `
-    <div class="pulse-chip ${c.cls}" style="animation-delay:${c.delay}ms">
-      <div class="chip-icon">${c.icon}</div>
-      <div class="chip-body">
-        <div class="chip-num">${c.num}</div>
-        <div class="chip-lbl">${c.lbl}</div>
-        <div class="chip-sub">${c.sub}</div>
-      </div>
-    </div>`).join('');
-
-  // ── Predictive insight sentence ───────────────
-  const banner  = document.getElementById('predict-banner');
-  const textEl  = document.getElementById('predict-text');
-  const metaEl  = document.getElementById('predict-meta');
-  const iconEl  = document.getElementById('predict-icon');
-
-  let insight = '', icon = '🌱', meta = 'Computed from your library data';
-
-  if (criticalCount > 0) {
-    insight = `${criticalCount} plant${criticalCount>1?'s have':' has'} a high or critical health issue active right now. Check the Clinic for treatment protocols before conditions spread.`;
-    icon = '🚨'; banner.style.borderLeftColor = 'var(--red)'; meta = 'Health alert — immediate attention';
-  } else if (imminentHarvest.length > 0) {
-    const p = imminentHarvest[0];
-    const hd = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-    const days = Math.ceil((hd - today) / 86400000);
-    insight = `${p.emoji} ${p.common_name} ${days <= 0 ? 'is ready to harvest now' : `enters peak harvest in ${days} day${days!==1?'s':''}`}.${imminentHarvest.length > 1 ? ` ${imminentHarvest.length - 1} more plant${imminentHarvest.length>2?'s':''} follow within 14 days.` : ''}`;
-    icon = '🌾'; meta = 'Harvest window approaching';
-  } else if (daysToFrost > 0 && daysToFrost <= 30) {
-    insight = `First frost expected in ${daysToFrost} days (Oct 15, Zone 6b). Harvest frost-sensitive crops and prepare row cover for perennials.`;
-    icon = '❄️'; banner.style.borderLeftColor = 'var(--blue)'; meta = 'Frost window — 30-day alert';
-  } else if (blooming.length === 0 && activePlants > 3) {
-    insight = `No flowering plants detected in your library. Adding even one pollinator plant — marigold, zinnia, or borage — would significantly improve your garden's ecosystem health and Pollinator IQ.`;
-    icon = '🌼'; banner.style.borderLeftColor = 'var(--amber)'; meta = 'Ecosystem opportunity';
-  } else if (nativeCount === 0 && activePlants > 0) {
-    insight = `None of your ${activePlants} plants are flagged as native. Native species provide 3–5× more ecosystem value for local pollinators. Consider adding native flowering plants from your region.`;
-    icon = '🦋'; banner.style.borderLeftColor = 'var(--pink)'; meta = 'Biodiversity signal';
-    // Make banner clickable to open native drawer
-    banner.classList.add('clickable');
-    renderNativeDrawer(plants);
-  } else if (nativeCount > 0 && nativeCount < activePlants) {
-    banner.classList.add('clickable');
-    renderNativeDrawer(plants);
-  } else {
-    const sortedByHarvest = [...plants].sort((a,b) => {
-      const da = harvestDate(a.planted_date, a.maturity_days, a.recovery_days);
-      const db = harvestDate(b.planted_date, b.maturity_days, b.recovery_days);
-      if (!da) return 1; if (!db) return -1;
-      return da - db;
-    });
-    const next = sortedByHarvest.find(p => {
-      const hd = harvestDate(p.planted_date, p.maturity_days, p.recovery_days);
-      return hd && hd > today;
-    });
-    if (next) {
-      const hd   = harvestDate(next.planted_date, next.maturity_days, next.recovery_days);
-      const days = Math.ceil((hd - today) / 86400000);
-      insight = `${next.emoji} ${next.common_name} is your next harvest — approximately ${days} day${days!==1?'s':''} away. ${pollinatorIQ >= 50 ? `Your Pollinator IQ of ${pollinatorIQ} is healthy.` : `Pollinator IQ ${pollinatorIQ} — consider adding native plants.`}`;
-      icon = '📅'; meta = 'Next harvest forecast';
-    } else {
-      insight = `${activePlants} plant${activePlants!==1?'s':''} active. Pollinator IQ: ${pollinatorIQ}. ${nativeCount} native species supporting the local ecosystem.`;
-      icon = '🌿';
-    }
-  }
-
-  iconEl.textContent  = icon;
-  textEl.textContent  = insight;
-  metaEl.textContent  = meta;
-  banner.style.display = 'flex';
-
-  // ── Also trigger bloom gap using the same plants ──
-  renderBloomGap(plants);
-  // ── Also render the 14-day growth graph ──────────
-  renderGrowthGraph(plants);
+  renderStats(plants);
+  renderSeasonStrip(plants);
+  renderBloomClock(plants);
+  renderInsight(plants);
 }
 
-// ══════════════════════════════════════════════
-//  BLOOM GAP DETECTOR — Circular Clock
-//  12-month radial SVG. Each month arc is colored:
-//    • blooming  → pink
-//    • gap       → red (in-season, no blooms)
-//    • off-season→ surface3 grey
-//  Inner ring shows month labels. Current month
-//  gets a green dot marker.
-// ══════════════════════════════════════════════
-function renderBloomGap(plants) {
-  const svg     = document.getElementById('bloom-clock-svg');
-  const gapList = document.getElementById('bloom-gaps-list');
-  if (!svg || !gapList) return;
+// ── Stats ─────────────────────────────────────
+function renderStats(plants) {
+  const total    = plants.length;
+  const native   = plants.filter(p => p.is_native).length;
+  const host     = plants.filter(p => p.is_host_plant).length;
+  const families = new Set(plants.map(p => p.plant_family).filter(Boolean)).size;
+  const blooming = plants.filter(p => {
+    const w = bloomWin(p.common_name, p.plant_family);
+    return w && CUR_MONTH >= w[0] && CUR_MONTH <= w[1];
+  }).length;
+  const iq = Math.min(100, Math.round(((native * 1.5 + host) / Math.max(total, 1)) * 50));
 
-  const tip = document.getElementById('bloom-clock-tip');
+  document.getElementById('stat-plants').textContent   = total;
+  document.getElementById('stat-blooming').textContent = blooming;
+  document.getElementById('stat-native').textContent   = native;
+  document.getElementById('stat-families').textContent = families;
+  document.getElementById('stat-iq').textContent       = iq;
 
-  // ── Bloom windows (same data as before) ──────
-  const FAMILY_BLOOM = {
-    Asteraceae:[6,10],Lamiaceae:[5,9],Rosaceae:[5,9],Boraginaceae:[5,9],
-    Tropaeolaceae:[6,10],Caprifoliaceae:[5,8],Scrophulariaceae:[6,9],
-    Violaceae:[4,6],Ranunculaceae:[4,6],Papaveraceae:[5,7],
-  };
-  const NAME_BLOOM = {
-    'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
-    'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
-    'coneflower':[7,9],'black-eyed':[7,9],'bee balm':[7,8],'catmint':[5,9],
-    'salvia':[6,9],'dill':[7,8],'fennel':[7,8],'chives':[5,6],'allium':[5,7],
-    'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
-    'thyme':[5,7],'oregano':[7,8],'basil':[7,9],
-  };
+  // Pollinator IQ card
+  document.getElementById('pollinator-iq').textContent = iq;
+  document.getElementById('iq-bar').style.width        = iq + '%';
+  document.getElementById('iq-bar').style.background   =
+    iq >= 60 ? 'var(--moss)' : iq >= 30 ? 'var(--gold)' : 'var(--rose)';
+  document.getElementById('iq-sub').textContent =
+    `${native} native · ${host} host · ${total} total`;
+}
 
-  // Build month → blooming plants map
-  const monthPlants = {};  // 1-12 → [names]
+// ── Season strip ──────────────────────────────
+function renderSeasonStrip(plants) {
+  const strip = document.getElementById('season-strip');
+  const bloomNow = plants.filter(p => {
+    const w = bloomWin(p.common_name, p.plant_family);
+    return w && CUR_MONTH >= w[0] && CUR_MONTH <= w[1];
+  });
+  const soon = plants.filter(p => {
+    const w = bloomWin(p.common_name, p.plant_family);
+    return w && w[0] > CUR_MONTH && w[0] - CUR_MONTH <= 2;
+  });
+
+  const tags = [];
+  if (bloomNow.length) {
+    tags.push(`<span class="season-tag live">🌸 ${bloomNow.length} blooming now</span>`);
+    bloomNow.slice(0, 3).forEach(p =>
+      tags.push(`<span class="season-tag">${p.emoji||'🌱'} ${p.common_name}</span>`)
+    );
+    if (bloomNow.length > 3) tags.push(`<span class="season-tag">+${bloomNow.length-3} more</span>`);
+  } else if (soon.length) {
+    tags.push(`<span class="season-tag live">⏳ Bloom season approaching</span>`);
+    soon.slice(0,2).forEach(p =>
+      tags.push(`<span class="season-tag">${p.emoji||'🌱'} ${p.common_name}</span>`)
+    );
+  } else if (plants.length === 0) {
+    tags.push(`<span class="season-tag">Add plants in My Garden to get started</span>`);
+  } else {
+    tags.push(`<span class="season-tag">${plants.length} plants · off season</span>`);
+  }
+
+  strip.innerHTML = tags.join('');
+}
+
+// ── Bloom clock ───────────────────────────────
+function renderBloomClock(plants) {
+  const svg    = document.getElementById('bloom-clock-svg');
+  const gaps   = document.getElementById('bloom-gaps-list');
+  const SEASON = [4,5,6,7,8,9,10];
+
+  // Build month → bloom map
+  const monthPlants = {};
   plants.forEach(p => {
-    const fam  = p.plant_family || '';
-    const name = (p.common_name || '').toLowerCase();
-    let win = null;
-    for (const [k,w] of Object.entries(NAME_BLOOM)) { if (name.includes(k)) { win=w; break; } }
-    if (!win) for (const [k,w] of Object.entries(FAMILY_BLOOM)) { if (fam.includes(k)) { win=w; break; } }
-    if (!win) return;
-    for (let m = win[0]; m <= win[1]; m++) {
+    const w = bloomWin(p.common_name, p.plant_family);
+    if (!w) return;
+    for (let m = w[0]; m <= w[1]; m++) {
       if (!monthPlants[m]) monthPlants[m] = [];
-      monthPlants[m].push((p.emoji||'🌱')+' '+p.common_name);
+      monthPlants[m].push((p.emoji||'🌱') + ' ' + p.common_name);
     }
   });
 
-  // Growing season: Apr(4)–Oct(10)
-  const SEASON = [4,5,6,7,8,9,10];
-  const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const curMonth = new Date().getMonth() + 1;  // 1-based
-  const curYear  = new Date().getFullYear();
+  // SVG arcs
+  const OUTER = 88, INNER = 54, LABEL = 44;
+  const GAP   = 2;
+  const STEP  = 360 / 12;
 
-  // ── SVG geometry ─────────────────────────────
-  const OUTER = 88, INNER = 52, LABEL = 44;
-  const GAP_DEG = 2;   // gap between arc segments (degrees)
-
-  // Helper: polar to cartesian
   function pol(r, deg) {
     const rad = (deg - 90) * Math.PI / 180;
     return [r * Math.cos(rad), r * Math.sin(rad)];
   }
-
-  // Helper: SVG arc path for a donut segment
-  function arcPath(r1, r2, startDeg, endDeg) {
-    const s1 = pol(r1, startDeg), e1 = pol(r1, endDeg);
-    const s2 = pol(r2, startDeg), e2 = pol(r2, endDeg);
-    const lg = (endDeg - startDeg) > 180 ? 1 : 0;
-    return [
-      `M ${s1[0].toFixed(2)} ${s1[1].toFixed(2)}`,
-      `A ${r1} ${r1} 0 ${lg} 1 ${e1[0].toFixed(2)} ${e1[1].toFixed(2)}`,
-      `L ${e2[0].toFixed(2)} ${e2[1].toFixed(2)}`,
-      `A ${r2} ${r2} 0 ${lg} 0 ${s2[0].toFixed(2)} ${s2[1].toFixed(2)}`,
-      'Z'
-    ].join(' ');
+  function arcPath(r1, r2, s, e) {
+    const [ax,ay]=pol(r1,s),[bx,by]=pol(r1,e),[cx,cy]=pol(r2,s),[dx,dy]=pol(r2,e);
+    const lg = (e-s)>180?1:0;
+    return `M${ax.toFixed(2)} ${ay.toFixed(2)} A${r1} ${r1} 0 ${lg} 1 ${bx.toFixed(2)} ${by.toFixed(2)} L${dx.toFixed(2)} ${dy.toFixed(2)} A${r2} ${r2} 0 ${lg} 0 ${cx.toFixed(2)} ${cy.toFixed(2)}Z`;
   }
 
-  // CSS variable values
-  const style   = getComputedStyle(document.documentElement);
-  const C_BLOOM = '#be185d';   // pink
-  const C_GAP   = '#b82018';   // red
-  const C_OFF   = '#e4ddd0';   // surface3
-  const C_GRN   = '#2d6a42';   // green
-  const C_TEXT  = '#7a7060';   // muted
+  let svgHtml = `<circle cx="0" cy="0" r="34" fill="white" stroke="#e0d4c0" stroke-width="1"/>
+    <text x="0" y="-5" text-anchor="middle" font-family="'Cormorant Garamond',serif" font-size="11" font-style="italic" fill="#a09080">bloom</text>
+    <text x="0" y="8"  text-anchor="middle" font-family="'Cormorant Garamond',serif" font-size="11" font-style="italic" fill="#a09080">clock</text>`;
 
-  let svgContent = '';
-  const STEP = 360 / 12;
+  const gapMonths = [];
 
   for (let i = 0; i < 12; i++) {
-    const m        = i + 1;          // 1-based month
-    const startDeg = i * STEP + GAP_DEG / 2;
-    const endDeg   = (i + 1) * STEP - GAP_DEG / 2;
-    const midDeg   = (startDeg + endDeg) / 2;
-
+    const m  = i + 1;
+    const s  = i * STEP + GAP / 2;
+    const e  = (i + 1) * STEP - GAP / 2;
+    const mid = (s + e) / 2;
     const inSeason = SEASON.includes(m);
     const hasBlooms = !!(monthPlants[m] && monthPlants[m].length);
-    const isGap    = inSeason && !hasBlooms;
-    const isBloom  = inSeason && hasBlooms;
+    const isGap = inSeason && !hasBlooms;
+    const isCur = m === CUR_MONTH;
 
-    let fill    = C_OFF;
-    let opacity = '1';
-    if (isBloom) { fill = C_BLOOM; opacity = '0.75'; }
-    if (isGap)   { fill = C_GAP;   opacity = '0.45'; }
+    let fill = '#e0d4c0', opacity = '0.7';
+    if (inSeason && hasBlooms) { fill = '#c87890'; opacity = '0.75'; }
+    if (isGap)                  { fill = '#b8604a'; opacity = '0.45'; gapMonths.push(MONTHS[i]); }
 
-    const d = arcPath(OUTER, INNER, startDeg, endDeg);
+    const tipText = hasBlooms
+      ? `${MONTHS[i]}: ${(monthPlants[m]||[]).slice(0,3).join(', ')}`
+      : isGap ? `${MONTHS[i]}: Bloom gap`
+      : `${MONTHS[i]}: Off season`;
 
-    // Tooltip data stored in data-attrs
-    const bloomNames = (monthPlants[m]||[]).slice(0,3).join(', ');
-    const tipText    = isBloom ? `${MONTHS[i]}: ${bloomNames}` :
-                       isGap  ? `${MONTHS[i]}: Gap — no blooms` :
-                                `${MONTHS[i]}: Off-season`;
-
-    svgContent += `<path d="${d}" fill="${fill}" opacity="${opacity}"
-      class="clock-arc" style="cursor:pointer;transition:opacity 0.15s;"
+    svgHtml += `<path d="${arcPath(OUTER,INNER,s,e)}" fill="${fill}" opacity="${opacity}"
+      style="cursor:pointer;transition:opacity 0.15s;"
       data-tip="${tipText.replace(/"/g,'&quot;')}"
-      onmouseenter="showClockTip(this)" onmouseleave="hideClockTip()"
-    />`;
+      onmouseenter="showClockTip(this,event)" onmouseleave="hideClockTip()"/>`;
 
-    // Month label
-    const [lx, ly] = pol(LABEL, midDeg);
-    const isCur = (m === curMonth);
-    svgContent += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"
+    const [lx,ly] = pol(LABEL, mid);
+    svgHtml += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"
       text-anchor="middle" dominant-baseline="middle"
-      font-family="'DM Mono',monospace"
-      font-size="${isCur ? '7' : '6'}"
-      font-weight="${isCur ? '500' : '400'}"
-      fill="${isCur ? C_GRN : C_TEXT}">${MONTHS[i].toUpperCase()}</text>`;
+      font-family="'Jost',sans-serif"
+      font-size="${isCur?7.5:6}" font-weight="${isCur?'500':'300'}"
+      fill="${isCur?'#526f45':'#a09080'}">${MONTHS[i].toUpperCase()}</text>`;
+
+    if (isCur) {
+      const [dx,dy] = pol(OUTER + 6, mid);
+      svgHtml += `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="3" fill="#526f45"/>`;
+    }
   }
 
-  // Centre hub — IQ score placeholder (shows # of blooming months)
-  const bloomMonthCount = Object.keys(monthPlants).filter(m => SEASON.includes(+m)).length;
-  const seasonLen       = SEASON.length;
-  const coveragePct     = Math.round((bloomMonthCount / seasonLen) * 100);
+  svg.innerHTML = svgHtml;
 
-  svgContent += `
-    <circle cx="0" cy="0" r="${INNER - 2}" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
-    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle"
-      font-family="'Fraunces',Georgia,serif" font-size="22" font-style="italic"
-      fill="${C_GRN}">${coveragePct}%</text>
-    <text x="0" y="10" text-anchor="middle" dominant-baseline="middle"
-      font-family="'DM Mono',monospace" font-size="5.5" fill="${C_TEXT}"
-      letter-spacing="0.12em">COVERAGE</text>
-    <text x="0" y="20" text-anchor="middle" dominant-baseline="middle"
-      font-family="'DM Mono',monospace" font-size="5" fill="${C_TEXT}"
-      opacity="0.7">${bloomMonthCount}/${seasonLen} MONTHS</text>
-  `;
+  gaps.textContent = gapMonths.length
+    ? gapMonths.join(', ')
+    : plants.length ? 'No gaps — full season covered ✓' : 'Add plants to see coverage';
+}
 
-  // Current month marker — small green dot on outer ring
-  const markerDeg = ((curMonth - 1) * STEP) + STEP / 2 - 90;
-  const [mx, my]  = pol(OUTER + 5, ((curMonth - 1) * STEP) + STEP / 2);
-  svgContent += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="3.5" fill="${C_GRN}"/>`;
+function showClockTip(el, evt) {
+  const tip = document.getElementById('bloom-clock-tip');
+  tip.textContent = el.dataset.tip;
+  tip.classList.add('show');
+}
+function hideClockTip() {
+  document.getElementById('bloom-clock-tip').classList.remove('show');
+}
 
-  svg.innerHTML = svgContent;
+// ── Insight banner ────────────────────────────
+function renderInsight(plants) {
+  const banner  = document.getElementById('insight-banner');
+  const textEl  = document.getElementById('insight-text');
+  const metaEl  = document.getElementById('insight-meta');
+  const iconEl  = document.getElementById('insight-icon');
 
-  // ── Gap list (same logic as before) ──────────
-  const gapMonths = SEASON.filter(m => !monthPlants[m]);
-
-  const FILLERS = [
-    { name:'Zinnia',emoji:'🌺',window:[6,10],reason:'Prolific bloomer, draws ladybugs and hoverflies' },
-    { name:'Marigold',emoji:'🌼',window:[6,10],reason:'Nematode deterrent; continuous color Jun–Oct' },
-    { name:'Borage',emoji:'⭐',window:[5,9],reason:'Self-seeding; attracts bees all season' },
-    { name:'Nasturtium',emoji:'🌸',window:[6,10],reason:'Edible trap crop; orange-yellow continuous bloom' },
-    { name:'Echinacea',emoji:'🌸',window:[7,9],reason:'Native perennial; peak late-season pollinator plant' },
-    { name:'Black-eyed Susan',emoji:'🌻',window:[7,9],reason:'Native perennial; fills the late-summer gap' },
-    { name:'Catmint',emoji:'💜',window:[5,9],reason:'Long-blooming; attracts bumblebees' },
-    { name:'Cosmos',emoji:'🌸',window:[7,10],reason:'Easy annual; peak Sept–Oct fill' },
-    { name:'Lavender',emoji:'💜',window:[6,8],reason:'Drought-tolerant perennial; strong June–Aug bloom' },
-    { name:'Bee Balm',emoji:'🌺',window:[7,8],reason:'Native perennial; fills the July–Aug gap' },
-    { name:'Salvia',emoji:'💙',window:[6,9],reason:'Heat-tolerant; hummingbirds and bees' },
-    { name:'Alyssum',emoji:'🤍',window:[4,10],reason:'Nearly year-round bloomer in Zone 6b' },
-  ];
-
-  if (!gapMonths.length) {
-    gapList.innerHTML = '<div style="font-family:var(--mono);font-size:0.52rem;color:var(--green);letter-spacing:0.08em;padding:0.25rem 0;">✓ Full season bloom coverage detected.</div>';
+  if (!plants.length) {
+    banner.style.borderLeftColor = 'var(--gold)';
+    iconEl.textContent  = '🌱';
+    textEl.textContent  = 'Your garden is empty. Head to My Garden to add your first plants — they\'ll appear across the whole site.';
+    metaEl.textContent  = 'Getting started';
+    banner.classList.add('show');
     return;
   }
 
-  const plantedNames = new Set(plants.map(p => p.common_name.toLowerCase()));
-
-  // Collapse consecutive gap months into runs
-  const runs = [];
-  let run = [gapMonths[0]];
-  for (let i = 1; i < gapMonths.length; i++) {
-    if (gapMonths[i] === gapMonths[i-1] + 1) { run.push(gapMonths[i]); }
-    else { runs.push(run); run = [gapMonths[i]]; }
-  }
-  runs.push(run);
-
-  gapList.innerHTML = runs.slice(0,4).map(r => {
-    const from = r[0], to = r[r.length-1];
-    const dateStr = from === to
-      ? MONTHS[from-1]
-      : `${MONTHS[from-1]} – ${MONTHS[to-1]}`;
-    const weeks = r.length * 4;
-
-    const suggestions = FILLERS
-      .filter(f => f.window[0] <= from+1 && f.window[1] >= from)
-      .filter(f => !plantedNames.has(f.name.toLowerCase()))
-      .slice(0,3);
-
-    const suggHtml = suggestions.length
-      ? suggestions.map(s => `<span style="font-weight:500;color:var(--green)">${s.emoji} ${s.name}</span> (${s.reason})`).join(' · ')
-      : 'All known fillers already in your library — well planted!';
-
-    return `<div class="gap-row">
-      <div class="gap-date">${dateStr}</div>
-      <div>
-        <div class="gap-label">~${weeks}-week bloom gap</div>
-        <div class="gap-sugg">Consider adding: ${suggHtml}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Clock tooltip helpers
-function showClockTip(el) {
-  const tip = document.getElementById('bloom-clock-tip');
-  if (!tip) return;
-  tip.textContent = el.dataset.tip;
-  tip.style.display = 'block';
-}
-function hideClockTip() {
-  const tip = document.getElementById('bloom-clock-tip');
-  if (tip) tip.style.display = 'none';
-}
-
-// ══════════════════════════════════════════════
-//  TEMPORAL PULSE — 14-Day Growth Line Graph
-//  Canvas-based. Draws projected maturity % over
-//  the next 14 days for all active plants.
-//  Shows individual plant trajectories as thin
-//  lines + a bold average line.
-// ══════════════════════════════════════════════
-function renderGrowthGraph(plants) {
-  const canvas = document.getElementById('growth-canvas');
-  if (!canvas || !plants || plants.length === 0) return;
-
-  const W   = canvas.offsetWidth || 220;
-  const H   = 90;
-  canvas.width  = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  const DAYS = 14;
-  const PAD  = { top:8, right:8, bottom:18, left:28 };
-  const chartW = W - PAD.left - PAD.right;
-  const chartH = H - PAD.top  - PAD.bottom;
-
-  // For each plant, compute pct for each of the next 14 days
-  const activePlants = plants.filter(p => p.planted_date && p.maturity_days);
-  const seriesData   = activePlants.map(p => {
-    return Array.from({length: DAYS}, (_, d) => {
-      const future    = Date.now() + d * 86400000;
-      const daysGrown = (future - new Date(p.planted_date).getTime()) / 86400000;
-      const effective = (p.maturity_days||60) + (p.recovery_days||0);
-      return Math.min(100, Math.max(0, (daysGrown / effective) * 100));
-    });
+  const nativeCount = plants.filter(p => p.is_native).length;
+  const bloomNow    = plants.filter(p => {
+    const w = bloomWin(p.common_name, p.plant_family);
+    return w && CUR_MONTH >= w[0] && CUR_MONTH <= w[1];
   });
-
-  // Average series
-  const avgSeries = Array.from({length: DAYS}, (_, d) => {
-    if (!seriesData.length) return 0;
-    return seriesData.reduce((acc, s) => acc + s[d], 0) / seriesData.length;
+  const soon = plants.filter(p => {
+    const w = bloomWin(p.common_name, p.plant_family);
+    return w && w[0] > CUR_MONTH && w[0] - CUR_MONTH <= 1;
   });
+  const iq = Math.min(100, Math.round(((nativeCount*1.5 + plants.filter(p=>p.is_host_plant).length) / plants.length) * 50));
 
-  // Determine Y range — pad to at least 0–100 if all plants mature
-  const allVals = seriesData.flat().concat(avgSeries);
-  const yMin    = Math.max(0, Math.floor(Math.min(...allVals) / 10) * 10 - 5);
-  const yMax    = Math.min(100, Math.ceil(Math.max(...allVals) / 10) * 10 + 5);
-  const yRange  = yMax - yMin || 10;
+  // Frost window (Zone 6b: last frost ~Apr 15, first frost ~Oct 15)
+  const year = NOW.getFullYear();
+  const lastFrost  = new Date(year, 3, 15);
+  const firstFrost = new Date(year, 9, 15);
+  const daysToFirstFrost = Math.ceil((firstFrost - NOW) / 86400000);
+  const daysFromLastFrost = Math.ceil((NOW - lastFrost) / 86400000);
 
-  function xOf(d) { return PAD.left + (d / (DAYS - 1)) * chartW; }
-  function yOf(v) { return PAD.top  + chartH - ((v - yMin) / yRange) * chartH; }
+  let icon='🌿', text='', meta='', color='var(--moss)';
 
-  ctx.clearRect(0, 0, W, H);
-
-  // ── Grid lines ──
-  ctx.strokeStyle = 'rgba(213,204,184,0.5)';
-  ctx.lineWidth   = 0.5;
-  [0, 25, 50, 75, 100].forEach(pct => {
-    if (pct < yMin || pct > yMax) return;
-    const y = yOf(pct);
-    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y);
-    ctx.stroke();
-    ctx.fillStyle   = 'rgba(122,112,96,0.7)';
-    ctx.font        = '8px DM Mono, monospace';
-    ctx.textAlign   = 'right';
-    ctx.fillText(`${pct}%`, PAD.left - 3, y + 3);
-  });
-
-  // ── X axis day labels: today + day 7 + day 14 ──
-  ctx.fillStyle = 'rgba(122,112,96,0.8)';
-  ctx.font      = '7px DM Mono, monospace';
-  ctx.textAlign = 'center';
-  [0, 7, 13].forEach(d => {
-    const label = d === 0 ? 'Today' : `+${d}d`;
-    ctx.fillText(label, xOf(d), H - 3);
-  });
-
-  // ── Individual plant lines (thin, muted) ──
-  seriesData.forEach(series => {
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(74,140,98,0.2)';
-    ctx.lineWidth   = 1;
-    series.forEach((v, d) => {
-      d === 0 ? ctx.moveTo(xOf(d), yOf(v)) : ctx.lineTo(xOf(d), yOf(v));
-    });
-    ctx.stroke();
-  });
-
-  // ── Harvest-ready fill zone (pct ≥ 100) ──
-  if (yMax >= 95) {
-    const readyY = yOf(100);
-    ctx.fillStyle = 'rgba(160,92,20,0.06)';
-    ctx.fillRect(PAD.left, PAD.top, chartW, readyY - PAD.top);
+  if (daysToFirstFrost > 0 && daysToFirstFrost <= 30) {
+    icon='❄️'; color='var(--sky)';
+    text=`First frost expected in ${daysToFirstFrost} days (Oct 15). Harvest frost-sensitive crops and prepare row cover for perennials.`;
+    meta='Frost window · 30-day alert';
+  } else if (daysFromLastFrost >= 0 && daysFromLastFrost <= 14) {
+    icon='🌱'; color='var(--moss)';
+    text=`Last frost was ${daysFromLastFrost} days ago. The growing season is open — safe to plant frost-sensitive seedlings outdoors.`;
+    meta='Post-frost window · Zone 6b';
+  } else if (soon.length > 0) {
+    icon='⏳'; color='var(--gold)';
+    const names = soon.slice(0,2).map(p=>p.common_name).join(' and ');
+    text=`${names} should start blooming next month. Check your Plan page for the full timeline.`;
+    meta='Bloom forecast · coming soon';
+  } else if (nativeCount === 0 && plants.length > 0) {
+    icon='🦋'; color='var(--plum)';
+    text=`None of your ${plants.length} plants are native species. Adding even one native — like Echinacea or Milkweed — provides 3–5× more value for local pollinators.`;
+    meta='Biodiversity opportunity';
+  } else if (bloomNow.length > 0) {
+    icon='🌸'; color='var(--rose)';
+    text=`${bloomNow.length} plant${bloomNow.length>1?'s are':' is'} blooming right now: ${bloomNow.slice(0,3).map(p=>p.common_name).join(', ')}${bloomNow.length>3?` +${bloomNow.length-3} more`:''}.`;
+    meta='Current bloom status';
+  } else {
+    return; // nothing interesting to say
   }
 
-  // ── Average line (bold green with gradient) ──
-  const grad = ctx.createLinearGradient(xOf(0), 0, xOf(DAYS-1), 0);
-  grad.addColorStop(0,   '#4a8c62');
-  grad.addColorStop(0.7, '#2d6a42');
-  grad.addColorStop(1,   '#a05c14');
-
-  ctx.beginPath();
-  ctx.strokeStyle = grad;
-  ctx.lineWidth   = 2.5;
-  ctx.lineJoin    = 'round';
-  ctx.lineCap     = 'round';
-  avgSeries.forEach((v, d) => {
-    d === 0 ? ctx.moveTo(xOf(d), yOf(v)) : ctx.lineTo(xOf(d), yOf(v));
-  });
-  ctx.stroke();
-
-  // ── Endpoint dot ──
-  const endX = xOf(DAYS-1), endY = yOf(avgSeries[DAYS-1]);
-  ctx.beginPath();
-  ctx.arc(endX, endY, 3, 0, Math.PI * 2);
-  ctx.fillStyle = avgSeries[DAYS-1] >= 95 ? '#a05c14' : '#2d6a42';
-  ctx.fill();
-
-  // ── Today dot ──
-  ctx.beginPath();
-  ctx.arc(xOf(0), yOf(avgSeries[0]), 3, 0, Math.PI * 2);
-  ctx.fillStyle = '#2d6a42';
-  ctx.fill();
+  banner.style.borderLeftColor = color;
+  iconEl.textContent = icon;
+  textEl.textContent = text;
+  metaEl.textContent = meta;
+  banner.classList.add('show');
 }
 
-// Hover tooltip on growth canvas
-(function setupGraphHover() {
-  const canvas = document.getElementById('growth-canvas');
-  if (!canvas) return;
-  canvas.addEventListener('mousemove', function(e) {
-    const rect = canvas.getBoundingClientRect();
-    const x    = e.clientX - rect.left;
-    const W    = canvas.offsetWidth;
-    const PAD_L = 28, PAD_R = 8;
-    const chartW = W - PAD_L - PAD_R;
-    const d = Math.round(((x - PAD_L) / chartW) * 13);
-    if (d < 0 || d > 13) { canvas.title = ''; return; }
-    canvas.title = d === 0 ? 'Today' : `Day +${d}`;
-  });
-})();
-
-// ══════════════════════════════════════════════
-//  NATIVE ALTERNATIVES DRAWER
-//  Full hardcoded swap DB (common → native).
-//  Cards highlighted if native alt is already
-//  in the user's library.
-// ══════════════════════════════════════════════
-
-const NATIVE_SWAPS = [
-  {
-    common: 'Butterfly Bush', commonEmoji: '🌸',
-    native: 'Joe Pye Weed', nativeEmoji: '🌺', nativeSci: 'Eutrochium purpureum',
-    benefit: 'Supports 42 native bee species vs. butterfly bush\'s near zero. Blooms Jul–Sep.',
-    tags: ['Perennial', 'Pollinator', 'Zone 4–9'],
-  },
-  {
-    common: 'English Lavender', commonEmoji: '💜',
-    native: 'Wild Bergamot', nativeEmoji: '💜', nativeSci: 'Monarda fistulosa',
-    benefit: 'Native bees can\'t access non-native lavender efficiently. Wild bergamot is their preferred nectar source.',
-    tags: ['Perennial', 'Bee Magnet', 'Deer Resistant'],
-  },
-  {
-    common: 'Burning Bush', commonEmoji: '🔴',
-    native: 'Highbush Blueberry', nativeEmoji: '🫐', nativeSci: 'Vaccinium corymbosum',
-    benefit: 'Burning bush is invasive in CT. Blueberry provides food for 288 caterpillar species + edible fruit.',
-    tags: ['Shrub', 'Edible', 'Wildlife Food'],
-  },
-  {
-    common: 'Japanese Barberry', commonEmoji: '🌿',
-    native: 'Spicebush', nativeEmoji: '🌿', nativeSci: 'Lindera benzoin',
-    benefit: 'Barberry is invasive and harbors deer ticks. Spicebush hosts the Spicebush Swallowtail butterfly.',
-    tags: ['Shrub', 'Host Plant', 'Fall Color'],
-  },
-  {
-    common: 'Daylily (non-native)', commonEmoji: '🌼',
-    native: 'Orange Coneflower', nativeEmoji: '🌻', nativeSci: 'Rudbeckia fulgida',
-    benefit: 'Tawny daylily is invasive in CT. Coneflower supports goldfinches in fall with seed heads.',
-    tags: ['Perennial', 'Birds', 'Long Bloom'],
-  },
-  {
-    common: 'Forsythia', commonEmoji: '💛',
-    native: 'Witch Hazel', nativeEmoji: '💛', nativeSci: 'Hamamelis virginiana',
-    benefit: 'Witch hazel blooms Nov–Jan — the only late-season nectar source for queen bumblebees.',
-    tags: ['Shrub', 'Winter Bloom', 'Medicinal'],
-  },
-  {
-    common: 'Hosta', commonEmoji: '🍃',
-    native: 'Wild Ginger', nativeEmoji: '🍃', nativeSci: 'Asarum canadense',
-    benefit: 'Both are shade groundcovers, but wild ginger hosts specialist native bees and self-spreads naturally.',
-    tags: ['Groundcover', 'Shade', 'Perennial'],
-  },
-  {
-    common: 'Crape Myrtle', commonEmoji: '🌸',
-    native: 'Serviceberry', nativeEmoji: '🍒', nativeSci: 'Amelanchier canadensis',
-    benefit: 'Serviceberry blooms first in spring (critical for emerging bees), provides edible berries, and hosts 124 Lepidoptera species.',
-    tags: ['Tree/Shrub', 'Edible', 'Early Bloom'],
-  },
-  {
-    common: 'Japanese Honeysuckle', commonEmoji: '🌼',
-    native: 'Trumpet Honeysuckle', nativeEmoji: '🌼', nativeSci: 'Lonicera sempervirens',
-    benefit: 'Japanese honeysuckle is invasive. Native trumpet honeysuckle is the primary Ruby-throated Hummingbird nectar plant.',
-    tags: ['Vine', 'Hummingbirds', 'Non-invasive'],
-  },
-  {
-    common: 'Norway Maple', commonEmoji: '🍁',
-    native: 'Sugar Maple', nativeEmoji: '🍁', nativeSci: 'Acer saccharum',
-    benefit: 'Norway maple shades out native understory plants. Sugar maple supports 285 caterpillar species and is CT\'s state tree.',
-    tags: ['Tree', 'Fall Color', 'Wildlife'],
-  },
-  {
-    common: 'Catmint (non-native)', commonEmoji: '💙',
-    native: 'Blue Wild Indigo', nativeEmoji: '💙', nativeSci: 'Baptisia australis',
-    benefit: 'Blue wild indigo is a host plant for Wild Indigo Duskywing butterfly and supports native bumblebees exclusively.',
-    tags: ['Perennial', 'Host Plant', 'Drought Tolerant'],
-  },
-  {
-    common: 'Ornamental Grass (misc)', commonEmoji: '🌾',
-    native: 'Little Bluestem', nativeEmoji: '🌾', nativeSci: 'Schizachyrium scoparium',
-    benefit: 'Little bluestem turns copper-red in fall, provides winter bird habitat, and is a host grass for 8 skipper species.',
-    tags: ['Grass', 'Birds', 'Winter Interest'],
-  },
-];
-
-let _nativeDrawerPlants = [];
-
-function renderNativeDrawer(plants) {
-  _nativeDrawerPlants = plants || [];
-  const grid = document.getElementById('swap-grid');
-  if (!grid) return;
-
-  const libraryNames = new Set(
-    _nativeDrawerPlants.map(p => (p.common_name || '').toLowerCase())
-  );
-
-  grid.innerHTML = NATIVE_SWAPS.map(swap => {
-    const nativeLower  = swap.native.toLowerCase();
-    const inLib        = libraryNames.has(nativeLower) ||
-                         [...libraryNames].some(n => n.includes(nativeLower.split(' ')[0]));
-    const tagsHtml     = swap.tags.map(t =>
-      `<span class="swap-badge">${t}</span>`
-    ).join(' ');
-
-    return `<div class="swap-card ${inLib ? 'in-library' : ''}">
-      <div class="swap-common">${swap.commonEmoji} ${swap.common}</div>
-      <div class="swap-arrow">→ swap for native</div>
-      <div class="swap-native">${swap.nativeEmoji} ${swap.native}</div>
-      <div style="font-family:var(--mono);font-size:0.44rem;color:var(--muted);letter-spacing:0.06em;margin-top:1px;">${swap.nativeSci}</div>
-      <div class="swap-why">${swap.benefit}</div>
-      <div style="margin-top:0.4rem;">${tagsHtml}</div>
-    </div>`;
-  }).join('');
+// ── Water pulse ───────────────────────────────
+async function loadWaterPulse() {
+  try {
+    const past7 = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+    const { data: logs } = await sb.from('garden_logs')
+      .select('quantity_gal,activity_type')
+      .eq('activity_type','watering')
+      .gte('log_date', past7);
+    const total = (logs||[]).reduce((a,l) => a+(parseFloat(l.quantity_gal)||0), 0);
+    const count = (logs||[]).length;
+    document.getElementById('water-stat').textContent = total.toFixed(1);
+    document.getElementById('water-sub').textContent  =
+      count > 0 ? `${count} session${count>1?'s':''} this week` : 'No watering logged this week';
+  } catch(e) {
+    document.getElementById('water-stat').textContent = '—';
+    document.getElementById('water-sub').textContent  = 'Log data unavailable';
+  }
 }
 
-function toggleNativeDrawer(e) {
-  if (e) e.stopPropagation();
-  const drawer = document.getElementById('native-drawer');
-  if (!drawer) return;
-  drawer.classList.toggle('open');
+// ── Weather ───────────────────────────────────
+async function fetchWeather() {
+  const btn = document.getElementById('weather-refresh-btn');
+  btn.textContent = '…'; btn.disabled = true;
+
+  try {
+    const wx = await WeatherEngine.run(sb);
+    const riskMap = {
+      FROST:    { label:'❄️ Frost risk',    cls:'danger' },
+      HEAT:     { label:'🔥 Heat risk',     cls:'warn'   },
+      MODERATE: { label:'⚠️ Moderate',     cls:'warn'   },
+      LOW:      { label:'✅ Low risk',      cls:'good'   },
+    };
+    const { label: riskLabel, cls: riskClass } = riskMap[wx.risk] || riskMap.LOW;
+
+    document.getElementById('w-temp').textContent  = `${wx.icon||''} ${wx.tempF}°F`;
+    document.getElementById('w-solar').textContent = `${wx.solarHours} hrs`;
+    document.getElementById('w-risk').textContent  = riskLabel;
+    document.getElementById('w-risk').className    = `wx-val ${riskClass}`;
+    document.getElementById('weather-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+
+    // Frost banner
+    const banner = document.getElementById('frost-banner');
+    if (wx.risk === 'FROST') {
+      banner.textContent = '❄️ Frost risk tonight — protect sensitive plants';
+      banner.classList.add('show');
+    } else {
+      banner.classList.remove('show');
+    }
+  } catch(e) {
+    document.getElementById('w-temp').textContent = '⚠ Offline';
+    document.getElementById('weather-updated').textContent = 'Weather unavailable';
+  }
+
+  btn.textContent = '↻ Refresh'; btn.disabled = false;
 }
-
-// ══════════════════════════════════════════════
-// Close modals on backdrop click
-document.getElementById('add-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('add-modal')) closeModal();
-});
-
-// Redraw graph on resize
-let _lastPlants = null;
-const _origRenderGrowth = renderGrowthGraph;
-window.renderGrowthGraph = function(plants) { _lastPlants = plants; _origRenderGrowth(plants); };
-window.addEventListener('resize', () => { if (_lastPlants) renderGrowthGraph(_lastPlants); });
 </script>
 </body>
 </html>
