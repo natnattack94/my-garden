@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GardenHub OS | Spatial Studio v10.6</title>
+<title>GardenHub — Garden Map</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=DM+Mono:wght@400;500&family=Jost:wght@300;400&display=swap" rel="stylesheet"/>
 
 <style>
 /* ── Design Tokens ────────────────────────────── */
 :root {
-  --bg:         #0b110d;
-  --surface:    #111a13;
-  --surface2:   #172019;
-  --border:     #1d2e20;
-  --border2:    #243628;
+  --bg:         #0d0f0b;
+  --surface:    #131510;
+  --surface2:   #1a1c16;
+  --border:     #252820;
+  --border2:    #2e3228;
   --green:      #3ddc6e;
   --green-dim:  #1a6b34;
   --green-pale: #a8f0b8;
@@ -72,11 +72,11 @@ body {
   text-transform: uppercase;
 }
 .sidebar-logo .title {
-  font-family: var(--serif);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #e8f5e8;
-  letter-spacing: -0.03em;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  font-weight: 300;
+  font-style: italic;
+  color: #d8e8d0;
   line-height: 1.1;
 }
 
@@ -107,11 +107,11 @@ body {
   flex-shrink: 0;
 }
 .map-nav-logo {
-  font-family: var(--serif);
-  font-size: 0.95rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
   font-weight: 300;
   font-style: italic;
-  color: var(--green-dim);
+  color: #8aab8a;
   text-decoration: none;
   margin-right: 1.5rem;
   white-space: nowrap;
@@ -514,11 +514,14 @@ body {
 
 /* ── Save indicator ─────────────────────────── */
 #save-indicator {
-  position: fixed; top: 0.75rem; right: 1rem;
-  font-size: 0.55rem; letter-spacing: 0.15em;
-  color: var(--green-dim); text-transform: uppercase;
-  opacity: 0; transition: opacity 0.3s;
-  z-index: 999;
+  position: fixed; bottom: 1rem; right: 1rem;
+  background: rgba(82,111,69,0.92);
+  color: #c4d8b0; font-family: 'Jost', sans-serif;
+  font-size: 0.62rem; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 0.35rem 0.85rem;
+  border-radius: 4px; opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; z-index: 400;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 #save-indicator.show { opacity: 1; }
 
@@ -530,14 +533,17 @@ body {
 }
 #auth-overlay.hidden { display: none; }
 .auth-box {
-  border: 1px solid var(--green);
-  background: var(--surface);
+  background: #faf4ea;
+  border: 1px solid #e0d4c0;
+  border-radius: 10px;
   padding: 2.25rem;
   width: 340px;
   position: relative;
+  color: #231c14;
 }
 .auth-box::before {
-  content: 'SPATIAL STUDIO // AUTH';
+  content: '';
+  display: none;
   font-size: 0.52rem; color: var(--green-dim);
   letter-spacing: 0.2em; text-transform: uppercase;
   position: absolute; top: -0.6rem; left: 1rem;
@@ -679,6 +685,23 @@ body {
 }
 .pd-close-btn:hover { border-color: var(--green-dim); color: var(--green); }
 
+/* ── Weather alert bar ──────────────────────── */
+#weather-alert-bar.frost {
+  background: rgba(99,102,241,0.18);
+  border-bottom: 1px solid rgba(99,102,241,0.4);
+  color: #a5b4fc;
+}
+#weather-alert-bar.heat {
+  background: rgba(240,82,82,0.15);
+  border-bottom: 1px solid rgba(240,82,82,0.4);
+  color: #fca5a5;
+}
+#weather-alert-bar.rain {
+  background: rgba(91,164,245,0.15);
+  border-bottom: 1px solid rgba(91,164,245,0.4);
+  color: #93c5fd;
+}
+
 /* ── Bloom gap overlay ──────────────────────── */
 .bloom-active { box-shadow: inset 0 0 0 2px rgba(236,72,153,0.6) !important; background: rgba(236,72,153,0.12) !important; }
 .bloom-gap    { box-shadow: inset 0 0 0 2px rgba(240,82,82,0.5) !important; background: rgba(240,82,82,0.10) !important; }
@@ -703,13 +726,13 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
 <!-- ═══════════════ AUTH OVERLAY ═══════════════ -->
 <div id="auth-overlay">
   <div class="auth-box">
-    <div class="auth-title">Spatial Studio</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;font-style:italic;color:#231c14;margin-bottom:0.2rem;">GardenHub</div><div style="font-size:0.6rem;letter-spacing:0.2rem;text-transform:uppercase;color:#a09080;margin-bottom:1.2rem;">Garden Map</div>
     <input id="a-email" class="auth-input" type="email" placeholder="email" autocomplete="email"/>
     <input id="a-pass"  class="auth-input" type="password" placeholder="password" autocomplete="current-password"/>
     <div id="auth-err"></div>
-    <button class="auth-btn" id="btn-login">Initialize Session</button>
-    <button class="auth-btn ghost" id="btn-reg">Register</button>
-    <button class="auth-btn ghost" id="btn-guest" style="margin-top:0.5rem;font-size:0.58rem;opacity:0.55;">↳ Continue without account</button>
+    <button class="auth-btn" id="btn-login">Sign In</button>
+    <button class="auth-btn ghost" id="btn-reg">Create Account</button>
+    <button class="auth-btn ghost" id="btn-guest" style="margin-top:0.25rem;">Continue without account</button>
   </div>
 </div>
 
@@ -717,7 +740,7 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
 <!-- ═══ NAV BAR ═══ -->
 <nav id="map-nav">
   <a href="index.html" class="map-nav-logo">GardenHub</a>
-  <a href="index.html"     class="map-nav-link">Dashboard</a>
+  <a href="index.html"     class="map-nav-link">Home</a>
   <a href="garden.html"    class="map-nav-link">My Garden</a>
   <a href="map.html"       class="map-nav-link active">Map</a>
   <a href="plan.html"      class="map-nav-link">Plan</a>
@@ -727,8 +750,8 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
 
 <aside id="sidebar">
   <div class="sidebar-logo">
-    <div class="eyebrow">GardenHub OS // v10.6</div>
-    <div class="title">Spatial<br/>Studio</div>
+    <div class="eyebrow">Garden Map</div>
+    <div class="title">GardenHub</div>
   </div>
 
   <!-- Crop Rotation -->
@@ -834,13 +857,15 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
     </div>
   </div>
 
+  <!-- Weather alert bar (shown when frost/heat risk) -->
+  <div id="weather-alert-bar" style="display:none;position:absolute;top:0;left:0;right:0;z-index:90;padding:0.45rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;display:none;align-items:center;gap:0.75rem;"></div>
+
   <!-- Season scrubber -->
   <div id="scrubber-bar">
     <label>Season Pulse</label>
     <span id="pulse-date">Mar 1</span>
     <input type="range" id="time-scrubber" min="60" max="300" step="1" value="60" oninput="onScrub()"/>
     <span id="season-badge">Early Spring</span>
-
   </div>
 </div>
 
@@ -1485,13 +1510,23 @@ async function loadHealthScans() {
   healthScans = data || [];
 }
 
-// ── Load plant inventory from garden_library ──
+// ── Load plant inventory (garden_plants + library) ───
 async function loadInventory() {
+  const grid = document.getElementById('plant-inventory');
+
+  // Try to get user's garden_plants first — show "My Plants" at top
+  let myPlantNames = new Set();
+  try {
+    const { data: gp } = await sb.from('garden_plants')
+      .select('name').eq('user_id', userId);
+    if (gp && gp.length > 0) {
+      gp.forEach(p => myPlantNames.add(p.name));
+    }
+  } catch(e) { /* table may not exist yet */ }
+
   const { data, error } = await sb.from('garden_library')
     .select('id, common_name, emoji, plant_family, spread_in, maturity_days, bloom_start_day, is_native, is_host_plant')
     .order('common_name');
-
-  const grid = document.getElementById('plant-inventory');
 
   if (error || !data || data.length === 0) {
     // Fallback hardcoded plants if library is empty or table has different schema
@@ -1513,8 +1548,23 @@ async function loadInventory() {
 }
 
 function renderInventory(grid, plants) {
-  grid.innerHTML = plants.map(p => {
+  // Sort: my garden plants first, then rest
+  const sorted = [...plants].sort((a, b) => {
+    const am = myPlantNames.has(a.common_name), bm = myPlantNames.has(b.common_name);
+    if (am && !bm) return -1;
+    if (!am && bm) return  1;
+    return a.common_name.localeCompare(b.common_name);
+  });
+
+  // Add section headers
+  const myPlants = sorted.filter(p => myPlantNames.has(p.common_name));
+  if (myPlants.length > 0) {
+    grid.insertAdjacentHTML('beforeend', `<div style="grid-column:1/-1;font-size:0.45rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--green-dim);padding:0.3rem 0 0.15rem;margin-top:0.25rem;">My Garden</div>`);
+  }
+
+  grid.innerHTML = sorted.map(p => {
     const badges = [];
+    if (myPlantNames.has(p.common_name)) badges.push('<span class="badge" style="background:rgba(61,220,110,0.12);color:var(--green);border:1px solid var(--green-dim);">★</span>');
     if (p.is_native)     badges.push('<span class="badge badge-native">N</span>');
     if (p.is_host_plant) badges.push('<span class="badge badge-host">H</span>');
     const plant = {
@@ -1572,7 +1622,7 @@ document.getElementById('btn-login').onclick = async () => {
   if (!email) { errEl.textContent = '✕ Enter your email'; return; }
   if (!pass)  { errEl.textContent = '✕ Enter your password'; return; }
 
-  btn.textContent = 'Connecting…';
+  btn.textContent = 'Signing in…';
   btn.disabled    = true;
 
   try {
@@ -1677,7 +1727,61 @@ window.addEventListener('DOMContentLoaded', () => {
   checkSession();
   initClickToPlace();
   initDetailPanel();
+  fetchWeatherForMap(); // non-blocking weather check
 });
+
+// ── Weather warnings on the map canvas ─────────
+async function fetchWeatherForMap() {
+  const bar = document.getElementById('weather-alert-bar');
+  if (!bar) return;
+
+  // Zone 6b frost dates: last frost ~Apr 15, first frost ~Oct 15
+  const now   = new Date();
+  const month = now.getMonth() + 1;
+  const day   = now.getDate();
+  const year  = now.getFullYear();
+
+  const lastFrost  = new Date(year, 3, 15);  // Apr 15
+  const firstFrost = new Date(year, 9, 15);  // Oct 15
+  const daysToFirst  = Math.ceil((firstFrost - now) / 86400000);
+  const daysFromLast = Math.ceil((now - lastFrost)  / 86400000);
+
+  let msg = '', cls = '';
+
+  if (daysToFirst > 0 && daysToFirst <= 14) {
+    msg = `❄️  First frost in ${daysToFirst} day${daysToFirst!==1?'s':''} (Oct 15) · Protect frost-sensitive plants`;
+    cls = 'frost';
+  } else if (daysFromLast >= 0 && daysFromLast <= 7) {
+    msg = `🌱  Past last frost ${daysFromLast} day${daysFromLast!==1?'s':''} ago · Safe to plant frost-sensitive seedlings`;
+    cls = 'rain';
+  } else if (month >= 11 || month <= 3) {
+    msg = `❄️  Winter dormancy period · Zone 6b · Last frost ~Apr 15`;
+    cls = 'frost';
+  }
+
+  // Try WeatherEngine if available
+  try {
+    if (typeof WeatherEngine !== 'undefined') {
+      const wx = await WeatherEngine.run(sb);
+      if (wx.risk === 'FROST') {
+        msg = `❄️  Frost risk tonight · ${wx.tempF}°F · Protect tender plants`;
+        cls = 'frost';
+      } else if (wx.risk === 'HEAT') {
+        msg = `🔥  Heat advisory · ${wx.tempF}°F · Watch for wilting`;
+        cls = 'heat';
+      }
+    }
+  } catch(e) { /* WeatherEngine not loaded, use date-based fallback above */ }
+
+  if (msg) {
+    bar.textContent = msg;
+    bar.className   = cls;
+    bar.style.display = 'flex';
+    // Shift canvas down to make room
+    const scroll = document.getElementById('canvas-scroll');
+    if (scroll) scroll.style.paddingTop = '2.5rem';
+  }
+}
 
 // ══════════════════════════════════════════════
 //  BLOOM GAP OVERLAY
