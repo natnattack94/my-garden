@@ -92,6 +92,49 @@ body {
   margin-bottom: 0.65rem;
 }
 
+/* ── NAV BAR ── */
+#map-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  background: #060d08;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 300;
+  gap: 0;
+  flex-shrink: 0;
+}
+.map-nav-logo {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--green-dim);
+  text-decoration: none;
+  margin-right: 1.5rem;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.map-nav-link {
+  color: #3a5a3a;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.18rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0 0.75rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.map-nav-link:hover  { color: var(--green-pale); }
+.map-nav-link.active { color: var(--green); border-bottom-color: var(--green-dim); }
+
 /* ── Panel / Card ───────────────────────────── */
 .panel {
   background: var(--surface2);
@@ -220,6 +263,8 @@ body {
 
 /* ── Main / Viewport Area ───────────────────── */
 #main-area {
+  margin-top: 40px;
+  height: calc(100vh - 40px);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -669,6 +714,17 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
 </div>
 
 <!-- ═══════════════ SIDEBAR ═══════════════════ -->
+<!-- ═══ NAV BAR ═══ -->
+<nav id="map-nav">
+  <a href="index.html" class="map-nav-logo">GardenHub</a>
+  <a href="index.html"     class="map-nav-link">Dashboard</a>
+  <a href="garden.html"    class="map-nav-link">My Garden</a>
+  <a href="map.html"       class="map-nav-link active">Map</a>
+  <a href="plan.html"      class="map-nav-link">Plan</a>
+  <a href="weather.html"   class="map-nav-link">Weather</a>
+  <a href="companions.html" class="map-nav-link">Companions</a>
+</nav>
+
 <aside id="sidebar">
   <div class="sidebar-logo">
     <div class="eyebrow">GardenHub OS // v10.6</div>
@@ -784,7 +840,7 @@ body.placing #viewport { outline: 1px solid rgba(61,220,110,0.3); }
     <span id="pulse-date">Mar 1</span>
     <input type="range" id="time-scrubber" min="60" max="300" step="1" value="60" oninput="onScrub()"/>
     <span id="season-badge">Early Spring</span>
-    <a href="plan.html" style="margin-left:auto;color:#8aab8a;font-family:var(--mono);font-size:0.52rem;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;padding:0.3rem 0.8rem;border:1px solid var(--border2);flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.color='var(--green)';this.style.borderColor='var(--green-dim)'" onmouseout="this.style.color='#8aab8a';this.style.borderColor='var(--border2)'">Garden Plan →</a>
+
   </div>
 </div>
 
