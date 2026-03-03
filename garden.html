@@ -551,6 +551,12 @@ nav {
 /* Card action edit button */
 .card-action.edit:hover { border-color: var(--moss); color: var(--moss); background: var(--moss-pale); }
 
+/* Location combo */
+#f-location-custom { margin-top: 0.35rem; }
+
+/* Sync timestamp */
+#sync-timestamp { font-size: 0.58rem; color: #b0a090; margin-top: 0.25rem; }
+
 /* Toast */
 #toast {
   position: fixed; bottom: 2rem; right: 2rem;
@@ -647,19 +653,15 @@ nav {
 
       <div class="form-row">
         <label class="form-label">Location / Bed</label>
-        <select class="form-select" id="f-location">
+        <select class="form-select" id="f-location-select" onchange="onLocationSelect(this.value)">
           <option value="">Select location…</option>
-          <option>Patio Bed</option>
-          <option>Fence Border</option>
-          <option>Front Garden</option>
-          <option>Back Garden</option>
-          <option>Container / Pot</option>
-          <option>Raised Bed</option>
-          <option>Window Box</option>
-          <option>Cutting Garden</option>
-          <option>Shade Border</option>
-          <option>Other</option>
+          <option value="__custom__">＋ Type a custom location…</option>
         </select>
+        <input class="form-input" id="f-location-custom" type="text"
+          placeholder="e.g. South Fence, Mom's Corner…"
+          style="display:none;margin-top:0.35rem"
+          oninput="syncLocationVal(this.value)"/>
+        <input type="hidden" id="f-location" value=""/>
       </div>
 
       <div class="form-row-2">
@@ -689,6 +691,7 @@ nav {
       <div>
         <div class="garden-title">My <em>Garden</em></div>
         <div class="garden-subtitle" id="garden-subtitle">West Simsbury, CT · Zone 6b</div>
+        <div id="sync-timestamp" style="font-size:0.58rem;color:#c0b0a0;margin-top:0.3rem;letter-spacing:0.04rem;"></div>
       </div>
       <div class="garden-stats">
         <div class="g-stat">
@@ -706,14 +709,12 @@ nav {
       </div>
     </div>
 
-    <!-- Filter bar -->
-    <div class="filter-bar">
-      <button class="filter-btn active" data-filter="all"      onclick="setFilter('all', this)">All</button>
-      <button class="filter-btn"        data-filter="blooming"  onclick="setFilter('blooming', this)">🌸 Blooming</button>
-      <button class="filter-btn"        data-filter="native"    onclick="setFilter('native', this)">Native</button>
-      <button class="filter-btn"        data-filter="patio"     onclick="setFilter('patio', this)">Patio Bed</button>
-      <button class="filter-btn"        data-filter="fence"     onclick="setFilter('fence', this)">Fence Border</button>
-      <button class="filter-btn"        data-filter="container" onclick="setFilter('container', this)">Containers</button>
+    <!-- Filter bar — populated dynamically from actual locations -->
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" data-filter="blooming"   onclick="setFilter('blooming', this)">🌸 Blooming</button>
+      <button class="filter-btn" data-filter="native"     onclick="setFilter('native', this)">Native</button>
+      <!-- location buttons injected by renderFilterBar() -->
     </div>
 
     <!-- Plant list -->
@@ -797,6 +798,83 @@ function monthName(m) {
 // ── Utility ────────────────────────────────────
 function uid() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
 
+// ── Location helpers ───────────────────────────
+const PRESET_LOCATIONS = [
+  'Patio Bed','Fence Border','Front Garden','Back Garden',
+  'Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border'
+];
+
+function getUsedLocations() {
+  const custom = myPlants.map(p => p.location).filter(Boolean);
+  const all = [...new Set([...PRESET_LOCATIONS, ...custom])].filter(Boolean);
+  return all.sort((a,b) => {
+    // Preset order first, then alphabetical custom
+    const ai = PRESET_LOCATIONS.indexOf(a), bi = PRESET_LOCATIONS.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return  1;
+    return a.localeCompare(b);
+  });
+}
+
+function populateLocationSelect() {
+  const sel  = document.getElementById('f-location-select');
+  const locs = getUsedLocations();
+  const cur  = document.getElementById('f-location').value;
+  sel.innerHTML = '<option value="">Select location…</option>' +
+    locs.map(l => `<option value="${l}"${l===cur?' selected':''}>${l}</option>`).join('') +
+    '<option value="__custom__">＋ Type a custom location…</option>';
+}
+
+function onLocationSelect(val) {
+  const custom = document.getElementById('f-location-custom');
+  if (val === '__custom__') {
+    custom.style.display = 'block';
+    custom.focus();
+    document.getElementById('f-location').value = '';
+  } else {
+    custom.style.display = 'none';
+    document.getElementById('f-location').value = val;
+  }
+}
+
+function syncLocationVal(val) {
+  document.getElementById('f-location').value = val.trim();
+}
+
+// ── Timestamp ──────────────────────────────────
+function setTimestamp() {
+  const el = document.getElementById('sync-timestamp');
+  if (!el) return;
+  const now = new Date();
+  const str = now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) +
+    ' · ' + now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  el.textContent = 'Synced ' + str;
+}
+
+// ── Dynamic filter bar ─────────────────────────
+function renderFilterBar() {
+  const bar  = document.getElementById('filter-bar');
+  if (!bar) return;
+
+  // Get locations actually used in current garden
+  const usedLocs = [...new Set(myPlants.map(p => p.location).filter(Boolean))];
+
+  // Remove old location buttons (keep All, Blooming, Native)
+  bar.querySelectorAll('[data-filter-loc]').forEach(b => b.remove());
+
+  // Add one button per real location
+  usedLocs.forEach(loc => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.filterLoc = loc;
+    btn.dataset.filter = 'loc:' + loc;
+    btn.textContent = loc;
+    btn.onclick = () => setFilter('loc:' + loc, btn);
+    bar.appendChild(btn);
+  });
+}
+
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -876,8 +954,11 @@ async function loadData() {
     }
   }
 
+  populateLocationSelect();
   renderSpeciesGrid(library);
   renderGarden();
+  renderFilterBar();
+  setTimestamp();
 }
 
 function saveLocal() {
@@ -991,7 +1072,10 @@ async function addPlant() {
 
   toast(`${plant.emoji} ${plant.name} added`);
   cancelAdd();
+  populateLocationSelect();
   renderGarden();
+  renderFilterBar();
+  setTimestamp();
 
   btn.disabled = false; btn.textContent = '+ Add to Garden';
 }
@@ -1052,6 +1136,8 @@ async function saveEdit(id) {
   await savePlant(plant);
   toast('✓ Saved');
   renderGarden();
+  renderFilterBar();
+  setTimestamp();
 }
 
 // ── Delete plant ───────────────────────────────
@@ -1061,13 +1147,15 @@ async function deletePlant(id) {
   saveLocal();
   toast('Plant removed');
   renderGarden();
+  renderFilterBar();
+  setTimestamp();
 }
 
 // ── Filter ─────────────────────────────────────
 function setFilter(f, btn) {
   _filter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   renderGarden();
 }
 
@@ -1085,11 +1173,9 @@ function renderGarden() {
 
   // Filter plants
   let filtered = [...myPlants];
-  if (_filter === 'blooming')  filtered = filtered.filter(p => isBlooming(p.name, p.family));
-  if (_filter === 'native')    filtered = filtered.filter(p => p.is_native);
-  if (_filter === 'patio')     filtered = filtered.filter(p => (p.location||'').toLowerCase().includes('patio'));
-  if (_filter === 'fence')     filtered = filtered.filter(p => (p.location||'').toLowerCase().includes('fence'));
-  if (_filter === 'container') filtered = filtered.filter(p => (p.location||'').toLowerCase().includes('container') || (p.location||'').toLowerCase().includes('pot'));
+  if (_filter === 'blooming')        filtered = filtered.filter(p => isBlooming(p.name, p.family));
+  if (_filter === 'native')          filtered = filtered.filter(p => p.is_native);
+  if (_filter.startsWith('loc:'))    filtered = filtered.filter(p => p.location === _filter.slice(4));
 
   const wrap = document.getElementById('plant-list-wrap');
 
@@ -1157,7 +1243,7 @@ function plantCard(p) {
   const notesHtml = p.notes
     ? `<div class="plant-card-notes">${p.notes}</div>` : '';
 
-  const locationOpts = ['Patio Bed','Fence Border','Front Garden','Back Garden','Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border','Other']
+  const locationOpts = getUsedLocations()
     .map(o => `<option${o === p.location ? ' selected' : ''}>${o}</option>`).join('');
 
   return `<div class="plant-card" id="card-${p.id}">
