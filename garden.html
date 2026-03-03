@@ -23,12 +23,13 @@
   --plum-pale:  #f5f0fc;
   --sky:        #4878a0;
   --sky-pale:   #eef5fc;
+  --sky-light:  #c0d8f0;
   --muted:      #a09080;
   --serif:      'Cormorant Garamond', serif;
   --sans:       'Jost', sans-serif;
 }
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
 
 body {
   font-family: var(--sans);
@@ -38,7 +39,6 @@ body {
   min-height: 100vh;
 }
 
-/* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--cream); }
 ::-webkit-scrollbar-thumb { background: #c8bca8; border-radius: 2px; }
@@ -52,81 +52,56 @@ body {
 }
 #auth-overlay.hidden { display: none; }
 .auth-box {
-  background: var(--paper);
-  border-radius: 10px;
-  padding: 2.5rem;
-  width: 340px;
+  background: var(--paper); border-radius: 10px;
+  padding: 2.5rem; width: 340px;
   box-shadow: 0 24px 64px rgba(0,0,0,0.45);
 }
-.auth-logo {
-  font-family: var(--serif);
-  font-size: 1.8rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--ink);
-  margin-bottom: 0.2rem;
-}
-.auth-sub {
-  font-size: 0.65rem;
-  letter-spacing: 0.18rem;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 1.5rem;
-}
+.auth-logo { font-family: var(--serif); font-size: 1.8rem; font-weight: 300; font-style: italic; color: var(--ink); margin-bottom: 0.2rem; }
+.auth-sub  { font-size: 0.65rem; letter-spacing: 0.18rem; text-transform: uppercase; color: var(--muted); margin-bottom: 1.5rem; }
 .auth-input {
-  width: 100%;
-  background: var(--cream);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 0.6rem 0.75rem;
-  font-family: var(--sans);
-  font-size: 0.82rem;
-  outline: none;
-  margin-bottom: 0.6rem;
-  border-radius: 3px;
-  transition: border-color 0.15s;
+  width: 100%; background: var(--cream); border: 1px solid var(--border);
+  color: var(--ink); padding: 0.6rem 0.75rem; font-family: var(--sans);
+  font-size: 0.82rem; outline: none; margin-bottom: 0.6rem;
+  border-radius: 3px; transition: border-color 0.15s;
 }
 .auth-input:focus { border-color: var(--moss); }
 #auth-err { font-size: 0.7rem; color: var(--rose); min-height: 1rem; margin-bottom: 0.4rem; }
 .auth-btn {
-  width: 100%; padding: 0.65rem;
-  background: var(--ink); color: var(--moss-light);
-  border: none; font-family: var(--sans);
-  font-size: 0.65rem; letter-spacing: 0.15rem;
-  text-transform: uppercase; cursor: pointer;
-  border-radius: 3px; transition: background 0.15s;
-  margin-bottom: 0.4rem;
+  width: 100%; padding: 0.65rem; background: var(--ink); color: var(--moss-light);
+  border: none; font-family: var(--sans); font-size: 0.65rem; letter-spacing: 0.15rem;
+  text-transform: uppercase; cursor: pointer; border-radius: 3px;
+  transition: background 0.15s; margin-bottom: 0.4rem;
 }
 .auth-btn:hover { background: #3a3028; }
-.auth-btn.ghost {
-  background: transparent; color: var(--muted);
-  border: 1px solid var(--border);
-}
+.auth-btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .auth-btn.ghost:hover { color: var(--ink); border-color: #b0a890; }
 
 /* ── NAV ── */
 nav {
   position: sticky; top: 0; z-index: 100;
-  background: var(--ink);
-  display: flex; align-items: center;
+  background: var(--ink); display: flex; align-items: center;
   padding: 0 2rem; height: 48px; gap: 0;
 }
 .nav-logo {
-  font-family: var(--serif); font-style: italic;
-  font-size: 1.05rem; color: var(--moss-light);
-  font-weight: 300; margin-right: 2rem;
+  font-family: var(--serif); font-style: italic; font-size: 1.05rem;
+  color: var(--moss-light); font-weight: 300; margin-right: 2rem;
   text-decoration: none; white-space: nowrap;
 }
 .nav-link {
-  color: #8a7a68; font-size: 0.6rem;
-  letter-spacing: 0.18rem; text-transform: uppercase;
-  text-decoration: none; padding: 0 0.9rem;
+  color: #8a7a68; font-size: 0.6rem; letter-spacing: 0.18rem;
+  text-transform: uppercase; text-decoration: none; padding: 0 0.9rem;
   height: 100%; display: flex; align-items: center;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap;
 }
 .nav-link:hover  { color: var(--moss-light); }
 .nav-link.active { color: var(--moss-light); border-bottom-color: var(--moss); }
+.nav-logout {
+  margin-left: auto; color: #5a4a38; font-size: 0.55rem;
+  letter-spacing: 0.15rem; text-transform: uppercase;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--sans); transition: color 0.12s; padding: 0 0.5rem;
+}
+.nav-logout:hover { color: var(--moss-light); }
 
 /* ── LAYOUT ── */
 .page {
@@ -135,439 +110,296 @@ nav {
   min-height: calc(100vh - 48px);
 }
 
-/* ── LEFT PANEL: ADD PLANT ── */
+/* ── LEFT PANEL ── */
 #add-panel {
-  background: #faf7f0;
-  border-right: 1px solid var(--border);
+  background: #faf7f0; border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
   position: sticky; top: 48px;
-  height: calc(100vh - 48px);
-  overflow: hidden;
+  height: calc(100vh - 48px); overflow: hidden;
 }
 .panel-head {
-  padding: 1.5rem 1.25rem 1rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
-.panel-title {
-  font-family: var(--serif);
-  font-size: 1.4rem; font-weight: 300;
-  color: var(--ink); margin-bottom: 0.85rem;
-}
-
-/* Search */
+.panel-title { font-family: var(--serif); font-size: 1.4rem; font-weight: 300; color: var(--ink); margin-bottom: 0.85rem; }
 .search-wrap { position: relative; margin-bottom: 0.6rem; }
 .search-input {
-  width: 100%;
-  background: var(--cream);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 0.5rem 0.75rem 0.5rem 2rem;
+  width: 100%; background: var(--cream); border: 1px solid var(--border);
+  color: var(--ink); padding: 0.5rem 0.75rem 0.5rem 2rem;
   font-family: var(--sans); font-size: 0.75rem;
-  outline: none; border-radius: 3px;
-  transition: border-color 0.15s;
+  outline: none; border-radius: 3px; transition: border-color 0.15s;
 }
 .search-input:focus { border-color: var(--moss); }
-.search-icon {
-  position: absolute; left: 0.6rem; top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.75rem; opacity: 0.45; pointer-events: none;
-}
-
-/* Species grid */
+.search-icon { position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 0.75rem; opacity: 0.45; pointer-events: none; }
 #species-grid {
-  flex: 1; overflow-y: auto;
-  padding: 0.5rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-  align-content: start;
+  flex: 1; overflow-y: auto; padding: 0.5rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; align-content: start;
 }
 .species-tile {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.65rem 0.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.14s;
-  position: relative;
+  background: white; border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.65rem 0.5rem; text-align: center; cursor: pointer;
+  transition: all 0.14s; position: relative;
 }
-.species-tile:hover {
-  border-color: var(--moss);
-  background: var(--moss-pale);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
-.species-tile.selected {
-  border-color: var(--moss);
-  background: var(--moss-pale);
-  box-shadow: 0 0 0 2px var(--moss);
-}
+.species-tile:hover { border-color: var(--moss); background: var(--moss-pale); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+.species-tile.selected { border-color: var(--moss); background: var(--moss-pale); box-shadow: 0 0 0 2px var(--moss); }
 .species-emoji { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
-.species-name {
-  font-size: 0.65rem; font-weight: 400;
-  color: var(--ink); line-height: 1.3;
-}
-.species-family {
-  font-size: 0.55rem; color: var(--muted);
-  font-style: italic; margin-top: 0.1rem;
-}
-.species-badge {
-  position: absolute; top: 4px; right: 4px;
-  font-size: 0.42rem; padding: 0.05rem 0.3rem;
-  border-radius: 10px; font-weight: 500;
-  letter-spacing: 0.05em; text-transform: uppercase;
-}
+.species-name  { font-size: 0.65rem; font-weight: 400; color: var(--ink); line-height: 1.3; }
+.species-family { font-size: 0.55rem; color: var(--muted); font-style: italic; margin-top: 0.1rem; }
+.species-badge { position: absolute; top: 4px; right: 4px; font-size: 0.42rem; padding: 0.05rem 0.3rem; border-radius: 10px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
 .badge-n { background: var(--moss-pale); color: #2a5820; border: 1px solid #90bb78; }
 
-/* Add form */
-#add-form {
-  padding: 0.85rem 1.25rem 1.25rem;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--cream);
-  display: none;
-}
-#add-form.show { display: block; }
-.selected-preview {
-  display: flex; align-items: center; gap: 0.6rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--border);
-}
-.selected-emoji { font-size: 1.6rem; }
-.selected-name {
-  font-family: var(--serif);
-  font-size: 1rem; font-weight: 600;
-  color: var(--ink);
-}
-.selected-fam { font-size: 0.65rem; color: var(--muted); font-style: italic; }
+/* Custom plant */
+.custom-plant-toggle { padding: 0.6rem 0.75rem; font-size: 0.6rem; letter-spacing: 0.12rem; text-transform: uppercase; color: var(--moss); cursor: pointer; text-align: center; border-top: 1px solid var(--border); transition: background 0.12s; flex-shrink: 0; }
+.custom-plant-toggle:hover { background: var(--moss-pale); }
+#custom-form { display: none; padding: 0.75rem 1rem; border-top: 1px solid var(--border); background: var(--cream); flex-shrink: 0; }
+#custom-form.show { display: block; }
+.custom-title { font-family: var(--serif); font-size: 0.95rem; color: var(--ink); margin-bottom: 0.6rem; font-style: italic; }
 
+/* Add form */
+#add-form { padding: 0.85rem 1.25rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--cream); display: none; }
+#add-form.show { display: block; }
+.selected-preview { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+.selected-emoji { font-size: 1.6rem; }
+.selected-name { font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--ink); }
+.selected-fam  { font-size: 0.65rem; color: var(--muted); font-style: italic; }
 .form-row { margin-bottom: 0.55rem; }
-.form-label {
-  display: block; font-size: 0.58rem;
-  letter-spacing: 0.12rem; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 0.25rem;
-}
+.form-label { display: block; font-size: 0.58rem; letter-spacing: 0.12rem; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
 .form-input, .form-select {
-  width: 100%;
-  background: white; border: 1px solid var(--border);
-  color: var(--ink); padding: 0.45rem 0.6rem;
-  font-family: var(--sans); font-size: 0.78rem;
-  outline: none; border-radius: 3px;
-  transition: border-color 0.15s;
+  width: 100%; background: white; border: 1px solid var(--border);
+  color: var(--ink); padding: 0.45rem 0.6rem; font-family: var(--sans);
+  font-size: 0.78rem; outline: none; border-radius: 3px; transition: border-color 0.15s;
 }
 .form-input:focus, .form-select:focus { border-color: var(--moss); }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-
 .add-btn {
-  width: 100%; padding: 0.6rem;
-  background: var(--moss); color: white;
-  border: none; font-family: var(--sans);
-  font-size: 0.62rem; letter-spacing: 0.15rem;
-  text-transform: uppercase; cursor: pointer;
-  border-radius: 3px; margin-top: 0.6rem;
+  width: 100%; padding: 0.6rem; background: var(--moss); color: white;
+  border: none; font-family: var(--sans); font-size: 0.62rem; letter-spacing: 0.15rem;
+  text-transform: uppercase; cursor: pointer; border-radius: 3px; margin-top: 0.6rem;
   transition: background 0.15s;
 }
 .add-btn:hover { background: #3d5a32; }
 .add-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.cancel-link {
-  display: block; text-align: center;
-  font-size: 0.55rem; letter-spacing: 0.1rem;
-  text-transform: uppercase; color: var(--muted);
-  cursor: pointer; margin-top: 0.5rem;
-  transition: color 0.12s;
-}
+.cancel-link { display: block; text-align: center; font-size: 0.55rem; letter-spacing: 0.1rem; text-transform: uppercase; color: var(--muted); cursor: pointer; margin-top: 0.5rem; transition: color 0.12s; }
 .cancel-link:hover { color: var(--ink); }
+#f-notes { width: 100%; background: white; border: 1px solid var(--border); color: var(--ink); padding: 0.4rem 0.6rem; font-family: var(--sans); font-size: 0.78rem; outline: none; border-radius: 3px; resize: vertical; min-height: 52px; line-height: 1.5; transition: border-color 0.15s; }
+#f-notes:focus { border-color: var(--moss); }
 
-/* ── RIGHT PANEL: MY GARDEN ── */
-#garden-panel {
-  padding: 2rem 2.5rem;
-  overflow-y: auto;
-}
+/* ── RIGHT PANEL ── */
+#garden-panel { padding: 2rem 2.5rem; overflow-y: auto; }
 
-/* Header */
 .garden-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem; padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: flex-end; justify-content: space-between;
+  display: flex; align-items: flex-start; justify-content: space-between;
   flex-wrap: wrap; gap: 1rem;
 }
-.garden-title {
-  font-family: var(--serif);
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  font-weight: 300; font-style: italic;
-  color: var(--ink); line-height: 1;
-}
+.garden-title { font-family: var(--serif); font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 300; font-style: italic; color: var(--ink); line-height: 1; }
 .garden-title em { color: var(--moss); font-style: normal; }
-.garden-subtitle {
-  font-size: 0.65rem; letter-spacing: 0.2rem;
-  text-transform: uppercase; color: var(--muted);
-  margin-top: 0.4rem;
+.garden-subtitle { font-size: 0.65rem; letter-spacing: 0.2rem; text-transform: uppercase; color: var(--muted); margin-top: 0.4rem; }
+#sync-timestamp { font-size: 0.58rem; color: #b0a090; margin-top: 0.25rem; }
+
+/* ── DEEP STATS ROW ── */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1.75rem;
 }
-.garden-stats {
-  display: flex; gap: 1.5rem; flex-wrap: wrap;
+.stats-card {
+  background: white; border-radius: 8px;
+  padding: 0.85rem 1rem;
+  border-top: 3px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-.g-stat {
-  text-align: right;
+.stats-card.c-moss   { border-top-color: var(--moss); }
+.stats-card.c-rose   { border-top-color: var(--rose); }
+.stats-card.c-gold   { border-top-color: var(--gold); }
+.stats-card.c-plum   { border-top-color: var(--plum); }
+.stats-card.c-sky    { border-top-color: var(--sky); }
+.stats-card.c-gap    { border-top-color: #d87060; }
+.stats-num   { font-family: var(--serif); font-size: 1.85rem; font-weight: 300; line-height: 1; color: var(--ink); }
+.stats-label { font-size: 0.58rem; letter-spacing: 0.12rem; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
+.stats-sub   { font-size: 0.6rem; color: var(--muted); margin-top: 0.15rem; }
+
+/* ── SOWING SCHEDULE ── */
+#sow-section {
+  margin-bottom: 1.75rem;
 }
-.g-stat-num {
-  font-family: var(--serif);
-  font-size: 1.8rem; font-weight: 300; line-height: 1;
-  color: var(--ink);
+.sow-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;
 }
-.g-stat-label {
-  font-size: 0.56rem; letter-spacing: 0.14rem;
-  text-transform: uppercase; color: var(--muted);
+.sow-title { font-family: var(--serif); font-size: 1.3rem; font-weight: 300; color: var(--ink); }
+.sow-meta  { font-size: 0.6rem; letter-spacing: 0.14rem; text-transform: uppercase; color: var(--muted); }
+.sow-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.65rem; }
+.sow-card {
+  background: white; border-radius: 8px; padding: 0.9rem 1rem;
+  border-left: 3px solid var(--moss);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.sow-card.urgent    { border-left-color: var(--rose); }
+.sow-card.upcoming  { border-left-color: var(--gold); }
+.sow-card.ongoing   { border-left-color: var(--moss); }
+.sow-card.past      { border-left-color: var(--border); opacity: 0.7; }
+.sow-card-action {
+  font-size: 0.56rem; letter-spacing: 0.14rem; text-transform: uppercase;
+  font-weight: 500; margin-bottom: 0.3rem;
+}
+.sow-card.urgent   .sow-card-action { color: var(--rose); }
+.sow-card.upcoming .sow-card-action { color: var(--gold); }
+.sow-card.ongoing  .sow-card-action { color: var(--moss); }
+.sow-card.past     .sow-card-action { color: var(--muted); }
+.sow-card-plants {
+  font-size: 0.75rem; color: var(--ink); line-height: 1.5;
+}
+.sow-card-when { font-size: 0.62rem; color: var(--muted); margin-top: 0.25rem; }
+.sow-empty { font-size: 0.75rem; color: var(--muted); font-style: italic; padding: 0.5rem 0; }
+
+/* ── GARDEN SEARCH + BULK BAR ── */
+.garden-toolbar {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
+.garden-search-wrap { position: relative; flex: 1; min-width: 180px; }
+.garden-search {
+  width: 100%; background: white; border: 1px solid var(--border);
+  color: var(--ink); padding: 0.45rem 0.75rem 0.45rem 2rem;
+  font-family: var(--sans); font-size: 0.75rem;
+  outline: none; border-radius: 20px; transition: border-color 0.15s;
+}
+.garden-search:focus { border-color: var(--moss); }
+.garden-search-icon { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); font-size: 0.7rem; opacity: 0.4; pointer-events: none; }
+.bulk-toggle {
+  font-size: 0.58rem; letter-spacing: 0.12rem; text-transform: uppercase;
+  padding: 0.4rem 0.85rem; border: 1px solid var(--border);
+  background: white; color: var(--muted); cursor: pointer;
+  border-radius: 20px; font-family: var(--sans);
+  transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
+}
+.bulk-toggle:hover { border-color: var(--moss); color: var(--moss); }
+.bulk-toggle.active { background: var(--ink); color: var(--moss-light); border-color: var(--ink); }
+
+/* Bulk action bar — shown when items selected */
+#bulk-bar {
+  display: none;
+  align-items: center; gap: 0.65rem;
+  padding: 0.65rem 1rem;
+  background: var(--ink); border-radius: 8px;
+  margin-bottom: 1rem;
+}
+#bulk-bar.show { display: flex; }
+.bulk-count { font-size: 0.68rem; color: var(--moss-light); flex: 1; letter-spacing: 0.04rem; }
+.bulk-action {
+  font-size: 0.58rem; letter-spacing: 0.1rem; text-transform: uppercase;
+  padding: 0.35rem 0.75rem; border-radius: 3px; cursor: pointer;
+  font-family: var(--sans); border: none; transition: all 0.12s;
+}
+.bulk-move   { background: rgba(196,216,176,0.15); color: var(--moss-light); border: 1px solid rgba(196,216,176,0.3); }
+.bulk-move:hover { background: rgba(196,216,176,0.25); }
+.bulk-delete { background: rgba(184,96,74,0.15); color: #f0a090; border: 1px solid rgba(184,96,74,0.3); }
+.bulk-delete:hover { background: rgba(184,96,74,0.25); }
+.bulk-cancel { background: none; color: #6a5a48; border: 1px solid #4a3a28; }
+.bulk-cancel:hover { color: var(--moss-light); }
+
+/* Bulk move dropdown */
+#bulk-location-wrap { display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+#bulk-location-wrap.show { display: flex; }
+.bulk-loc-select {
+  background: #2a2218; border: 1px solid #4a3a28; color: var(--moss-light);
+  padding: 0.3rem 0.5rem; font-family: var(--sans); font-size: 0.68rem;
+  outline: none; border-radius: 3px;
+}
+.bulk-confirm {
+  font-size: 0.58rem; letter-spacing: 0.1rem; text-transform: uppercase;
+  padding: 0.3rem 0.65rem; border-radius: 3px; cursor: pointer;
+  font-family: var(--sans); background: var(--moss); color: white; border: none;
+}
+.bulk-confirm:hover { background: #3d5a32; }
+
+/* Select checkbox on card */
+.card-select-wrap {
+  display: none; flex-shrink: 0; margin-right: 0.25rem;
+  align-items: flex-start; padding-top: 0.25rem;
+}
+.card-select-wrap.show { display: flex; }
+.card-checkbox {
+  width: 16px; height: 16px; accent-color: var(--moss);
+  cursor: pointer; margin-top: 0.15rem;
+}
+.plant-card.selected-bulk {
+  border-color: var(--moss);
+  background: var(--moss-pale);
+  box-shadow: 0 0 0 2px rgba(82,111,69,0.2);
 }
 
 /* Filter bar */
-.filter-bar {
-  display: flex; gap: 0.4rem; flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
+.filter-bar { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .filter-btn {
-  padding: 0.25rem 0.7rem;
-  font-family: var(--sans); font-size: 0.58rem;
+  padding: 0.25rem 0.7rem; font-family: var(--sans); font-size: 0.58rem;
   letter-spacing: 0.1rem; text-transform: uppercase;
-  border: 1px solid var(--border);
-  background: white; color: var(--muted);
-  cursor: pointer; border-radius: 20px;
-  transition: all 0.12s;
+  border: 1px solid var(--border); background: white; color: var(--muted);
+  cursor: pointer; border-radius: 20px; transition: all 0.12s;
 }
 .filter-btn:hover  { border-color: var(--moss); color: var(--moss); }
-.filter-btn.active {
-  background: var(--moss); color: white;
-  border-color: var(--moss);
-}
+.filter-btn.active { background: var(--moss); color: white; border-color: var(--moss); }
 
 /* Group header */
-.group-label {
-  font-size: 0.6rem; letter-spacing: 0.22rem;
-  text-transform: uppercase; color: var(--muted);
-  margin: 1.5rem 0 0.75rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
-}
+.group-label { font-size: 0.6rem; letter-spacing: 0.22rem; text-transform: uppercase; color: var(--muted); margin: 1.5rem 0 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
 .group-label:first-of-type { margin-top: 0; }
 
 /* Plant cards */
-.plant-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
+.plant-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
 .plant-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.1rem;
-  display: flex; align-items: flex-start; gap: 0.75rem;
-  transition: all 0.15s;
-  position: relative;
-  cursor: default;
+  background: white; border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem 1.1rem; display: flex; align-items: flex-start; gap: 0.75rem;
+  transition: all 0.15s; position: relative; cursor: default;
 }
-.plant-card:hover {
-  border-color: #c8bca0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-}
-.plant-card-emoji {
-  font-size: 1.8rem; flex-shrink: 0;
-  line-height: 1; margin-top: 0.1rem;
-}
-.plant-card-body { flex: 1; min-width: 0; }
-.plant-card-name {
-  font-family: var(--serif);
-  font-size: 1rem; font-weight: 600;
-  color: var(--ink); line-height: 1.2;
-}
-.plant-card-where {
-  font-size: 0.62rem; color: var(--muted);
-  margin-top: 0.2rem;
-}
-.plant-card-meta {
-  display: flex; gap: 0.4rem; flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-.meta-chip {
-  font-size: 0.55rem; padding: 0.1rem 0.4rem;
-  border-radius: 10px; display: inline-block;
-}
+.plant-card:hover { border-color: #c8bca0; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+.plant-card-emoji { font-size: 1.8rem; flex-shrink: 0; line-height: 1; margin-top: 0.1rem; }
+.plant-card-body  { flex: 1; min-width: 0; }
+.plant-card-name  { font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.plant-card-where { font-size: 0.62rem; color: var(--muted); margin-top: 0.2rem; }
+.plant-card-meta  { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.meta-chip        { font-size: 0.55rem; padding: 0.1rem 0.4rem; border-radius: 10px; display: inline-block; }
 .chip-qty      { background: var(--gold-pale);  color: #6a4810; border: 1px solid #d0a850; }
 .chip-date     { background: var(--sky-pale);   color: #1a4060; border: 1px solid #80b0d8; }
 .chip-native   { background: var(--moss-pale);  color: #2a5820; border: 1px solid #90bb78; }
 .chip-host     { background: var(--plum-pale);  color: #4a2870; border: 1px solid #b090d8; }
 .chip-blooming { background: #fef0f8;           color: #8a2858; border: 1px solid #e8a8c8; }
-.chip-location {
-  font-size: 0.55rem; padding: 0.1rem 0.45rem;
-  border-radius: 10px; border: 1px solid var(--border);
-  color: var(--muted); background: var(--cream);
-}
-
-/* Card actions */
-.plant-card-actions {
-  display: flex; flex-direction: column; gap: 0.3rem;
-  opacity: 0; flex-shrink: 0;
-  transition: opacity 0.15s;
-}
+.plant-card-actions { display: flex; flex-direction: column; gap: 0.3rem; opacity: 0; flex-shrink: 0; transition: opacity 0.15s; }
 .plant-card:hover .plant-card-actions { opacity: 1; }
-.card-action {
-  width: 24px; height: 24px;
-  border: 1px solid var(--border);
-  background: var(--cream); color: var(--muted);
-  border-radius: 3px; font-size: 0.65rem;
-  cursor: pointer; display: flex;
-  align-items: center; justify-content: center;
-  transition: all 0.12s;
-}
-.card-action:hover        { border-color: #b0a890; color: var(--ink); }
-.card-action.del:hover    { border-color: var(--rose); color: var(--rose); background: var(--rose-pale); }
+.card-action { width: 24px; height: 24px; border: 1px solid var(--border); background: var(--cream); color: var(--muted); border-radius: 3px; font-size: 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+.card-action:hover { border-color: #b0a890; color: var(--ink); }
+.card-action.del:hover  { border-color: var(--rose); color: var(--rose); background: var(--rose-pale); }
+.card-action.edit:hover { border-color: var(--moss); color: var(--moss); background: var(--moss-pale); }
+.bloom-strip { height: 3px; border-radius: 0 0 8px 8px; position: absolute; bottom: 0; left: 0; right: 0; }
 
-/* Bloom indicator strip */
-.bloom-strip {
-  height: 3px; border-radius: 0 0 8px 8px;
-  position: absolute; bottom: 0; left: 0; right: 0;
-}
-
-/* Empty state */
-.empty-garden {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  min-height: 40vh; gap: 0.75rem;
-  opacity: 0.55;
-}
-.empty-icon { font-size: 3rem; }
-.empty-msg {
-  font-family: var(--serif); font-style: italic;
-  font-size: 1.2rem; color: #5a6838;
-}
-.empty-sub {
-  font-size: 0.65rem; letter-spacing: 0.14rem;
-  text-transform: uppercase; color: var(--muted);
-}
-
-/* Loading */
-.spinner {
-  width: 28px; height: 28px;
-  border: 2px solid var(--border);
-  border-top-color: var(--moss);
-  border-radius: 50%;
-  animation: spin 0.85s linear infinite;
-  margin: 4rem auto;
-  display: block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Edit drawer on card */
-.edit-drawer {
-  display: none;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--border);
-  margin-top: 0.6rem;
-  gap: 0.5rem;
-}
+/* Edit drawer */
+.edit-drawer { display: none; padding: 0.75rem 0; border-top: 1px solid var(--border); margin-top: 0.6rem; gap: 0.5rem; }
 .edit-drawer.open { display: flex; flex-direction: column; }
 .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
-.edit-input, .edit-select {
-  background: var(--cream); border: 1px solid var(--border);
-  color: var(--ink); padding: 0.35rem 0.5rem;
-  font-family: var(--sans); font-size: 0.75rem;
-  outline: none; border-radius: 3px; width: 100%;
-  transition: border-color 0.12s;
-}
-.edit-input:focus, .edit-select:focus { border-color: var(--moss); }
-.edit-textarea {
-  background: var(--cream); border: 1px solid var(--border);
-  color: var(--ink); padding: 0.35rem 0.5rem;
-  font-family: var(--sans); font-size: 0.75rem;
-  outline: none; border-radius: 3px; width: 100%;
-  resize: vertical; min-height: 52px; line-height: 1.5;
-  transition: border-color 0.12s;
-}
+.edit-input,.edit-select { background: var(--cream); border: 1px solid var(--border); color: var(--ink); padding: 0.35rem 0.5rem; font-family: var(--sans); font-size: 0.75rem; outline: none; border-radius: 3px; width: 100%; transition: border-color 0.12s; }
+.edit-input:focus,.edit-select:focus { border-color: var(--moss); }
+.edit-textarea { background: var(--cream); border: 1px solid var(--border); color: var(--ink); padding: 0.35rem 0.5rem; font-family: var(--sans); font-size: 0.75rem; outline: none; border-radius: 3px; width: 100%; resize: vertical; min-height: 52px; line-height: 1.5; transition: border-color 0.12s; }
 .edit-textarea:focus { border-color: var(--moss); }
-.edit-label {
-  font-size: 0.55rem; letter-spacing: 0.1rem;
-  text-transform: uppercase; color: var(--muted);
-  display: block; margin-bottom: 0.2rem;
-}
-.edit-save {
-  padding: 0.35rem 0.7rem;
-  background: var(--moss); color: white;
-  border: none; font-family: var(--sans);
-  font-size: 0.6rem; letter-spacing: 0.1rem;
-  text-transform: uppercase; cursor: pointer;
-  border-radius: 3px; align-self: flex-start;
-  transition: background 0.12s;
-}
+.edit-label { font-size: 0.55rem; letter-spacing: 0.1rem; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 0.2rem; }
+.edit-save { padding: 0.35rem 0.7rem; background: var(--moss); color: white; border: none; font-family: var(--sans); font-size: 0.6rem; letter-spacing: 0.1rem; text-transform: uppercase; cursor: pointer; border-radius: 3px; align-self: flex-start; transition: background 0.12s; }
 .edit-save:hover { background: #3d5a32; }
 
-/* Notes display on card */
-.plant-card-notes {
-  font-size: 0.7rem; color: #7a6858;
-  font-style: italic; margin-top: 0.35rem;
-  line-height: 1.4;
-}
+/* Notes */
+.plant-card-notes { font-size: 0.7rem; color: #7a6858; font-style: italic; margin-top: 0.35rem; line-height: 1.4; }
 
-/* Custom plant section in picker */
-.custom-plant-toggle {
-  padding: 0.6rem 0.75rem;
-  font-size: 0.6rem; letter-spacing: 0.12rem;
-  text-transform: uppercase; color: var(--moss);
-  cursor: pointer; text-align: center;
-  border-top: 1px solid var(--border);
-  transition: background 0.12s; flex-shrink: 0;
-}
-.custom-plant-toggle:hover { background: var(--moss-pale); }
-#custom-form {
-  display: none;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--border);
-  background: var(--cream);
-  flex-shrink: 0;
-}
-#custom-form.show { display: block; }
-#custom-form .form-label { margin-top: 0.4rem; }
-#custom-form .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
-.custom-title {
-  font-family: var(--serif); font-size: 0.95rem;
-  color: var(--ink); margin-bottom: 0.6rem; font-style: italic;
-}
+/* Empty */
+.empty-garden { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 35vh; gap: 0.75rem; opacity: 0.55; }
+.empty-icon { font-size: 3rem; }
+.empty-msg  { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: #5a6838; }
+.empty-sub  { font-size: 0.65rem; letter-spacing: 0.14rem; text-transform: uppercase; color: var(--muted); }
 
-/* Notes field in add form */
-#f-notes {
-  width: 100%;
-  background: white; border: 1px solid var(--border);
-  color: var(--ink); padding: 0.4rem 0.6rem;
-  font-family: var(--sans); font-size: 0.78rem;
-  outline: none; border-radius: 3px;
-  resize: vertical; min-height: 52px; line-height: 1.5;
-  transition: border-color 0.15s;
-}
-#f-notes:focus { border-color: var(--moss); }
-
-/* Card action edit button */
-.card-action.edit:hover { border-color: var(--moss); color: var(--moss); background: var(--moss-pale); }
-
-/* Location combo */
-#f-location-custom { margin-top: 0.35rem; }
-
-/* Sync timestamp */
-#sync-timestamp { font-size: 0.58rem; color: #b0a090; margin-top: 0.25rem; }
+/* Spinner */
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--moss); border-radius: 50%; animation: spin 0.85s linear infinite; margin: 4rem auto; display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Toast */
-#toast {
-  position: fixed; bottom: 2rem; right: 2rem;
-  background: var(--ink); color: var(--moss-light);
-  font-family: var(--sans); font-size: 0.68rem;
-  letter-spacing: 0.1rem; text-transform: uppercase;
-  padding: 0.65rem 1.2rem; border-radius: 4px;
-  opacity: 0; transform: translateY(8px);
-  transition: all 0.25s; pointer-events: none;
-  z-index: 500;
-}
+#toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--ink); color: var(--moss-light); font-family: var(--sans); font-size: 0.68rem; letter-spacing: 0.1rem; text-transform: uppercase; padding: 0.65rem 1.2rem; border-radius: 4px; opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; z-index: 500; }
 #toast.show { opacity: 1; transform: translateY(0); }
 
 @media(max-width: 720px) {
@@ -595,12 +427,13 @@ nav {
 <!-- Nav -->
 <nav>
   <a href="index.html" class="nav-logo">GardenHub</a>
-  <a href="index.html"    class="nav-link">Dashboard</a>
-  <a href="garden.html"   class="nav-link active">My Garden</a>
-  <a href="map.html"      class="nav-link">Map</a>
-  <a href="plan.html"     class="nav-link">Plan</a>
-  <a href="weather.html"  class="nav-link">Weather</a>
+  <a href="index.html"      class="nav-link">Home</a>
+  <a href="garden.html"     class="nav-link active">My Garden</a>
+  <a href="map.html"        class="nav-link">Map</a>
+  <a href="plan.html"       class="nav-link">Plan</a>
+  <a href="weather.html"    class="nav-link">Weather</a>
   <a href="companions.html" class="nav-link">Companions</a>
+  <button class="nav-logout" onclick="handleLogout()">Sign out</button>
 </nav>
 
 <!-- Page -->
@@ -617,9 +450,7 @@ nav {
       </div>
     </div>
 
-    <div id="species-grid">
-      <div class="spinner"></div>
-    </div>
+    <div id="species-grid"><div class="spinner"></div></div>
 
     <div class="custom-plant-toggle" onclick="toggleCustomForm()">＋ Add a custom plant not in the list</div>
     <div id="custom-form">
@@ -629,19 +460,12 @@ nav {
         <input class="form-input" id="cf-name" type="text" placeholder="e.g. Grandma's Peonies"/>
       </div>
       <div class="form-row-2">
-        <div>
-          <label class="form-label">Emoji</label>
-          <input class="form-input" id="cf-emoji" type="text" placeholder="🌸" maxlength="2"/>
-        </div>
-        <div>
-          <label class="form-label">Family</label>
-          <input class="form-input" id="cf-family" type="text" placeholder="e.g. Rosaceae"/>
-        </div>
+        <div><label class="form-label">Emoji</label><input class="form-input" id="cf-emoji" type="text" placeholder="🌸" maxlength="2"/></div>
+        <div><label class="form-label">Family</label><input class="form-input" id="cf-family" type="text" placeholder="e.g. Rosaceae"/></div>
       </div>
       <button class="add-btn" style="margin-top:0.5rem" onclick="addCustomPlant()">Use this plant →</button>
     </div>
 
-    <!-- Add form — shown after selecting a species -->
     <div id="add-form">
       <div class="selected-preview">
         <span class="selected-emoji" id="sel-emoji">🌱</span>
@@ -650,7 +474,6 @@ nav {
           <div class="selected-fam"  id="sel-fam">—</div>
         </div>
       </div>
-
       <div class="form-row">
         <label class="form-label">Location / Bed</label>
         <select class="form-select" id="f-location-select" onchange="onLocationSelect(this.value)">
@@ -663,18 +486,16 @@ nav {
           oninput="syncLocationVal(this.value)"/>
         <input type="hidden" id="f-location" value=""/>
       </div>
-
       <div class="form-row-2">
         <div class="form-row" style="margin-bottom:0">
           <label class="form-label">Quantity</label>
-          <input class="form-input" id="f-qty" type="number" min="1" value="1" placeholder="1"/>
+          <input class="form-input" id="f-qty" type="number" min="1" value="1"/>
         </div>
         <div class="form-row" style="margin-bottom:0">
           <label class="form-label">Date Planted</label>
           <input class="form-input" id="f-date" type="date"/>
         </div>
       </div>
-
       <div class="form-row">
         <label class="form-label">Notes (optional)</label>
         <textarea class="form-input" id="f-notes" placeholder="E.g. from farmer's market, struggling in shade…" rows="2"></textarea>
@@ -691,36 +512,85 @@ nav {
       <div>
         <div class="garden-title">My <em>Garden</em></div>
         <div class="garden-subtitle" id="garden-subtitle">West Simsbury, CT · Zone 6b</div>
-        <div id="sync-timestamp" style="font-size:0.58rem;color:#c0b0a0;margin-top:0.3rem;letter-spacing:0.04rem;"></div>
-      </div>
-      <div class="garden-stats">
-        <div class="g-stat">
-          <div class="g-stat-num" id="stat-total">—</div>
-          <div class="g-stat-label">Plants</div>
-        </div>
-        <div class="g-stat">
-          <div class="g-stat-num" id="stat-blooming">—</div>
-          <div class="g-stat-label">Blooming</div>
-        </div>
-        <div class="g-stat">
-          <div class="g-stat-num" id="stat-native">—</div>
-          <div class="g-stat-label">Native</div>
-        </div>
+        <div id="sync-timestamp"></div>
       </div>
     </div>
 
-    <!-- Filter bar — populated dynamically from actual locations -->
+    <!-- Deep stats -->
+    <div class="stats-cards" id="stats-cards">
+      <div class="stats-card c-moss">
+        <div class="stats-num" id="stat-total">—</div>
+        <div class="stats-label">Plants</div>
+      </div>
+      <div class="stats-card c-rose">
+        <div class="stats-num" id="stat-blooming">—</div>
+        <div class="stats-label">Blooming</div>
+        <div class="stats-sub" id="stat-blooming-sub"></div>
+      </div>
+      <div class="stats-card c-gold">
+        <div class="stats-num" id="stat-native">—</div>
+        <div class="stats-label">Native</div>
+        <div class="stats-sub" id="stat-native-sub"></div>
+      </div>
+      <div class="stats-card c-plum">
+        <div class="stats-num" id="stat-host">—</div>
+        <div class="stats-label">Host Plants</div>
+      </div>
+      <div class="stats-card c-sky">
+        <div class="stats-num" id="stat-coverage">—</div>
+        <div class="stats-label">Bloom Months</div>
+        <div class="stats-sub" id="stat-coverage-sub"></div>
+      </div>
+      <div class="stats-card c-gap">
+        <div class="stats-num" id="stat-gaps">—</div>
+        <div class="stats-label">Bloom Gaps</div>
+        <div class="stats-sub" id="stat-gaps-sub"></div>
+      </div>
+    </div>
+
+    <!-- Sowing schedule -->
+    <div id="sow-section">
+      <div class="sow-header">
+        <div class="sow-title">This Week in the Garden</div>
+        <div class="sow-meta" id="sow-meta"></div>
+      </div>
+      <div class="sow-grid" id="sow-grid">
+        <div class="sow-empty">Loading sowing schedule…</div>
+      </div>
+    </div>
+
+    <!-- Search + bulk toolbar -->
+    <div class="garden-toolbar">
+      <div class="garden-search-wrap">
+        <span class="garden-search-icon">⌕</span>
+        <input class="garden-search" id="garden-search" type="text"
+          placeholder="Search my plants…" oninput="onGardenSearch(this.value)" autocomplete="off"/>
+      </div>
+      <button class="bulk-toggle" id="bulk-toggle" onclick="toggleBulkMode()">Select</button>
+    </div>
+
+    <!-- Bulk action bar -->
+    <div id="bulk-bar">
+      <span class="bulk-count" id="bulk-count">0 selected</span>
+      <div id="bulk-location-wrap">
+        <select class="bulk-loc-select" id="bulk-loc-select"></select>
+        <button class="bulk-confirm" onclick="confirmBulkMove()">Move</button>
+        <button class="bulk-action bulk-cancel" onclick="hideBulkLocation()">Cancel</button>
+      </div>
+      <button class="bulk-action bulk-move"   id="bulk-move-btn"   onclick="showBulkLocation()">Move to…</button>
+      <button class="bulk-action bulk-delete" id="bulk-delete-btn" onclick="confirmBulkDelete()">Delete</button>
+      <button class="bulk-action bulk-cancel" onclick="toggleBulkMode()">Done</button>
+    </div>
+
+    <!-- Filter bar -->
     <div class="filter-bar" id="filter-bar">
-      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
-      <button class="filter-btn" data-filter="blooming"   onclick="setFilter('blooming', this)">🌸 Blooming</button>
-      <button class="filter-btn" data-filter="native"     onclick="setFilter('native', this)">Native</button>
-      <!-- location buttons injected by renderFilterBar() -->
+      <button class="filter-btn active" data-filter="all"      onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn"        data-filter="blooming"  onclick="setFilter('blooming', this)">🌸 Blooming</button>
+      <button class="filter-btn"        data-filter="native"    onclick="setFilter('native', this)">Native</button>
     </div>
 
     <!-- Plant list -->
-    <div id="plant-list-wrap">
-      <div class="spinner"></div>
-    </div>
+    <div id="plant-list-wrap"><div class="spinner"></div></div>
 
   </div>
 </div>
@@ -734,12 +604,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let userId      = null;
-let myPlants    = [];   // plants in my garden (from garden_plants table or localStorage)
-let library     = [];   // full species library
-let _selSpecies = null; // currently selected species in the picker
+let myPlants    = [];
+let library     = [];
+let _selSpecies = null;
 let _filter     = 'all';
+let _search     = '';
+let _bulkMode   = false;
+let _selected   = new Set();
 
-// Storage key for guest mode
 const STORE_KEY = 'ghub_my_garden';
 
 // ── Bloom data ─────────────────────────────────
@@ -771,7 +643,9 @@ const BLOOM_COLORS = {
   'poppy':'#e87878','aster':'#c878d0','goldenrod':'#e8c030',
 };
 
-const CUR_MONTH = new Date().getMonth() + 1;
+const NOW       = new Date();
+const CUR_MONTH = NOW.getMonth() + 1;
+const CUR_YEAR  = NOW.getFullYear();
 
 function bloomWin(name, family) {
   const n = (name||'').toLowerCase();
@@ -794,25 +668,18 @@ function bloomColor(name) {
 function monthName(m) {
   return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]||'';
 }
-
-// ── Utility ────────────────────────────────────
 function uid() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
 
 // ── Location helpers ───────────────────────────
-const PRESET_LOCATIONS = [
-  'Patio Bed','Fence Border','Front Garden','Back Garden',
-  'Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border'
-];
+const PRESET_LOCATIONS = ['Patio Bed','Fence Border','Front Garden','Back Garden','Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border'];
 
 function getUsedLocations() {
   const custom = myPlants.map(p => p.location).filter(Boolean);
   const all = [...new Set([...PRESET_LOCATIONS, ...custom])].filter(Boolean);
   return all.sort((a,b) => {
-    // Preset order first, then alphabetical custom
     const ai = PRESET_LOCATIONS.indexOf(a), bi = PRESET_LOCATIONS.indexOf(b);
     if (ai !== -1 && bi !== -1) return ai - bi;
-    if (ai !== -1) return -1;
-    if (bi !== -1) return  1;
+    if (ai !== -1) return -1; if (bi !== -1) return 1;
     return a.localeCompare(b);
   });
 }
@@ -820,61 +687,32 @@ function getUsedLocations() {
 function populateLocationSelect() {
   const sel  = document.getElementById('f-location-select');
   const locs = getUsedLocations();
-  const cur  = document.getElementById('f-location').value;
   sel.innerHTML = '<option value="">Select location…</option>' +
-    locs.map(l => `<option value="${l}"${l===cur?' selected':''}>${l}</option>`).join('') +
+    locs.map(l => `<option value="${l}">${l}</option>`).join('') +
     '<option value="__custom__">＋ Type a custom location…</option>';
 }
 
 function onLocationSelect(val) {
   const custom = document.getElementById('f-location-custom');
   if (val === '__custom__') {
-    custom.style.display = 'block';
-    custom.focus();
+    custom.style.display = 'block'; custom.focus();
     document.getElementById('f-location').value = '';
   } else {
     custom.style.display = 'none';
     document.getElementById('f-location').value = val;
   }
 }
-
-function syncLocationVal(val) {
-  document.getElementById('f-location').value = val.trim();
-}
+function syncLocationVal(val) { document.getElementById('f-location').value = val.trim(); }
 
 // ── Timestamp ──────────────────────────────────
 function setTimestamp() {
   const el = document.getElementById('sync-timestamp');
   if (!el) return;
   const now = new Date();
-  const str = now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) +
-    ' · ' + now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  el.textContent = 'Synced ' + str;
+  el.textContent = 'Synced ' + now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + ' · ' + now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 
-// ── Dynamic filter bar ─────────────────────────
-function renderFilterBar() {
-  const bar  = document.getElementById('filter-bar');
-  if (!bar) return;
-
-  // Get locations actually used in current garden
-  const usedLocs = [...new Set(myPlants.map(p => p.location).filter(Boolean))];
-
-  // Remove old location buttons (keep All, Blooming, Native)
-  bar.querySelectorAll('[data-filter-loc]').forEach(b => b.remove());
-
-  // Add one button per real location
-  usedLocs.forEach(loc => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn';
-    btn.dataset.filterLoc = loc;
-    btn.dataset.filter = 'loc:' + loc;
-    btn.textContent = loc;
-    btn.onclick = () => setFilter('loc:' + loc, btn);
-    bar.appendChild(btn);
-  });
-}
-
+// ── Toast ──────────────────────────────────────
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -909,6 +747,8 @@ document.getElementById('btn-guest').onclick = () => {
   loadData();
 };
 
+async function handleLogout() { await sb.auth.signOut(); location.reload(); }
+
 async function afterAuth(user) {
   if (!user) return;
   userId = user.id;
@@ -929,27 +769,20 @@ async function checkSession() {
 // ── Load data ──────────────────────────────────
 async function loadData() {
   try {
-    // Load species library
     const { data: lib } = await sb.from('garden_library')
       .select('id,common_name,emoji,plant_family,spread_in,maturity_days,bloom_start_day,is_native,is_host_plant')
       .order('common_name');
     library = lib || FALLBACK_LIB;
-  } catch(e) {
-    library = FALLBACK_LIB;
-  }
+  } catch(e) { library = FALLBACK_LIB; }
 
-  // Load my garden plants
   if (userId === 'guest') {
     myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
   } else {
     try {
       const { data: state } = await sb.from('garden_plants')
         .select('*').eq('user_id', userId).order('created_at');
-      myPlants = state || [];
-      // If garden_plants table doesn't exist yet, fall back to localStorage
-      if (!state) myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+      myPlants = state || JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
     } catch(e) {
-      // Table may not exist yet — use localStorage as fallback
       myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
     }
   }
@@ -958,6 +791,7 @@ async function loadData() {
   renderSpeciesGrid(library);
   renderGarden();
   renderFilterBar();
+  renderSowingSchedule();
   setTimestamp();
 }
 
@@ -968,19 +802,13 @@ function saveLocal() {
 async function savePlant(plant) {
   saveLocal();
   if (userId === 'guest') return;
-  try {
-    await sb.from('garden_plants').upsert({ ...plant, user_id: userId });
-  } catch(e) {
-    // Table may not exist — silently use localStorage
-  }
+  try { await sb.from('garden_plants').upsert({ ...plant, user_id: userId }); } catch(e) {}
 }
 
 async function deletePlantRemote(id) {
   saveLocal();
   if (userId === 'guest') return;
-  try {
-    await sb.from('garden_plants').delete().eq('id', id).eq('user_id', userId);
-  } catch(e) {}
+  try { await sb.from('garden_plants').delete().eq('id', id).eq('user_id', userId); } catch(e) {}
 }
 
 // ── Species grid ───────────────────────────────
@@ -1006,10 +834,7 @@ function renderSpeciesGrid(species) {
 
 function filterSpecies(q) {
   const filtered = q.trim()
-    ? _allSpecies.filter(s =>
-        s.common_name.toLowerCase().includes(q.toLowerCase()) ||
-        (s.plant_family||'').toLowerCase().includes(q.toLowerCase())
-      )
+    ? _allSpecies.filter(s => s.common_name.toLowerCase().includes(q.toLowerCase()) || (s.plant_family||'').toLowerCase().includes(q.toLowerCase()))
     : _allSpecies;
   renderSpeciesGrid(filtered);
 }
@@ -1018,19 +843,15 @@ function selectSpecies(id) {
   const s = _allSpecies.find(x => x.id === id);
   if (!s) return;
   _selSpecies = s;
-
-  // Highlight tile
   document.querySelectorAll('.species-tile').forEach(t => t.classList.remove('selected'));
   document.querySelector(`.species-tile[data-id="${id}"]`)?.classList.add('selected');
-
-  // Populate form
   document.getElementById('sel-emoji').textContent = s.emoji || '🌱';
   document.getElementById('sel-name').textContent  = s.common_name;
   document.getElementById('sel-fam').textContent   = s.plant_family || '';
   document.getElementById('f-qty').value  = 1;
   document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
   document.getElementById('f-location').value = '';
-
+  populateLocationSelect();
   document.getElementById('add-form').classList.add('show');
 }
 
@@ -1048,35 +869,21 @@ async function addPlant() {
   const qty      = parseInt(document.getElementById('f-qty').value) || 1;
   const dateVal  = document.getElementById('f-date').value;
   const notes    = (document.getElementById('f-notes').value||'').trim();
-
   btn.disabled = true; btn.textContent = 'Adding…';
-
   const plant = {
-    id:         uid(),
-    name:       _selSpecies.common_name,
-    emoji:      _selSpecies.emoji || '🌱',
-    family:     _selSpecies.plant_family || 'Unknown',
-    is_native:  _selSpecies.is_native || false,
-    is_host:    _selSpecies.is_host_plant || false,
-    spread:     _selSpecies.spread_in || 12,
-    dtm:        _selSpecies.maturity_days || 60,
-    location:   location || '',
-    qty:        qty,
-    notes:      notes,
+    id: uid(), name: _selSpecies.common_name, emoji: _selSpecies.emoji || '🌱',
+    family: _selSpecies.plant_family || 'Unknown',
+    is_native: _selSpecies.is_native || false, is_host: _selSpecies.is_host_plant || false,
+    spread: _selSpecies.spread_in || 12, dtm: _selSpecies.maturity_days || 60,
+    location: location || '', qty, notes,
     date_planted: dateVal || new Date().toISOString().slice(0,10),
     created_at: new Date().toISOString(),
   };
-
   myPlants.push(plant);
   await savePlant(plant);
-
   toast(`${plant.emoji} ${plant.name} added`);
-  cancelAdd();
-  populateLocationSelect();
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
-
+  cancelAdd(); populateLocationSelect();
+  renderGarden(); renderFilterBar(); renderSowingSchedule(); setTimestamp();
   btn.disabled = false; btn.textContent = '+ Add to Garden';
 }
 
@@ -1084,10 +891,7 @@ async function addPlant() {
 function toggleCustomForm() {
   const f = document.getElementById('custom-form');
   f.classList.toggle('show');
-  if (f.classList.contains('show')) {
-    document.getElementById('cf-name').focus();
-    cancelAdd(); // close library form if open
-  }
+  if (f.classList.contains('show')) { document.getElementById('cf-name').focus(); cancelAdd(); }
 }
 
 function addCustomPlant() {
@@ -1095,17 +899,7 @@ function addCustomPlant() {
   const emoji  = (document.getElementById('cf-emoji').value||'🌱').trim();
   const family = (document.getElementById('cf-family').value||'').trim();
   if (!name) { document.getElementById('cf-name').focus(); return; }
-
-  // Treat as a synthetic species entry and open the add form
-  _selSpecies = {
-    common_name: name,
-    emoji: emoji || '🌱',
-    plant_family: family || 'Unknown',
-    spread_in: 12, maturity_days: 60,
-    is_native: false, is_host_plant: false,
-    _custom: true,
-  };
-
+  _selSpecies = { common_name: name, emoji: emoji||'🌱', plant_family: family||'Unknown', spread_in:12, maturity_days:60, is_native:false, is_host_plant:false, _custom:true };
   document.getElementById('sel-emoji').textContent = _selSpecies.emoji;
   document.getElementById('sel-name').textContent  = _selSpecies.common_name;
   document.getElementById('sel-fam').textContent   = _selSpecies.plant_family;
@@ -1122,7 +916,6 @@ function toggleEdit(id) {
   const drawer = document.getElementById(`edit-${id}`);
   if (!drawer) return;
   const isOpen = drawer.classList.contains('open');
-  // Close all other open drawers
   document.querySelectorAll('.edit-drawer.open').forEach(d => d.classList.remove('open'));
   if (!isOpen) drawer.classList.add('open');
 }
@@ -1135,9 +928,7 @@ async function saveEdit(id) {
   plant.notes    = (document.getElementById(`en-${id}`).value||'').trim();
   await savePlant(plant);
   toast('✓ Saved');
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
+  renderGarden(); renderFilterBar(); setTimestamp();
 }
 
 // ── Delete plant ───────────────────────────────
@@ -1146,9 +937,7 @@ async function deletePlant(id) {
   await deletePlantRemote(id);
   saveLocal();
   toast('Plant removed');
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
+  renderGarden(); renderFilterBar(); renderSowingSchedule(); setTimestamp();
 }
 
 // ── Filter ─────────────────────────────────────
@@ -1159,23 +948,124 @@ function setFilter(f, btn) {
   renderGarden();
 }
 
+function renderFilterBar() {
+  const bar  = document.getElementById('filter-bar');
+  if (!bar) return;
+  const usedLocs = [...new Set(myPlants.map(p => p.location).filter(Boolean))];
+  bar.querySelectorAll('[data-filter-loc]').forEach(b => b.remove());
+  usedLocs.forEach(loc => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.filterLoc = loc;
+    btn.dataset.filter = 'loc:' + loc;
+    btn.textContent = loc;
+    btn.onclick = () => setFilter('loc:' + loc, btn);
+    bar.appendChild(btn);
+  });
+}
+
+// ── Garden search ──────────────────────────────
+function onGardenSearch(q) {
+  _search = q.toLowerCase().trim();
+  renderGarden();
+}
+
+// ── Bulk mode ──────────────────────────────────
+function toggleBulkMode() {
+  _bulkMode = !_bulkMode;
+  _selected.clear();
+  const btn = document.getElementById('bulk-toggle');
+  btn.classList.toggle('active', _bulkMode);
+  btn.textContent = _bulkMode ? 'Done' : 'Select';
+  document.getElementById('bulk-bar').classList.toggle('show', false);
+  hideBulkLocation();
+  renderGarden();
+}
+
+function toggleSelectCard(id) {
+  if (!_bulkMode) return;
+  if (_selected.has(id)) _selected.delete(id);
+  else _selected.add(id);
+  // Update card appearance
+  const card = document.getElementById(`card-${id}`);
+  if (card) card.classList.toggle('selected-bulk', _selected.has(id));
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  const n   = _selected.size;
+  document.getElementById('bulk-count').textContent = `${n} plant${n !== 1 ? 's' : ''} selected`;
+  bar.classList.toggle('show', n > 0);
+  // Populate location dropdown
+  const sel = document.getElementById('bulk-loc-select');
+  sel.innerHTML = getUsedLocations().map(l => `<option>${l}</option>`).join('');
+}
+
+function showBulkLocation() {
+  if (!_selected.size) return;
+  document.getElementById('bulk-location-wrap').classList.add('show');
+  document.getElementById('bulk-move-btn').style.display = 'none';
+}
+
+function hideBulkLocation() {
+  document.getElementById('bulk-location-wrap').classList.remove('show');
+  const btn = document.getElementById('bulk-move-btn');
+  if (btn) btn.style.display = '';
+}
+
+async function confirmBulkMove() {
+  const loc = document.getElementById('bulk-loc-select').value;
+  const ids = [..._selected];
+  for (const id of ids) {
+    const p = myPlants.find(x => x.id === id);
+    if (p) { p.location = loc; await savePlant(p); }
+  }
+  toast(`Moved ${ids.length} plant${ids.length !== 1 ? 's' : ''} to ${loc}`);
+  _selected.clear();
+  hideBulkLocation();
+  document.getElementById('bulk-bar').classList.remove('show');
+  renderGarden(); renderFilterBar(); setTimestamp();
+}
+
+async function confirmBulkDelete() {
+  if (!_selected.size) return;
+  const n = _selected.size;
+  if (!confirm(`Remove ${n} plant${n !== 1 ? 's' : ''}?`)) return;
+  const ids = [..._selected];
+  for (const id of ids) {
+    myPlants = myPlants.filter(p => p.id !== id);
+    await deletePlantRemote(id);
+  }
+  saveLocal();
+  toast(`Removed ${n} plant${n !== 1 ? 's' : ''}`);
+  _selected.clear();
+  document.getElementById('bulk-bar').classList.remove('show');
+  renderGarden(); renderFilterBar(); renderSowingSchedule(); setTimestamp();
+}
+
 // ── Render garden ──────────────────────────────
 function renderGarden() {
-  // Stats
-  const blooming = myPlants.filter(p => isBlooming(p.name, p.family)).length;
-  const native   = myPlants.filter(p => p.is_native).length;
-  document.getElementById('stat-total').textContent    = myPlants.length;
-  document.getElementById('stat-blooming').textContent = blooming;
-  document.getElementById('stat-native').textContent   = native;
-
-  const subtitle = `West Simsbury, CT · Zone 6b · ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}`;
-  document.getElementById('garden-subtitle').textContent = subtitle;
+  renderDeepStats();
 
   // Filter plants
   let filtered = [...myPlants];
   if (_filter === 'blooming')        filtered = filtered.filter(p => isBlooming(p.name, p.family));
   if (_filter === 'native')          filtered = filtered.filter(p => p.is_native);
   if (_filter.startsWith('loc:'))    filtered = filtered.filter(p => p.location === _filter.slice(4));
+
+  // Search
+  if (_search) {
+    filtered = filtered.filter(p =>
+      (p.name||'').toLowerCase().includes(_search) ||
+      (p.family||'').toLowerCase().includes(_search) ||
+      (p.location||'').toLowerCase().includes(_search) ||
+      (p.notes||'').toLowerCase().includes(_search)
+    );
+  }
+
+  const subtitle = `West Simsbury, CT · Zone 6b · ${NOW.toLocaleDateString('en-US',{month:'long',year:'numeric'})}`;
+  document.getElementById('garden-subtitle').textContent = subtitle;
 
   const wrap = document.getElementById('plant-list-wrap');
 
@@ -1191,8 +1081,8 @@ function renderGarden() {
   if (!filtered.length) {
     wrap.innerHTML = `<div class="empty-garden">
       <div class="empty-icon">🔍</div>
-      <div class="empty-msg">No plants match this filter</div>
-      <div class="empty-sub" style="cursor:pointer;text-decoration:underline;" onclick="setFilter('all', document.querySelector('[data-filter=all]'))">Show all plants</div>
+      <div class="empty-msg">No plants match</div>
+      <div class="empty-sub" style="cursor:pointer;text-decoration:underline;" onclick="setFilter('all', document.querySelector('[data-filter=all]'));document.getElementById('garden-search').value='';onGardenSearch('')">Clear filters</div>
     </div>`;
     return;
   }
@@ -1205,19 +1095,233 @@ function renderGarden() {
     groups[loc].push(p);
   });
 
-  const locationOrder = ['Patio Bed','Fence Border','Front Garden','Back Garden','Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border','Other','Unassigned'];
+  const locationOrder = [...PRESET_LOCATIONS, 'Other', 'Unassigned'];
   const sortedGroups = Object.entries(groups).sort(([a],[b]) => {
     const ai = locationOrder.indexOf(a), bi = locationOrder.indexOf(b);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 
-  wrap.innerHTML = sortedGroups.map(([loc, plants]) => {
-    const cards = plants.map(p => plantCard(p)).join('');
-    return `<div class="group-label">${loc} <span style="opacity:0.5;font-weight:300">(${plants.length})</span></div>
-      <div class="plant-list">${cards}</div>`;
-  }).join('');
+  wrap.innerHTML = sortedGroups.map(([loc, plants]) =>
+    `<div class="group-label">${loc} <span style="opacity:0.5;font-weight:300">(${plants.length})</span></div>
+     <div class="plant-list">${plants.map(p => plantCard(p)).join('')}</div>`
+  ).join('');
 }
 
+// ── Deep stats ─────────────────────────────────
+function renderDeepStats() {
+  const total    = myPlants.length;
+  const blooming = myPlants.filter(p => isBlooming(p.name, p.family));
+  const native   = myPlants.filter(p => p.is_native).length;
+  const host     = myPlants.filter(p => p.is_host).length;
+
+  // Bloom coverage: how many of 7 growing-season months (Apr–Oct) have at least one bloomer
+  const season = [4,5,6,7,8,9,10];
+  const coveredMonths = season.filter(m =>
+    myPlants.some(p => { const w = bloomWin(p.name, p.family); return w && m >= w[0] && m <= w[1]; })
+  );
+  const gapMonths = season.filter(m => !coveredMonths.includes(m));
+
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-blooming').textContent = blooming.length;
+  document.getElementById('stat-blooming-sub').textContent = blooming.length ? blooming.slice(0,2).map(p=>p.name).join(', ') + (blooming.length>2?` +${blooming.length-2}`:'') : 'None this month';
+  document.getElementById('stat-native').textContent  = native;
+  document.getElementById('stat-native-sub').textContent = total ? `${Math.round(native/total*100)}% of garden` : '';
+  document.getElementById('stat-host').textContent    = host;
+  document.getElementById('stat-coverage').textContent = coveredMonths.length + '/7';
+  document.getElementById('stat-coverage-sub').textContent = coveredMonths.length === 7 ? 'Full season ✓' : `${coveredMonths.map(m=>monthName(m)).join(', ')||'—'}`;
+  document.getElementById('stat-gaps').textContent    = gapMonths.length;
+  document.getElementById('stat-gaps-sub').textContent = gapMonths.length ? gapMonths.map(m=>monthName(m)).join(', ') : 'No gaps ✓';
+}
+
+// ── Sowing schedule — Zone 6b ──────────────────
+// Last frost: April 15 · First frost: October 15
+const ZONE6B = {
+  lastFrost:  new Date(CUR_YEAR, 3, 15),  // Apr 15
+  firstFrost: new Date(CUR_YEAR, 9, 15),  // Oct 15
+};
+
+// SOW_DB: [name_keyword, { indoor: [start_wks_before_lf, end_wks], direct: [start_month, end_month], transplant: [start_wks_after_lf, end_wks] }]
+// All times relative to last frost (Apr 15) or calendar month
+const SOW_DB = {
+  // Warm-season vegetables
+  'tomato':      { indoor:[8,6],  transplant:[0,2]  },
+  'pepper':      { indoor:[10,8], transplant:[0,2]  },
+  'eggplant':    { indoor:[10,8], transplant:[1,3]  },
+  'squash':      { indoor:[3,2],  direct:[5,6],     transplant:[0,1] },
+  'cucumber':    { indoor:[3,2],  direct:[5,6],     transplant:[0,1] },
+  'bean':        { direct:[5,8]   },
+  'corn':        { direct:[5,6]   },
+  'pumpkin':     { direct:[5,6],  indoor:[4,3]      },
+  'melon':       { indoor:[4,3],  transplant:[1,2]  },
+  'basil':       { indoor:[6,4],  direct:[6,8],     transplant:[0,1] },
+  // Cool-season vegetables
+  'lettuce':     { direct:[3,5],  indoor:[8,6]      },
+  'spinach':     { direct:[3,5],  indoor:[8,7]      },
+  'kale':        { direct:[3,6],  indoor:[8,6]      },
+  'chard':       { direct:[3,5],  indoor:[6,5]      },
+  'carrot':      { direct:[4,7]   },
+  'radish':      { direct:[4,9]   },
+  'pea':         { direct:[3,5]   },
+  'onion':       { indoor:[12,10],direct:[3,5]      },
+  'garlic':      { direct:[9,10]  },  // fall planting
+  'broccoli':    { indoor:[8,6],  transplant:[-2,0], direct:[7,8] },
+  'cabbage':     { indoor:[8,6],  transplant:[-2,0] },
+  // Herbs
+  'parsley':     { indoor:[10,8], direct:[4,6]      },
+  'cilantro':    { direct:[4,6],  direct2:[8,10]    },
+  'dill':        { direct:[4,8]   },
+  'oregano':     { indoor:[10,8], transplant:[0,2]  },
+  'thyme':       { indoor:[10,8], transplant:[0,2]  },
+  'lavender':    { indoor:[12,8], transplant:[0,2]  },
+  'sage':        { indoor:[8,6],  transplant:[0,2]  },
+  'rosemary':    { indoor:[12,10],transplant:[0,2]  },
+  'chives':      { indoor:[8,6],  direct:[4,6]      },
+  // Flowers
+  'zinnia':      { direct:[5,7],  indoor:[4,3]      },
+  'marigold':    { direct:[5,7],  indoor:[6,4]      },
+  'sunflower':   { direct:[5,7]   },
+  'cosmos':      { direct:[5,7],  indoor:[4,3]      },
+  'nasturtium':  { direct:[5,7]   },
+  'calendula':   { direct:[4,6],  indoor:[8,6]      },
+  'echinacea':   { indoor:[10,8], direct:[4,5]      },
+  'milkweed':    { direct:[4,5],  indoor:[12,10]    },
+  'aster':       { indoor:[10,8], transplant:[0,2]  },
+  'columbine':   { direct:[4,5],  indoor:[12,10]    },
+  'poppy':       { direct:[3,5]   },
+  'forget-me-not': { direct:[8,9] },  // fall sow
+  'foxglove':    { direct:[6,7],  indoor:[4,3]      },
+  'borage':      { direct:[5,7]   },
+  'bee balm':    { indoor:[8,6],  direct:[4,5]      },
+  'catmint':     { indoor:[10,8], transplant:[0,2]  },
+  'salvia':      { indoor:[10,8], transplant:[0,1]  },
+  'verbena':     { indoor:[12,10],transplant:[0,1]  },
+  'strawberry':  { indoor:[12,10],transplant:[0,2]  },
+  'raspberry':   { transplant:[0,2] },
+  'blueberry':   { transplant:[0,2] },
+  'rose':        { transplant:[0,2] },
+  'lavender':    { indoor:[12,8], transplant:[0,2]  },
+};
+
+function getSowingTasks(plants) {
+  const today     = new Date();
+  const lf        = ZONE6B.lastFrost;
+  const weeksToLF = (lf - today) / (7 * 86400000);
+  const month     = today.getMonth() + 1;
+
+  const tasks = { urgent:[], upcoming:[], ongoing:[], suggestions:[] };
+
+  // Match each plant in the garden to sow data
+  const plantNames = plants.map(p => (p.name||'').toLowerCase());
+
+  for (const [keyword, sow] of Object.entries(SOW_DB)) {
+    // Check if any of my plants match this keyword
+    const myMatch = plants.find(p => (p.name||'').toLowerCase().includes(keyword));
+    const name    = myMatch ? myMatch.name : null;
+    const emoji   = myMatch ? myMatch.emoji : null;
+
+    // Indoor sowing window (weeks before last frost)
+    if (sow.indoor) {
+      const [start, end] = sow.indoor;
+      const inWindow = weeksToLF >= end && weeksToLF <= start;
+      const soonWindow = weeksToLF >= end - 1 && weeksToLF <= start + 1;
+      if (name && inWindow) {
+        const urgency = weeksToLF <= end + 1 ? 'urgent' : weeksToLF <= end + 2 ? 'upcoming' : 'ongoing';
+        tasks[urgency].push({ action: 'Start indoors', plant: name, emoji, detail: `${Math.round(weeksToLF)} wks to last frost` });
+      } else if (!name && soonWindow) {
+        tasks.suggestions.push({ action: 'Consider starting', plant: keyword, emoji: '🌱', detail: 'Not in your garden yet' });
+      }
+    }
+
+    // Direct sow (by calendar month)
+    if (sow.direct) {
+      const [dStart, dEnd] = sow.direct;
+      if (name && month >= dStart && month <= dEnd) {
+        tasks.ongoing.push({ action: 'Direct sow', plant: name, emoji, detail: `${monthName(dStart)}–${monthName(dEnd)}` });
+      }
+    }
+
+    // Transplant out window (weeks after last frost)
+    if (sow.transplant && name) {
+      const [tStart, tEnd] = sow.transplant;
+      const weeksAfterLF = (today - lf) / (7 * 86400000);
+      if (weeksAfterLF >= tStart && weeksAfterLF <= tEnd + 2) {
+        tasks.urgent.push({ action: 'Harden off & transplant', plant: name, emoji, detail: `${Math.round(weeksAfterLF)}w past last frost` });
+      }
+    }
+  }
+
+  return tasks;
+}
+
+function renderSowingSchedule() {
+  const grid = document.getElementById('sow-grid');
+  const meta = document.getElementById('sow-meta');
+  const lf   = ZONE6B.lastFrost;
+  const today = new Date();
+  const daysToLF = Math.ceil((lf - today) / 86400000);
+
+  meta.textContent = daysToLF > 0
+    ? `Last frost: Apr 15 · ${daysToLF} days away · Zone 6b`
+    : `Frost-free season · Last frost was ${Math.abs(daysToLF)} days ago`;
+
+  if (!myPlants.length) {
+    grid.innerHTML = `<div class="sow-empty">Add plants to your garden to get a personalised sowing schedule.</div>`;
+    return;
+  }
+
+  const tasks = getSowingTasks(myPlants);
+  const cards = [];
+
+  if (tasks.urgent.length) {
+    const names = [...new Set(tasks.urgent.map(t => `${t.emoji} ${t.plant}`))].slice(0,4).join(', ');
+    const action = tasks.urgent[0].action;
+    cards.push({ cls:'urgent', action, names, when: tasks.urgent[0].detail });
+  }
+
+  if (tasks.upcoming.length) {
+    const names = [...new Set(tasks.upcoming.map(t => `${t.emoji} ${t.plant}`))].slice(0,4).join(', ');
+    cards.push({ cls:'upcoming', action: tasks.upcoming[0].action, names, when: 'Coming up soon' });
+  }
+
+  if (tasks.ongoing.length) {
+    // Group by action type
+    const byAction = {};
+    tasks.ongoing.forEach(t => {
+      if (!byAction[t.action]) byAction[t.action] = [];
+      byAction[t.action].push(`${t.emoji} ${t.plant}`);
+    });
+    for (const [action, plants] of Object.entries(byAction)) {
+      const unique = [...new Set(plants)].slice(0,4);
+      cards.push({ cls:'ongoing', action, names: unique.join(', '), when: 'Now through season' });
+    }
+  }
+
+  // Zone-based seasonal advice regardless of plants
+  const month = today.getMonth() + 1;
+  const daysToFirst = Math.ceil((new Date(today.getFullYear(),9,15) - today) / 86400000);
+
+  if (!cards.length) {
+    // Fallback advice by season
+    let advice = '';
+    if (month <= 2)      advice = 'Seed catalogs & planning time. Order seeds now for spring.';
+    else if (month === 3) advice = 'Start tomatoes & peppers indoors. Sow cool-season crops.';
+    else if (month <= 5) advice = 'Prime transplant season. Harden off seedlings before planting out.';
+    else if (month <= 8) advice = 'Water consistently and deadhead flowers to extend bloom.';
+    else if (month <= 10) advice = `First frost in ${daysToFirst > 0 ? daysToFirst + ' days' : 'the past'}. Harvest and protect tender plants.`;
+    else                  advice = 'Clean up beds, plant garlic and spring bulbs before ground freezes.';
+    cards.push({ cls:'ongoing', action: 'Seasonal tip', names: advice, when: '' });
+  }
+
+  grid.innerHTML = cards.map(c => `
+    <div class="sow-card ${c.cls}">
+      <div class="sow-card-action">${c.action}</div>
+      <div class="sow-card-plants">${c.names}</div>
+      ${c.when ? `<div class="sow-card-when">${c.when}</div>` : ''}
+    </div>`
+  ).join('');
+}
+
+// ── Plant card ─────────────────────────────────
 function plantCard(p) {
   const blooming  = isBlooming(p.name, p.family);
   const color     = bloomColor(p.name);
@@ -1236,18 +1340,18 @@ function plantCard(p) {
     bloomStr && !blooming ? `<span class="meta-chip" style="background:var(--gold-pale);color:#6a4810;border:1px solid #d0a850;">Blooms ${bloomStr}</span>` : '',
   ].filter(Boolean).join('');
 
-  const strip = blooming
-    ? `<div class="bloom-strip" style="background:${color};opacity:0.55;"></div>`
-    : '';
+  const strip    = blooming ? `<div class="bloom-strip" style="background:${color};opacity:0.55;"></div>` : '';
+  const notesHtml = p.notes ? `<div class="plant-card-notes">${p.notes}</div>` : '';
+  const locationOpts = getUsedLocations().map(o => `<option${o===p.location?' selected':''}>${o}</option>`).join('');
 
-  const notesHtml = p.notes
-    ? `<div class="plant-card-notes">${p.notes}</div>` : '';
+  const isSelected = _selected.has(p.id);
+  const checkboxHtml = `<div class="card-select-wrap${_bulkMode?' show':''}">
+    <input type="checkbox" class="card-checkbox" id="chk-${p.id}" ${isSelected?'checked':''} onchange="toggleSelectCard('${p.id}')"/>
+  </div>`;
 
-  const locationOpts = getUsedLocations()
-    .map(o => `<option${o === p.location ? ' selected' : ''}>${o}</option>`).join('');
-
-  return `<div class="plant-card" id="card-${p.id}">
+  return `<div class="plant-card${isSelected?' selected-bulk':''}" id="card-${p.id}">
     ${strip}
+    ${checkboxHtml}
     <div class="plant-card-emoji">${p.emoji}</div>
     <div class="plant-card-body">
       <div class="plant-card-name">${p.name}</div>
@@ -1299,7 +1403,6 @@ const FALLBACK_LIB = [
 ];
 
 // ── Boot ───────────────────────────────────────
-// Set today's date as default
 document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
 checkSession();
 </script>
