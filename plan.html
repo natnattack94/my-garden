@@ -3,578 +3,187 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GardenHub — My Garden</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<title>GardenHub — Garden Plans</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --ink:        #231c14;
-  --paper:      #faf4ea;
-  --cream:      #f5ede0;
-  --border:     #e0d4c0;
-  --moss:       #526f45;
-  --moss-light: #c4d8b0;
-  --moss-pale:  #eaf2e4;
-  --rose:       #b8604a;
-  --rose-pale:  #fdf0ec;
-  --gold:       #b08a28;
-  --gold-pale:  #fdf6e0;
-  --plum:       #7a5898;
-  --plum-pale:  #f5f0fc;
-  --sky:        #4878a0;
-  --sky-pale:   #eef5fc;
-  --muted:      #a09080;
-  --serif:      'Cormorant Garamond', serif;
-  --sans:       'Jost', sans-serif;
+  --ink:       #231c14; --paper:     #faf4ea; --cream:     #f5ede0;
+  --border:    #e0d4c0; --moss:      #526f45; --moss-lt:   #c4d8b0;
+  --moss-pale: #eaf2e4; --rose:      #b8604a; --rose-pale: #fdf0ec;
+  --gold:      #b08a28; --gold-pale: #fdf6e0; --plum:      #7a5898;
+  --plum-pale: #f5f0fc; --sky:       #4878a0; --sky-pale:  #eef5fc;
+  --muted:     #a09080; --serif:     'Cormorant Garamond',serif;
+  --sans:      'Jost',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);font-weight:300;background:var(--paper);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--cream);}::-webkit-scrollbar-thumb{background:#c8bca8;border-radius:2px;}
+
+/* AUTH */
+#auth-overlay{position:fixed;inset:0;background:rgba(35,28,20,0.93);z-index:1000;display:flex;align-items:center;justify-content:center;}
+#auth-overlay.hidden{display:none;}
+.auth-box{background:var(--paper);border-radius:10px;padding:2.5rem;width:340px;box-shadow:0 24px 64px rgba(0,0,0,0.45);}
+.auth-logo{font-family:var(--serif);font-size:1.8rem;font-weight:300;font-style:italic;color:var(--ink);margin-bottom:0.2rem;}
+.auth-sub{font-size:0.65rem;letter-spacing:0.18rem;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;}
+.auth-input{width:100%;background:var(--cream);border:1px solid var(--border);color:var(--ink);padding:0.6rem 0.75rem;font-family:var(--sans);font-size:0.82rem;outline:none;margin-bottom:0.6rem;border-radius:3px;transition:border-color 0.15s;}
+.auth-input:focus{border-color:var(--moss);}
+#auth-err{font-size:0.7rem;color:var(--rose);min-height:1rem;margin-bottom:0.4rem;}
+.auth-btn{width:100%;padding:0.65rem;background:var(--ink);color:var(--moss-lt);border:none;font-family:var(--sans);font-size:0.65rem;letter-spacing:0.15rem;text-transform:uppercase;cursor:pointer;border-radius:3px;transition:background 0.15s;margin-bottom:0.4rem;}
+.auth-btn:hover{background:#3a3028;}
+.auth-btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;align-items:center;padding:0 2rem;height:48px;}
+.nav-logo{font-family:var(--serif);font-style:italic;font-size:1.05rem;color:var(--moss-lt);font-weight:300;margin-right:2rem;text-decoration:none;white-space:nowrap;}
+.nav-link{color:#8a7a68;font-size:0.6rem;letter-spacing:0.18rem;text-transform:uppercase;text-decoration:none;padding:0 0.9rem;height:100%;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;}
+.nav-link:hover{color:var(--moss-lt);}
+.nav-link.active{color:var(--moss-lt);border-bottom-color:var(--moss);}
+.nav-logout{margin-left:auto;color:#5a4a38;font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:var(--sans);transition:color 0.12s;padding:0 0.5rem;}
+.nav-logout:hover{color:var(--moss-lt);}
+
+/* HERO */
+.hero{background:var(--ink);padding:3.5rem 2rem 2.5rem;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 25% 50%,rgba(82,111,69,0.25) 0%,transparent 55%),radial-gradient(ellipse at 75% 30%,rgba(176,138,40,0.15) 0%,transparent 50%);}
+.hero-eyebrow{font-size:0.6rem;letter-spacing:0.35rem;text-transform:uppercase;color:var(--moss-lt);margin-bottom:0.65rem;position:relative;}
+.hero-title{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.6rem);font-weight:300;color:var(--paper);font-style:italic;line-height:1.05;position:relative;}
+.hero-sub{font-size:0.75rem;color:#8a7a68;margin-top:0.75rem;position:relative;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6;}
+.match-banner{display:none;margin-top:1.25rem;position:relative;}
+.match-banner.show{display:block;}
+.match-pill{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(82,111,69,0.2);border:1px solid rgba(196,216,176,0.3);border-radius:20px;padding:0.3rem 0.9rem;font-size:0.65rem;color:var(--moss-lt);letter-spacing:0.08rem;}
+
+/* FILTER BAR */
+.filter-bar{background:white;border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:0;overflow-x:auto;}
+.filter-tab{font-size:0.6rem;letter-spacing:0.15rem;text-transform:uppercase;color:var(--muted);padding:0.85rem 1rem;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);}
+.filter-tab:hover{color:var(--ink);}
+.filter-tab.active{color:var(--moss);border-bottom-color:var(--moss);}
+.filter-right{margin-left:auto;display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;}
+.match-toggle{font-size:0.58rem;letter-spacing:0.12rem;text-transform:uppercase;padding:0.3rem 0.75rem;border:1px solid var(--border);background:white;color:var(--muted);cursor:pointer;border-radius:20px;font-family:var(--sans);transition:all 0.12s;white-space:nowrap;}
+.match-toggle.active{background:var(--moss-pale);border-color:var(--moss);color:var(--moss);}
+
+/* PLAN GRID */
+.container{max-width:1160px;margin:0 auto;padding:2.5rem 2rem 5rem;}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;}
+
+/* PLAN CARD */
+.plan-card{background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all 0.2s;cursor:pointer;}
+.plan-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.1);transform:translateY(-2px);border-color:#c8bca0;}
+.plan-card.dimmed{opacity:0.4;}
+.plan-img-wrap{position:relative;height:200px;overflow:hidden;background:var(--cream);}
+.plan-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform 0.4s;}
+.plan-card:hover .plan-img-wrap img{transform:scale(1.03);}
+.plan-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;}
+.match-badge{position:absolute;top:0.75rem;right:0.75rem;padding:0.25rem 0.6rem;border-radius:20px;font-size:0.62rem;font-weight:500;letter-spacing:0.05rem;backdrop-filter:blur(8px);}
+.match-high{background:rgba(82,111,69,0.9);color:white;}
+.match-med {background:rgba(176,138,40,0.9);color:white;}
+.match-low {background:rgba(35,28,20,0.7);color:#c8bca8;}
+.plan-tags{position:absolute;bottom:0.6rem;left:0.75rem;display:flex;gap:0.35rem;flex-wrap:wrap;}
+.plan-tag{font-size:0.5rem;letter-spacing:0.1rem;text-transform:uppercase;padding:0.15rem 0.45rem;border-radius:10px;backdrop-filter:blur(8px);background:rgba(250,244,234,0.85);color:var(--ink);border:1px solid rgba(255,255,255,0.5);}
+.plan-body{padding:1.25rem 1.4rem 1.4rem;}
+.plan-title{font-family:var(--serif);font-size:1.35rem;font-weight:600;color:var(--ink);line-height:1.15;margin-bottom:0.3rem;}
+.plan-tagline{font-size:0.7rem;color:var(--muted);line-height:1.5;margin-bottom:1rem;}
+.plan-meta{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;}
+.plan-meta-item{font-size:0.6rem;color:var(--muted);display:flex;align-items:center;gap:0.3rem;}
+.plan-meta-item span{color:var(--ink);}
+.plan-actions{display:flex;gap:0.5rem;}
+.btn-view{flex:1;padding:0.55rem;background:var(--ink);color:var(--moss-lt);border:none;font-family:var(--sans);font-size:0.6rem;letter-spacing:0.14rem;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:background 0.15s;}
+.btn-view:hover{background:#3a3028;}
+.btn-print{padding:0.55rem 0.75rem;background:white;color:var(--muted);border:1px solid var(--border);font-family:var(--sans);font-size:0.6rem;letter-spacing:0.12rem;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all 0.15s;}
+.btn-print:hover{border-color:var(--moss);color:var(--moss);}
+
+/* MATCH SCORE BAR */
+.match-score-bar{margin-top:0.75rem;}
+.match-score-label{display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);margin-bottom:0.3rem;}
+.match-score-label span{color:var(--moss);font-weight:500;}
+.score-track{height:4px;background:var(--cream);border-radius:2px;overflow:hidden;}
+.score-fill{height:100%;background:var(--moss);border-radius:2px;transition:width 0.6s ease;}
+
+/* MODAL */
+#plan-modal{position:fixed;inset:0;z-index:500;display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;background:rgba(35,28,20,0.7);backdrop-filter:blur(4px);}
+#plan-modal.show{display:flex;}
+.modal-box{background:var(--paper);border-radius:12px;width:100%;max-width:900px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.35);margin:auto;}
+.modal-close{position:fixed;top:1.5rem;right:1.5rem;width:36px;height:36px;background:var(--ink);color:var(--moss-lt);border:none;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:background 0.15s;}
+.modal-close:hover{background:#3a3028;}
+
+/* MODAL HERO */
+.modal-hero{position:relative;height:320px;overflow:hidden;background:var(--cream);}
+.modal-hero img{width:100%;height:100%;object-fit:cover;}
+.modal-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(35,28,20,0.7));display:flex;flex-direction:column;justify-content:flex-end;padding:1.75rem 2rem;}
+.modal-plan-title{font-family:var(--serif);font-size:2.4rem;font-weight:300;font-style:italic;color:var(--paper);line-height:1;}
+.modal-plan-sub{font-size:0.7rem;color:rgba(250,244,234,0.7);letter-spacing:0.12rem;text-transform:uppercase;margin-top:0.4rem;}
+
+/* MODAL BODY */
+.modal-body{padding:2rem 2.5rem;}
+.modal-cols{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;}
+.modal-section-title{font-family:var(--serif);font-size:1.2rem;font-weight:400;color:var(--ink);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+
+/* PLANT LIST IN MODAL */
+.plant-list-item{display:flex;align-items:baseline;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--cream);}
+.plant-letter{font-family:var(--serif);font-size:1.1rem;font-weight:700;color:var(--moss);width:1.4rem;flex-shrink:0;line-height:1;}
+.plant-qty{font-size:0.62rem;color:var(--muted);width:1.2rem;flex-shrink:0;}
+.plant-names{flex:1;}
+.plant-common{font-size:0.82rem;font-weight:400;color:var(--ink);}
+.plant-sci{font-size:0.65rem;color:var(--muted);font-style:italic;margin-top:0.05rem;}
+.plant-zones{font-size:0.58rem;color:var(--muted);margin-top:0.05rem;}
+.plant-match-chip{font-size:0.5rem;letter-spacing:0.08rem;text-transform:uppercase;padding:0.1rem 0.4rem;border-radius:10px;white-space:nowrap;flex-shrink:0;}
+.chip-owned{background:var(--moss-pale);color:#2a5820;border:1px solid #90bb78;}
+.chip-swap{background:var(--gold-pale);color:#6a4810;border:1px solid #d0a850;}
+.chip-needed{background:var(--cream);color:var(--muted);border:1px solid var(--border);}
+
+/* GRID DIAGRAM */
+.grid-diagram{margin-top:1.5rem;}
+.grid-table{border-collapse:collapse;font-family:var(--sans);}
+.grid-table td{width:28px;height:28px;border:1px solid var(--border);font-size:0.65rem;font-weight:500;text-align:center;vertical-align:middle;color:var(--moss);background:white;}
+.grid-table td.rock{background:var(--cream);color:var(--muted);font-size:0.45rem;letter-spacing:0.05rem;}
+.grid-table td.water{background:var(--sky-pale);color:var(--sky);font-size:0.5rem;}
+.grid-table td.empty{background:var(--paper);}
+.grid-note{font-size:0.58rem;color:var(--muted);margin-top:0.5rem;letter-spacing:0.06rem;}
+
+/* SWAP SECTION */
+.swap-section{margin-top:1.5rem;padding:1rem 1.25rem;background:var(--gold-pale);border-radius:8px;border:1px solid #e0c070;}
+.swap-title{font-size:0.6rem;letter-spacing:0.15rem;text-transform:uppercase;color:#7a5810;margin-bottom:0.65rem;font-weight:500;}
+.swap-item{display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;margin-bottom:0.4rem;flex-wrap:wrap;}
+.swap-arrow{color:#b08a28;font-size:0.8rem;}
+.swap-from{color:var(--muted);text-decoration:line-through;}
+.swap-to{color:var(--ink);font-weight:400;}
+.swap-reason{font-size:0.62rem;color:#8a6830;font-style:italic;}
+
+/* CARE TIPS */
+.care-section{margin-top:1.5rem;}
+.care-item{display:flex;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--cream);}
+.care-icon{font-size:1rem;flex-shrink:0;line-height:1.4;}
+.care-text{font-size:0.72rem;color:#4a3a28;line-height:1.5;}
+.care-label{font-size:0.58rem;letter-spacing:0.1rem;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.1rem;}
+
+/* PRINT SHEET */
+@media print {
+  body * { visibility: hidden; }
+  #print-sheet, #print-sheet * { visibility: visible; }
+  #print-sheet { position: fixed; inset: 0; background: white; z-index: 9999; padding: 1.5cm; }
+  nav, #plan-modal, #auth-overlay { display: none !important; }
+}
+#print-sheet { display: none; }
+
+/* EMPTY STATE */
+.empty-plans{text-align:center;padding:5rem 2rem;opacity:0.5;}
+.empty-plans-icon{font-size:3rem;margin-bottom:1rem;}
+.empty-plans-msg{font-family:var(--serif);font-style:italic;font-size:1.3rem;color:var(--moss);}
+
+/* SPINNER */
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--moss);border-radius:50%;animation:spin 0.85s linear infinite;margin:5rem auto;display:block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .modal-cols{grid-template-columns:1fr;}
+  .modal-body{padding:1.25rem;}
+  .modal-hero{height:220px;}
+  .modal-plan-title{font-size:1.7rem;}
 }
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  font-family: var(--sans);
-  font-weight: 300;
-  background: var(--paper);
-  color: var(--ink);
-  min-height: 100vh;
-}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--cream); }
-::-webkit-scrollbar-thumb { background: #c8bca8; border-radius: 2px; }
-
-/* ── AUTH ── */
-#auth-overlay {
-  position: fixed; inset: 0;
-  background: rgba(35,28,20,0.93);
-  z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-}
-#auth-overlay.hidden { display: none; }
-.auth-box {
-  background: var(--paper);
-  border-radius: 10px;
-  padding: 2.5rem;
-  width: 340px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.45);
-}
-.auth-logo {
-  font-family: var(--serif);
-  font-size: 1.8rem;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--ink);
-  margin-bottom: 0.2rem;
-}
-.auth-sub {
-  font-size: 0.65rem;
-  letter-spacing: 0.18rem;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 1.5rem;
-}
-.auth-input {
-  width: 100%;
-  background: var(--cream);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 0.6rem 0.75rem;
-  font-family: var(--sans);
-  font-size: 0.82rem;
-  outline: none;
-  margin-bottom: 0.6rem;
-  border-radius: 3px;
-  transition: border-color 0.15s;
-}
-.auth-input:focus { border-color: var(--moss); }
-#auth-err { font-size: 0.7rem; color: var(--rose); min-height: 1rem; margin-bottom: 0.4rem; }
-.auth-btn {
-  width: 100%; padding: 0.65rem;
-  background: var(--ink); color: var(--moss-light);
-  border: none; font-family: var(--sans);
-  font-size: 0.65rem; letter-spacing: 0.15rem;
-  text-transform: uppercase; cursor: pointer;
-  border-radius: 3px; transition: background 0.15s;
-  margin-bottom: 0.4rem;
-}
-.auth-btn:hover { background: #3a3028; }
-.auth-btn.ghost {
-  background: transparent; color: var(--muted);
-  border: 1px solid var(--border);
-}
-.auth-btn.ghost:hover { color: var(--ink); border-color: #b0a890; }
-
-/* ── NAV ── */
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--ink);
-  display: flex; align-items: center;
-  padding: 0 2rem; height: 48px; gap: 0;
-}
-.nav-logo {
-  font-family: var(--serif); font-style: italic;
-  font-size: 1.05rem; color: var(--moss-light);
-  font-weight: 300; margin-right: 2rem;
-  text-decoration: none; white-space: nowrap;
-}
-.nav-link {
-  color: #8a7a68; font-size: 0.6rem;
-  letter-spacing: 0.18rem; text-transform: uppercase;
-  text-decoration: none; padding: 0 0.9rem;
-  height: 100%; display: flex; align-items: center;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s; white-space: nowrap;
-}
-.nav-link:hover  { color: var(--moss-light); }
-.nav-link.active { color: var(--moss-light); border-bottom-color: var(--moss); }
-
-/* ── LAYOUT ── */
-.page {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  min-height: calc(100vh - 48px);
-}
-
-/* ── LEFT PANEL: ADD PLANT ── */
-#add-panel {
-  background: #faf7f0;
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  position: sticky; top: 48px;
-  height: calc(100vh - 48px);
-  overflow: hidden;
-}
-.panel-head {
-  padding: 1.5rem 1.25rem 1rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.panel-title {
-  font-family: var(--serif);
-  font-size: 1.4rem; font-weight: 300;
-  color: var(--ink); margin-bottom: 0.85rem;
-}
-
-/* Search */
-.search-wrap { position: relative; margin-bottom: 0.6rem; }
-.search-input {
-  width: 100%;
-  background: var(--cream);
-  border: 1px solid var(--border);
-  color: var(--ink);
-  padding: 0.5rem 0.75rem 0.5rem 2rem;
-  font-family: var(--sans); font-size: 0.75rem;
-  outline: none; border-radius: 3px;
-  transition: border-color 0.15s;
-}
-.search-input:focus { border-color: var(--moss); }
-.search-icon {
-  position: absolute; left: 0.6rem; top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.75rem; opacity: 0.45; pointer-events: none;
-}
-
-/* Species grid */
-#species-grid {
-  flex: 1; overflow-y: auto;
-  padding: 0.5rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-  align-content: start;
-}
-.species-tile {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.65rem 0.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.14s;
-  position: relative;
-}
-.species-tile:hover {
-  border-color: var(--moss);
-  background: var(--moss-pale);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
-.species-tile.selected {
-  border-color: var(--moss);
-  background: var(--moss-pale);
-  box-shadow: 0 0 0 2px var(--moss);
-}
-.species-emoji { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
-.species-name {
-  font-size: 0.65rem; font-weight: 400;
-  color: var(--ink); line-height: 1.3;
-}
-.species-family {
-  font-size: 0.55rem; color: var(--muted);
-  font-style: italic; margin-top: 0.1rem;
-}
-.species-badge {
-  position: absolute; top: 4px; right: 4px;
-  font-size: 0.42rem; padding: 0.05rem 0.3rem;
-  border-radius: 10px; font-weight: 500;
-  letter-spacing: 0.05em; text-transform: uppercase;
-}
-.badge-n { background: var(--moss-pale); color: #2a5820; border: 1px solid #90bb78; }
-
-/* Add form */
-#add-form {
-  padding: 0.85rem 1.25rem 1.25rem;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--cream);
-  display: none;
-}
-#add-form.show { display: block; }
-.selected-preview {
-  display: flex; align-items: center; gap: 0.6rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--border);
-}
-.selected-emoji { font-size: 1.6rem; }
-.selected-name {
-  font-family: var(--serif);
-  font-size: 1rem; font-weight: 600;
-  color: var(--ink);
-}
-.selected-fam { font-size: 0.65rem; color: var(--muted); font-style: italic; }
-
-.form-row { margin-bottom: 0.55rem; }
-.form-label {
-  display: block; font-size: 0.58rem;
-  letter-spacing: 0.12rem; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 0.25rem;
-}
-.form-input, .form-select {
-  width: 100%;
-  background: white; border: 1px solid var(--border);
-  color: var(--ink); padding: 0.45rem 0.6rem;
-  font-family: var(--sans); font-size: 0.78rem;
-  outline: none; border-radius: 3px;
-  transition: border-color 0.15s;
-}
-.form-input:focus, .form-select:focus { border-color: var(--moss); }
-.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-
-.add-btn {
-  width: 100%; padding: 0.6rem;
-  background: var(--moss); color: white;
-  border: none; font-family: var(--sans);
-  font-size: 0.62rem; letter-spacing: 0.15rem;
-  text-transform: uppercase; cursor: pointer;
-  border-radius: 3px; margin-top: 0.6rem;
-  transition: background 0.15s;
-}
-.add-btn:hover { background: #3d5a32; }
-.add-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.cancel-link {
-  display: block; text-align: center;
-  font-size: 0.55rem; letter-spacing: 0.1rem;
-  text-transform: uppercase; color: var(--muted);
-  cursor: pointer; margin-top: 0.5rem;
-  transition: color 0.12s;
-}
-.cancel-link:hover { color: var(--ink); }
-
-/* ── RIGHT PANEL: MY GARDEN ── */
-#garden-panel {
-  padding: 2rem 2.5rem;
-  overflow-y: auto;
-}
-
-/* Header */
-.garden-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: flex-end; justify-content: space-between;
-  flex-wrap: wrap; gap: 1rem;
-}
-.garden-title {
-  font-family: var(--serif);
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  font-weight: 300; font-style: italic;
-  color: var(--ink); line-height: 1;
-}
-.garden-title em { color: var(--moss); font-style: normal; }
-.garden-subtitle {
-  font-size: 0.65rem; letter-spacing: 0.2rem;
-  text-transform: uppercase; color: var(--muted);
-  margin-top: 0.4rem;
-}
-.garden-stats {
-  display: flex; gap: 1.5rem; flex-wrap: wrap;
-}
-.g-stat {
-  text-align: right;
-}
-.g-stat-num {
-  font-family: var(--serif);
-  font-size: 1.8rem; font-weight: 300; line-height: 1;
-  color: var(--ink);
-}
-.g-stat-label {
-  font-size: 0.56rem; letter-spacing: 0.14rem;
-  text-transform: uppercase; color: var(--muted);
-}
-
-/* Filter bar */
-.filter-bar {
-  display: flex; gap: 0.4rem; flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
-.filter-btn {
-  padding: 0.25rem 0.7rem;
-  font-family: var(--sans); font-size: 0.58rem;
-  letter-spacing: 0.1rem; text-transform: uppercase;
-  border: 1px solid var(--border);
-  background: white; color: var(--muted);
-  cursor: pointer; border-radius: 20px;
-  transition: all 0.12s;
-}
-.filter-btn:hover  { border-color: var(--moss); color: var(--moss); }
-.filter-btn.active {
-  background: var(--moss); color: white;
-  border-color: var(--moss);
-}
-
-/* Group header */
-.group-label {
-  font-size: 0.6rem; letter-spacing: 0.22rem;
-  text-transform: uppercase; color: var(--muted);
-  margin: 1.5rem 0 0.75rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
-}
-.group-label:first-of-type { margin-top: 0; }
-
-/* Plant cards */
-.plant-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-.plant-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.1rem;
-  display: flex; align-items: flex-start; gap: 0.75rem;
-  transition: all 0.15s;
-  position: relative;
-  cursor: default;
-}
-.plant-card:hover {
-  border-color: #c8bca0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-}
-.plant-card-emoji {
-  font-size: 1.8rem; flex-shrink: 0;
-  line-height: 1; margin-top: 0.1rem;
-}
-.plant-card-body { flex: 1; min-width: 0; }
-.plant-card-name {
-  font-family: var(--serif);
-  font-size: 1rem; font-weight: 600;
-  color: var(--ink); line-height: 1.2;
-}
-.plant-card-where {
-  font-size: 0.62rem; color: var(--muted);
-  margin-top: 0.2rem;
-}
-.plant-card-meta {
-  display: flex; gap: 0.4rem; flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-.meta-chip {
-  font-size: 0.55rem; padding: 0.1rem 0.4rem;
-  border-radius: 10px; display: inline-block;
-}
-.chip-qty      { background: var(--gold-pale);  color: #6a4810; border: 1px solid #d0a850; }
-.chip-date     { background: var(--sky-pale);   color: #1a4060; border: 1px solid #80b0d8; }
-.chip-native   { background: var(--moss-pale);  color: #2a5820; border: 1px solid #90bb78; }
-.chip-host     { background: var(--plum-pale);  color: #4a2870; border: 1px solid #b090d8; }
-.chip-blooming { background: #fef0f8;           color: #8a2858; border: 1px solid #e8a8c8; }
-.chip-location {
-  font-size: 0.55rem; padding: 0.1rem 0.45rem;
-  border-radius: 10px; border: 1px solid var(--border);
-  color: var(--muted); background: var(--cream);
-}
-
-/* Card actions */
-.plant-card-actions {
-  display: flex; flex-direction: column; gap: 0.3rem;
-  opacity: 0; flex-shrink: 0;
-  transition: opacity 0.15s;
-}
-.plant-card:hover .plant-card-actions { opacity: 1; }
-.card-action {
-  width: 24px; height: 24px;
-  border: 1px solid var(--border);
-  background: var(--cream); color: var(--muted);
-  border-radius: 3px; font-size: 0.65rem;
-  cursor: pointer; display: flex;
-  align-items: center; justify-content: center;
-  transition: all 0.12s;
-}
-.card-action:hover        { border-color: #b0a890; color: var(--ink); }
-.card-action.del:hover    { border-color: var(--rose); color: var(--rose); background: var(--rose-pale); }
-
-/* Bloom indicator strip */
-.bloom-strip {
-  height: 3px; border-radius: 0 0 8px 8px;
-  position: absolute; bottom: 0; left: 0; right: 0;
-}
-
-/* Empty state */
-.empty-garden {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  min-height: 40vh; gap: 0.75rem;
-  opacity: 0.55;
-}
-.empty-icon { font-size: 3rem; }
-.empty-msg {
-  font-family: var(--serif); font-style: italic;
-  font-size: 1.2rem; color: #5a6838;
-}
-.empty-sub {
-  font-size: 0.65rem; letter-spacing: 0.14rem;
-  text-transform: uppercase; color: var(--muted);
-}
-
-/* Loading */
-.spinner {
-  width: 28px; height: 28px;
-  border: 2px solid var(--border);
-  border-top-color: var(--moss);
-  border-radius: 50%;
-  animation: spin 0.85s linear infinite;
-  margin: 4rem auto;
-  display: block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Edit drawer on card */
-.edit-drawer {
-  display: none;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--border);
-  margin-top: 0.6rem;
-  gap: 0.5rem;
-}
-.edit-drawer.open { display: flex; flex-direction: column; }
-.edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
-.edit-input, .edit-select {
-  background: var(--cream); border: 1px solid var(--border);
-  color: var(--ink); padding: 0.35rem 0.5rem;
-  font-family: var(--sans); font-size: 0.75rem;
-  outline: none; border-radius: 3px; width: 100%;
-  transition: border-color 0.12s;
-}
-.edit-input:focus, .edit-select:focus { border-color: var(--moss); }
-.edit-textarea {
-  background: var(--cream); border: 1px solid var(--border);
-  color: var(--ink); padding: 0.35rem 0.5rem;
-  font-family: var(--sans); font-size: 0.75rem;
-  outline: none; border-radius: 3px; width: 100%;
-  resize: vertical; min-height: 52px; line-height: 1.5;
-  transition: border-color 0.12s;
-}
-.edit-textarea:focus { border-color: var(--moss); }
-.edit-label {
-  font-size: 0.55rem; letter-spacing: 0.1rem;
-  text-transform: uppercase; color: var(--muted);
-  display: block; margin-bottom: 0.2rem;
-}
-.edit-save {
-  padding: 0.35rem 0.7rem;
-  background: var(--moss); color: white;
-  border: none; font-family: var(--sans);
-  font-size: 0.6rem; letter-spacing: 0.1rem;
-  text-transform: uppercase; cursor: pointer;
-  border-radius: 3px; align-self: flex-start;
-  transition: background 0.12s;
-}
-.edit-save:hover { background: #3d5a32; }
-
-/* Notes display on card */
-.plant-card-notes {
-  font-size: 0.7rem; color: #7a6858;
-  font-style: italic; margin-top: 0.35rem;
-  line-height: 1.4;
-}
-
-/* Custom plant section in picker */
-.custom-plant-toggle {
-  padding: 0.6rem 0.75rem;
-  font-size: 0.6rem; letter-spacing: 0.12rem;
-  text-transform: uppercase; color: var(--moss);
-  cursor: pointer; text-align: center;
-  border-top: 1px solid var(--border);
-  transition: background 0.12s; flex-shrink: 0;
-}
-.custom-plant-toggle:hover { background: var(--moss-pale); }
-#custom-form {
-  display: none;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--border);
-  background: var(--cream);
-  flex-shrink: 0;
-}
-#custom-form.show { display: block; }
-#custom-form .form-label { margin-top: 0.4rem; }
-#custom-form .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
-.custom-title {
-  font-family: var(--serif); font-size: 0.95rem;
-  color: var(--ink); margin-bottom: 0.6rem; font-style: italic;
-}
-
-/* Notes field in add form */
-#f-notes {
-  width: 100%;
-  background: white; border: 1px solid var(--border);
-  color: var(--ink); padding: 0.4rem 0.6rem;
-  font-family: var(--sans); font-size: 0.78rem;
-  outline: none; border-radius: 3px;
-  resize: vertical; min-height: 52px; line-height: 1.5;
-  transition: border-color 0.15s;
-}
-#f-notes:focus { border-color: var(--moss); }
-
-/* Card action edit button */
-.card-action.edit:hover { border-color: var(--moss); color: var(--moss); background: var(--moss-pale); }
-
-/* Location combo */
-#f-location-custom { margin-top: 0.35rem; }
-
-/* Sync timestamp */
-#sync-timestamp { font-size: 0.58rem; color: #b0a090; margin-top: 0.25rem; }
-
-/* Toast */
-#toast {
-  position: fixed; bottom: 2rem; right: 2rem;
-  background: var(--ink); color: var(--moss-light);
-  font-family: var(--sans); font-size: 0.68rem;
-  letter-spacing: 0.1rem; text-transform: uppercase;
-  padding: 0.65rem 1.2rem; border-radius: 4px;
-  opacity: 0; transform: translateY(8px);
-  transition: all 0.25s; pointer-events: none;
-  z-index: 500;
-}
-#toast.show { opacity: 1; transform: translateY(0); }
-
-@media(max-width: 720px) {
-  .page { grid-template-columns: 1fr; }
-  #add-panel { position: static; height: auto; }
-  #garden-panel { padding: 1.25rem; }
-}
+/* TOAST */
+#toast{position:fixed;bottom:2rem;right:2rem;background:var(--ink);color:var(--moss-lt);font-family:var(--sans);font-size:0.68rem;letter-spacing:0.1rem;text-transform:uppercase;padding:0.65rem 1.2rem;border-radius:4px;opacity:0;transform:translateY(8px);transition:all 0.25s;pointer-events:none;z-index:600;}
+#toast.show{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
@@ -588,301 +197,783 @@ nav {
     <input id="a-pass"  class="auth-input" type="password" placeholder="Password" autocomplete="current-password"/>
     <div id="auth-err"></div>
     <button class="auth-btn" id="btn-login">Sign In</button>
-    <button class="auth-btn ghost" id="btn-guest">Continue without account</button>
+    <button class="auth-btn ghost" id="btn-guest">Browse without account</button>
   </div>
 </div>
 
 <!-- Nav -->
 <nav>
   <a href="index.html" class="nav-logo">GardenHub</a>
-  <a href="index.html"    class="nav-link">Dashboard</a>
-  <a href="garden.html"   class="nav-link active">My Garden</a>
-  <a href="map.html"      class="nav-link">Map</a>
-  <a href="plan.html"     class="nav-link">Plan</a>
-  <a href="weather.html"  class="nav-link">Weather</a>
+  <a href="index.html"      class="nav-link">Home</a>
+  <a href="garden.html"     class="nav-link">My Garden</a>
+  <a href="map.html"        class="nav-link">Map</a>
+  <a href="plan.html"       class="nav-link">Plan</a>
+  <a href="plans.html"      class="nav-link active">Garden Plans</a>
+  <a href="weather.html"    class="nav-link">Weather</a>
   <a href="companions.html" class="nav-link">Companions</a>
+  <button class="nav-logout" onclick="handleLogout()">Sign out</button>
 </nav>
 
-<!-- Page -->
-<div class="page">
-
-  <!-- Left: Add Plant -->
-  <div id="add-panel">
-    <div class="panel-head">
-      <div class="panel-title">Add a Plant</div>
-      <div class="search-wrap">
-        <span class="search-icon">⌕</span>
-        <input class="search-input" id="species-search" type="text"
-          placeholder="Search species…" oninput="filterSpecies(this.value)" autocomplete="off"/>
-      </div>
-    </div>
-
-    <div id="species-grid">
-      <div class="spinner"></div>
-    </div>
-
-    <div class="custom-plant-toggle" onclick="toggleCustomForm()">＋ Add a custom plant not in the list</div>
-    <div id="custom-form">
-      <div class="custom-title">Custom Plant</div>
-      <div class="form-row">
-        <label class="form-label">Name</label>
-        <input class="form-input" id="cf-name" type="text" placeholder="e.g. Grandma's Peonies"/>
-      </div>
-      <div class="form-row-2">
-        <div>
-          <label class="form-label">Emoji</label>
-          <input class="form-input" id="cf-emoji" type="text" placeholder="🌸" maxlength="2"/>
-        </div>
-        <div>
-          <label class="form-label">Family</label>
-          <input class="form-input" id="cf-family" type="text" placeholder="e.g. Rosaceae"/>
-        </div>
-      </div>
-      <button class="add-btn" style="margin-top:0.5rem" onclick="addCustomPlant()">Use this plant →</button>
-    </div>
-
-    <!-- Add form — shown after selecting a species -->
-    <div id="add-form">
-      <div class="selected-preview">
-        <span class="selected-emoji" id="sel-emoji">🌱</span>
-        <div>
-          <div class="selected-name" id="sel-name">—</div>
-          <div class="selected-fam"  id="sel-fam">—</div>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label class="form-label">Location / Bed</label>
-        <select class="form-select" id="f-location-select" onchange="onLocationSelect(this.value)">
-          <option value="">Select location…</option>
-          <option value="__custom__">＋ Type a custom location…</option>
-        </select>
-        <input class="form-input" id="f-location-custom" type="text"
-          placeholder="e.g. South Fence, Mom's Corner…"
-          style="display:none;margin-top:0.35rem"
-          oninput="syncLocationVal(this.value)"/>
-        <input type="hidden" id="f-location" value=""/>
-      </div>
-
-      <div class="form-row-2">
-        <div class="form-row" style="margin-bottom:0">
-          <label class="form-label">Quantity</label>
-          <input class="form-input" id="f-qty" type="number" min="1" value="1" placeholder="1"/>
-        </div>
-        <div class="form-row" style="margin-bottom:0">
-          <label class="form-label">Date Planted</label>
-          <input class="form-input" id="f-date" type="date"/>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label class="form-label">Notes (optional)</label>
-        <textarea class="form-input" id="f-notes" placeholder="E.g. from farmer's market, struggling in shade…" rows="2"></textarea>
-      </div>
-      <button class="add-btn" id="btn-add" onclick="addPlant()">+ Add to Garden</button>
-      <span class="cancel-link" onclick="cancelAdd()">Cancel</span>
-    </div>
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-eyebrow">GardenHub · West Simsbury CT · Zone 6b</div>
+  <h1 class="hero-title">Garden Plan Library</h1>
+  <p class="hero-sub">Curated bed designs you can grow. Each plan shows how your existing plants fit — and what to add to complete the picture.</p>
+  <div class="match-banner" id="match-banner">
+    <div class="match-pill">🌿 <span id="match-summary">Comparing against your garden…</span></div>
   </div>
+</header>
 
-  <!-- Right: Garden -->
-  <div id="garden-panel">
-
-    <div class="garden-header">
-      <div>
-        <div class="garden-title">My <em>Garden</em></div>
-        <div class="garden-subtitle" id="garden-subtitle">West Simsbury, CT · Zone 6b</div>
-        <div id="sync-timestamp" style="font-size:0.58rem;color:#c0b0a0;margin-top:0.3rem;letter-spacing:0.04rem;"></div>
-      </div>
-      <div class="garden-stats">
-        <div class="g-stat">
-          <div class="g-stat-num" id="stat-total">—</div>
-          <div class="g-stat-label">Plants</div>
-        </div>
-        <div class="g-stat">
-          <div class="g-stat-num" id="stat-blooming">—</div>
-          <div class="g-stat-label">Blooming</div>
-        </div>
-        <div class="g-stat">
-          <div class="g-stat-num" id="stat-native">—</div>
-          <div class="g-stat-label">Native</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filter bar — populated dynamically from actual locations -->
-    <div class="filter-bar" id="filter-bar">
-      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
-      <button class="filter-btn" data-filter="blooming"   onclick="setFilter('blooming', this)">🌸 Blooming</button>
-      <button class="filter-btn" data-filter="native"     onclick="setFilter('native', this)">Native</button>
-      <!-- location buttons injected by renderFilterBar() -->
-    </div>
-
-    <!-- Plant list -->
-    <div id="plant-list-wrap">
-      <div class="spinner"></div>
-    </div>
-
+<!-- Filter bar -->
+<div class="filter-bar">
+  <button class="filter-tab active" onclick="setCategory('all',this)">All Plans</button>
+  <button class="filter-tab" onclick="setCategory('pollinator',this)">Pollinator</button>
+  <button class="filter-tab" onclick="setCategory('cutting',this)">Cutting Garden</button>
+  <button class="filter-tab" onclick="setCategory('herb',this)">Herbs</button>
+  <button class="filter-tab" onclick="setCategory('cottage',this)">Cottage</button>
+  <button class="filter-tab" onclick="setCategory('deer',this)">Deer-Resistant</button>
+  <button class="filter-tab" onclick="setCategory('native',this)">Native</button>
+  <button class="filter-tab" onclick="setCategory('shade',this)">Shade</button>
+  <button class="filter-tab" onclick="setCategory('rain',this)">Rain Garden</button>
+  <div class="filter-right">
+    <button class="match-toggle" id="match-toggle" onclick="toggleMatchSort()">Sort by Match</button>
   </div>
 </div>
 
+<!-- Plans grid -->
+<div class="container">
+  <div class="plans-grid" id="plans-grid"><div class="spinner"></div></div>
+</div>
+
+<!-- Plan detail modal -->
+<div id="plan-modal">
+  <div class="modal-box" id="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Print sheet (hidden, shown only on print) -->
+<div id="print-sheet"></div>
 <div id="toast"></div>
 
 <script>
-// ── Config ─────────────────────────────────────
+// ── Supabase ────────────────────────────────────
 const SUPABASE_URL = 'https://zrohwzqaksqruywiedxt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2h3enFha3NxcnV5d2llZHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzUwOTYsImV4cCI6MjA4NzQ1MTA5Nn0.cS8_C2WCdqH-e_ysxooH2wbarlxmi-S6CDZkevg_DPM';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let userId      = null;
-let myPlants    = [];   // plants in my garden (from garden_plants table or localStorage)
-let library     = [];   // full species library
-let _selSpecies = null; // currently selected species in the picker
-let _filter     = 'all';
+let userId    = null;
+let myPlants  = [];
+let _category = 'all';
+let _matchSort = false;
+let _activePlan = null;
 
-// Storage key for guest mode
-const STORE_KEY = 'ghub_my_garden';
-
-// ── Bloom data ─────────────────────────────────
-const BLOOM_WIN = {
-  'borage':[5,9],'nasturtium':[6,10],'zinnia':[6,10],'marigold':[6,10],
-  'sunflower':[7,9],'cosmos':[7,10],'lavender':[6,8],'echinacea':[7,9],
-  'coneflower':[7,9],'black-eyed':[7,9],'bee balm':[7,8],'catmint':[5,9],
-  'salvia':[6,9],'dill':[7,8],'fennel':[7,8],'chives':[5,6],'allium':[5,7],
-  'rose':[5,9],'strawberry':[4,6],'raspberry':[5,7],'blueberry':[4,6],
-  'thyme':[5,7],'oregano':[7,8],'basil':[7,9],'tomato':[6,9],
-  'pepper':[6,9],'bean':[6,8],'squash':[6,9],'cucumber':[6,9],
-  'foxglove':[6,7],'forget-me-not':[4,5],'bachelor':[5,7],
-  'verbena':[5,9],'milkweed':[6,8],'calendula':[5,10],'poppy':[5,6],
-  'phlox':[6,8],'sedum':[8,10],'aster':[8,10],'goldenrod':[8,10],
-};
-const BLOOM_FAM = {
-  Asteraceae:[6,10],Lamiaceae:[5,9],Rosaceae:[5,9],Boraginaceae:[5,9],
-  Tropaeolaceae:[6,10],Scrophulariaceae:[6,9],Violaceae:[4,6],
-  Ranunculaceae:[4,6],Papaveraceae:[5,7],Solanaceae:[6,9],
-  Cucurbitaceae:[6,9],Fabaceae:[6,8],Apocynaceae:[6,8],
-};
-const BLOOM_COLORS = {
-  'sunflower':'#f5c518','lavender':'#9878c8','basil':'#6aaa38',
-  'rose':'#e06070','milkweed':'#d4708a','squash':'#f0a830',
-  'zinnia':'#f06080','marigold':'#f0a030','cosmos':'#d878c8',
-  'salvia':'#9878c8','catmint':'#a088d8','tomato':'#e05040',
-  'echinacea':'#d080a8','foxglove':'#b070d0','calendula':'#f0b030',
-  'bachelor':'#6090e0','forget-me-not':'#78a8e8','verbena':'#b090d8',
-  'poppy':'#e87878','aster':'#c878d0','goldenrod':'#e8c030',
-};
-
-const CUR_MONTH = new Date().getMonth() + 1;
-
-function bloomWin(name, family) {
-  const n = (name||'').toLowerCase();
-  for (const [k,w] of Object.entries(BLOOM_WIN)) { if (n.includes(k)) return w; }
-  const f = family||'';
-  for (const [k,w] of Object.entries(BLOOM_FAM)) { if (f.includes(k)) return w; }
-  return null;
-}
-function isBlooming(name, family) {
-  const w = bloomWin(name, family);
-  return w && CUR_MONTH >= w[0] && CUR_MONTH <= w[1];
-}
-function bloomColor(name) {
-  const n = (name||'').toLowerCase();
-  for (const [k,c] of Object.entries(BLOOM_COLORS)) { if (n.includes(k)) return c; }
-  let h = 0;
-  for (let i = 0; i < n.length; i++) h = (h*31 + n.charCodeAt(i)) & 0xfffffff;
-  return `hsl(${(h%200)+100},50%,60%)`;
-}
-function monthName(m) {
-  return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]||'';
-}
-
-// ── Utility ────────────────────────────────────
-function uid() { return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
-
-// ── Location helpers ───────────────────────────
-const PRESET_LOCATIONS = [
-  'Patio Bed','Fence Border','Front Garden','Back Garden',
-  'Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border'
+// ── PLAN DATABASE ───────────────────────────────
+// BHG-style plans. Image URLs point to high-quality garden photography.
+// Grid uses 0=empty, letter=plant, R=rock, W=water
+const PLANS = [
+  {
+    id: 'butterfly',
+    title: 'Butterfly Garden',
+    tagline: 'A lush island bed of flowers that brings beautiful butterflies to your garden.',
+    categories: ['pollinator','native'],
+    size: '12 × 8 ft',  sun: 'Full Sun',  zone: '3–9',
+    // Using the BHG image from the PDF upload rendered as base64 would be ideal;
+    // instead we reference a representative public domain garden photo style
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+    tags: ['Pollinator', 'Island Bed', 'Perennial'],
+    care: [
+      { icon:'💧', label:'Water', text:'1 inch per week; drought-tolerant once established' },
+      { icon:'☀️', label:'Sun',   text:'Full sun — at least 6 hours direct light daily' },
+      { icon:'✂️', label:'Maintenance', text:'Deadhead spent blooms to extend flowering season' },
+      { icon:'🌱', label:'Soil',  text:'Well-drained average soil; avoid over-fertilizing' },
+    ],
+    plants: [
+      { letter:'A', qty:2,  common:'Butterfly Weed',       scientific:'Asclepias tuberosa',                       zones:'4–9', role:'Host plant for Monarch caterpillars' },
+      { letter:'B', qty:3,  common:'Purple Dome Aster',    scientific:"Symphyotrichum novae-angliae 'Purple Dome'", zones:'4–8', role:'Late-season nectar source' },
+      { letter:'C', qty:1,  common:'Nanho Purple Butterfly Bush', scientific:"Buddleia davidii 'Nanho Purple'",    zones:'5–9', role:'Focal shrub, abundant nectar' },
+      { letter:'D', qty:3,  common:'Purple Coneflower',    scientific:"Echinacea purpurea 'Bright Star'",          zones:'3–9', role:'Native nectar plant' },
+      { letter:'E', qty:4,  common:'Spike Gayfeather',     scientific:"Liatris spicata 'Floristan Violet'",        zones:'3–9', role:'Vertical accent, butterfly magnet' },
+      { letter:'F', qty:3,  common:'Petite Delight Bee Balm', scientific:"Monarda didyma 'Petite Delight'",        zones:'3–9', role:'Hummingbird & butterfly nectar' },
+      { letter:'G', qty:6,  common:'Black-eyed Susan',     scientific:"Rudbeckia fulgida 'Goldsturm'",             zones:'3–8', role:'Long-blooming native daisy' },
+      { letter:'H', qty:2,  common:'Matrona Stonecrop',    scientific:"Sedum 'Matrona'",                           zones:'3–9', role:'Late bloom, edging plant' },
+      { letter:'I', qty:2,  common:'Golden Fleece Goldenrod', scientific:"Solidago sphacelata 'Golden Fleece'",    zones:'3–10',role:'Fall nectar source' },
+      { letter:'J', qty:2,  common:'Elijah Blue Fescue',   scientific:"Festuca glauca 'Elijah Blue'",              zones:'4–8', role:'Ornamental grass, front edging' },
+      { letter:'K', qty:12, common:'Sweet Alyssum',        scientific:'Lobularia maritima',                        zones:'All', role:'Fragrant annual edging' },
+      { letter:'L', qty:6,  common:'Parsley',              scientific:'Petroselinum crispum',                      zones:'All', role:'Host plant for Black Swallowtail' },
+      { letter:'M', qty:24, common:'Dwarf Zinnia',         scientific:'Zinnia elegans (dwarf)',                    zones:'All', role:'Annual color, butterfly nectar' },
+    ],
+    // 12×8 grid (columns × rows)
+    grid: [
+      ['','','','','','','','','','','',''],
+      ['','K','K','F','F','','G','G','','','K','K'],
+      ['H','','D','D','E','E','','G','A','','C','G'],
+      ['H','I','','D','E','E','A','','','','','G'],
+      ['J','I','R','','M','M','','J','B','B','',''],
+      ['','J','','L','','M','M','B','','R','',''],
+      ['','','K','K','','','','','K','K','',''],
+      ['','','','','','','','','','','',''],
+    ],
+    // Swap suggestions: when my plant can stand in for a plan plant
+    swaps: [
+      { from:'Spike Gayfeather',   myAlts:['Salvia','Catmint','Liatris'],  reason:'similar vertical purple spike' },
+      { from:'Dwarf Zinnia',       myAlts:['Marigold','Cosmos'],           reason:'annual filler with similar color range' },
+      { from:'Butterfly Bush',     myAlts:['Bee Balm','Lavender'],         reason:'shrubby nectar source' },
+      { from:'Sweet Alyssum',      myAlts:['Lobularia','Thyme'],           reason:'low fragrant edging' },
+    ],
+  },
+  {
+    id: 'cutting',
+    title: 'Cutting Flower Garden',
+    tagline: 'A generous mix of annuals and perennials for long-lasting bouquets from June through frost.',
+    categories: ['cutting'],
+    size: '10 × 6 ft', sun: 'Full Sun', zone: '3–9',
+    image: 'https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=800&q=80',
+    tags: ['Cut Flowers', 'Annual + Perennial', 'Summer'],
+    care: [
+      { icon:'💧', label:'Water', text:'Regular watering; keep soil consistently moist' },
+      { icon:'✂️', label:'Harvest', text:'Cut stems in the morning before heat sets in' },
+      { icon:'🌱', label:'Succession sow', text:'Sow zinnias and cosmos every 3 weeks for continuous bloom' },
+      { icon:'🧪', label:'Fertilize', text:'Monthly balanced fertilizer encourages heavy bloom' },
+    ],
+    plants: [
+      { letter:'A', qty:3,  common:'Peony',            scientific:'Paeonia lactiflora',           zones:'3–8', role:'Anchor perennial, fragrant' },
+      { letter:'B', qty:5,  common:'Lisianthus',       scientific:'Eustoma grandiflorum',         zones:'All', role:'Long-lasting annual cut flower' },
+      { letter:'C', qty:6,  common:'Zinnia',           scientific:'Zinnia elegans (tall)',        zones:'All', role:'Prolific summer bloomer' },
+      { letter:'D', qty:4,  common:'Cosmos',           scientific:'Cosmos bipinnatus',            zones:'All', role:'Airy filler, self-sows' },
+      { letter:'E', qty:3,  common:'Snapdragon',       scientific:'Antirrhinum majus',            zones:'All', role:'Cool-season vertical accent' },
+      { letter:'F', qty:4,  common:'Larkspur',         scientific:'Consolida ajacis',             zones:'All', role:'Blue/purple vertical filler' },
+      { letter:'G', qty:5,  common:'Sunflower (branching)', scientific:'Helianthus annuus',       zones:'All', role:'Bold statement, multiple stems' },
+      { letter:'H', qty:6,  common:'Marigold (tall)',  scientific:'Tagetes erecta',               zones:'All', role:'Pest deterrent and warm filler' },
+      { letter:'I', qty:3,  common:'Dahlia',           scientific:'Dahlia (mixed)',               zones:'8–11',role:'Showstopper tuber, cut every 2 days' },
+      { letter:'J', qty:4,  common:'Statice',          scientific:'Limonium sinuatum',            zones:'All', role:'Everlasting dried flower' },
+      { letter:'K', qty:3,  common:'Rudbeckia',        scientific:'Rudbeckia hirta',              zones:'3–7', role:'Native, long-blooming perennial' },
+      { letter:'L', qty:4,  common:'Strawflower',      scientific:'Helichrysum bracteatum',       zones:'All', role:'Everlasting annual' },
+    ],
+    grid: [
+      ['','E','E','F','F','','G','G','G',''],
+      ['A','','E','F','','C','C','G','',''],
+      ['A','B','B','','C','C','','','I',''],
+      ['','B','','D','D','','K','K','I',''],
+      ['H','H','D','D','','L','L','','',''],
+      ['H','H','','J','J','J','','','',''],
+    ],
+    swaps: [
+      { from:'Lisianthus',   myAlts:['Cosmos','Snapdragon'],  reason:'delicate-textured cut flower' },
+      { from:'Dahlia',       myAlts:['Zinnia','Rudbeckia'],   reason:'bold round-headed cut flower' },
+      { from:'Larkspur',     myAlts:['Salvia','Delphiniums'], reason:'vertical blue/purple spike' },
+    ],
+  },
+  {
+    id: 'herb',
+    title: 'Herb & Kitchen Garden',
+    tagline: 'A productive and beautiful mix of culinary herbs arranged for easy harvest.',
+    categories: ['herb'],
+    size: '8 × 6 ft', sun: 'Full Sun', zone: '4–9',
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80',
+    tags: ['Edible', 'Culinary', 'Fragrant'],
+    care: [
+      { icon:'💧', label:'Water', text:'Allow soil to dry slightly between waterings; most herbs prefer lean soil' },
+      { icon:'✂️', label:'Harvest', text:'Cut herbs regularly to prevent bolting and encourage bushy growth' },
+      { icon:'☀️', label:'Sun',   text:'Full sun minimum 6 hours; Mediterranean herbs need heat' },
+      { icon:'🌸', label:'Flowers', text:'Allow some herbs to flower for beneficial insects' },
+    ],
+    plants: [
+      { letter:'A', qty:1,  common:'Rosemary',     scientific:'Salvia rosmarinus',        zones:'6–11',role:'Anchor shrub, evergreen' },
+      { letter:'B', qty:3,  common:'Basil',        scientific:'Ocimum basilicum',         zones:'All', role:'Summer annual, pesto essential' },
+      { letter:'C', qty:2,  common:'Lavender',     scientific:'Lavandula angustifolia',   zones:'5–8', role:'Fragrant border, pollinator' },
+      { letter:'D', qty:3,  common:'Parsley',      scientific:'Petroselinum crispum',     zones:'All', role:'Biennial, host for swallowtails' },
+      { letter:'E', qty:2,  common:'Sage',         scientific:'Salvia officinalis',       zones:'4–8', role:'Perennial culinary herb' },
+      { letter:'F', qty:2,  common:'Thyme',        scientific:'Thymus vulgaris',          zones:'4–9', role:'Low creeping edging herb' },
+      { letter:'G', qty:1,  common:'Chives',       scientific:'Allium schoenoprasum',     zones:'3–9', role:'Perennial onion family, pollinator' },
+      { letter:'H', qty:3,  common:'Dill',         scientific:'Anethum graveolens',       zones:'All', role:'Annual, host for swallowtails' },
+      { letter:'I', qty:2,  common:'Oregano',      scientific:'Origanum vulgare',         zones:'4–9', role:'Spreading perennial' },
+      { letter:'J', qty:1,  common:'Mint (contained)', scientific:'Mentha spicata',       zones:'3–8', role:'Contained in pot to prevent spread' },
+      { letter:'K', qty:3,  common:'Calendula',    scientific:'Calendula officinalis',    zones:'All', role:'Edible flower, medicinal' },
+      { letter:'L', qty:2,  common:'Nasturtium',   scientific:'Tropaeolum majus',         zones:'All', role:'Edible flower, pest trap crop' },
+    ],
+    grid: [
+      ['A','A','','C','C','H','H','H'],
+      ['A','','E','E','','H','',''],
+      ['','G','','','B','B','B',''],
+      ['F','F','I','I','B','','K','K'],
+      ['F','D','D','','','L','L',''],
+      ['','D','','J','','','',''],
+    ],
+    swaps: [
+      { from:'Rosemary',  myAlts:['Sage','Thyme'],    reason:'woody Mediterranean shrub herb' },
+      { from:'Lavender',  myAlts:['Catmint','Hyssop'],reason:'fragrant flowering border herb' },
+      { from:'Dill',      myAlts:['Fennel','Parsley'], reason:'tall ferny host plant' },
+    ],
+  },
+  {
+    id: 'cottage',
+    title: 'Cottage Garden Border',
+    tagline: 'A romantic, seemingly untamed border overflowing with old-fashioned favorites.',
+    categories: ['cottage'],
+    size: '14 × 5 ft', sun: 'Full Sun to Part Shade', zone: '4–8',
+    image: 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=800&q=80',
+    tags: ['Cottage', 'Romantic', 'Mixed Border'],
+    care: [
+      { icon:'🌸', label:'Bloom', text:'Stagger planting heights — tall at back, short at front' },
+      { icon:'✂️', label:'Deadhead', text:'Remove spent flowers to encourage repeat bloom' },
+      { icon:'🌱', label:'Self-sow', text:'Allow foxglove and larkspur to self-sow for naturalized look' },
+      { icon:'💧', label:'Water', text:'Moderate water; mulch well to retain moisture' },
+    ],
+    plants: [
+      { letter:'A', qty:3,  common:'Delphinium',      scientific:'Delphinium elatum',           zones:'3–7', role:'Tall blue spire, back of border' },
+      { letter:'B', qty:2,  common:'Hollyhock',        scientific:'Alcea rosea',                  zones:'3–9', role:'Tall architectural biennial' },
+      { letter:'C', qty:4,  common:'Foxglove',         scientific:'Digitalis purpurea',           zones:'4–8', role:'Biennial cottage classic' },
+      { letter:'D', qty:3,  common:'Rose (shrub)',     scientific:'Rosa (any shrub variety)',      zones:'4–9', role:'Focal flowering shrub' },
+      { letter:'E', qty:5,  common:'Catmint',          scientific:"Nepeta 'Walker's Low'",         zones:'3–8', role:'Front edging, long bloom' },
+      { letter:'F', qty:4,  common:'Peony',            scientific:'Paeonia lactiflora',            zones:'3–8', role:'Fragrant perennial anchor' },
+      { letter:'G', qty:6,  common:'Cosmos',           scientific:'Cosmos bipinnatus',             zones:'All', role:'Airy annual filler' },
+      { letter:'H', qty:4,  common:'Larkspur',         scientific:'Consolida ajacis',              zones:'All', role:'Self-sowing annual spike' },
+      { letter:'I', qty:5,  common:'Salvia',           scientific:'Salvia nemorosa',               zones:'4–8', role:'Compact perennial spike' },
+      { letter:'J', qty:3,  common:'Verbena',          scientific:'Verbena bonariensis',           zones:'7–11',role:'Tall airy annual, self-sows' },
+      { letter:'K', qty:6,  common:'Viola',            scientific:'Viola cornuta',                 zones:'5–8', role:'Front edging, cool season' },
+      { letter:'L', qty:4,  common:'Sweet William',    scientific:'Dianthus barbatus',             zones:'3–9', role:'Fragrant biennial' },
+    ],
+    grid: [
+      ['B','A','A','H','H','A','C','C','C','J','J','B','',''],
+      ['','D','D','F','','','G','G','','','J','D','',''],
+      ['F','','','','I','I','','','G','','','','F',''],
+      ['','L','L','I','I','','','','','','','L','',''],
+      ['E','E','K','K','E','E','','K','K','E','E','E','E',''],
+    ],
+    swaps: [
+      { from:'Delphinium',  myAlts:['Larkspur','Salvia'],     reason:'tall blue vertical spike' },
+      { from:'Hollyhock',   myAlts:['Foxglove','Verbena'],    reason:'tall biennial back-of-border' },
+      { from:'Verbena bonariensis', myAlts:['Cosmos','Dill'], reason:'tall airy filler' },
+    ],
+  },
+  {
+    id: 'deer',
+    title: 'Deer-Resistant Border',
+    tagline: 'Plants deer reliably avoid, built around strong scent, texture, and toxicity.',
+    categories: ['deer'],
+    size: '12 × 4 ft', sun: 'Full Sun', zone: '4–8',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+    tags: ['Deer-Resistant', 'Low Maintenance', 'Perennial'],
+    care: [
+      { icon:'🦌', label:'Deer note', text:'No plant is 100% deer-proof; hungry deer will eat anything. These are reliably avoided in normal conditions.' },
+      { icon:'💧', label:'Water', text:'Drought-tolerant once established; avoid overwatering' },
+      { icon:'✂️', label:'Cut back', text:'Cut back in early spring before new growth emerges' },
+      { icon:'🌿', label:'Spread', text:'Allow catmint and salvia to spread naturally for ground cover effect' },
+    ],
+    plants: [
+      { letter:'A', qty:3,  common:'Russian Sage',   scientific:'Perovskia atriplicifolia',     zones:'4–9', role:'Tall silver-blue, aromatic' },
+      { letter:'B', qty:5,  common:'Catmint',        scientific:"Nepeta 'Walker's Low'",         zones:'3–8', role:'Reliable deer-resistant edging' },
+      { letter:'C', qty:4,  common:'Lavender',       scientific:'Lavandula angustifolia',        zones:'5–8', role:'Fragrant, avoided by deer' },
+      { letter:'D', qty:3,  common:'Salvia (perennial)', scientific:'Salvia nemorosa',           zones:'4–8', role:'Long-blooming purple spike' },
+      { letter:'E', qty:2,  common:'Yarrow',         scientific:'Achillea millefolium',          zones:'3–9', role:'Flat-top native wildflower' },
+      { letter:'F', qty:4,  common:'Lamb\'s Ear',   scientific:'Stachys byzantina',             zones:'4–8', role:'Silver foliage, textural edging' },
+      { letter:'G', qty:3,  common:'Coneflower',     scientific:'Echinacea purpurea',            zones:'3–9', role:'Native, marginally deer-resistant' },
+      { letter:'H', qty:2,  common:'Ornamental Allium', scientific:"Allium 'Purple Sensation'", zones:'4–8', role:'Spring bulb, deer-resistant' },
+      { letter:'I', qty:3,  common:'Baptisia',       scientific:'Baptisia australis',            zones:'3–9', role:'Blue false indigo, toxic to deer' },
+      { letter:'J', qty:4,  common:'Agastache',      scientific:"Agastache 'Blue Fortune'",      zones:'5–9', role:'Anise-scented, hummingbird plant' },
+    ],
+    grid: [
+      ['I','I','A','A','H','A','','J','J','J','',''],
+      ['','I','','D','D','G','G','','J','','',''],
+      ['E','E','D','D','','G','','','','C','C',''],
+      ['F','F','B','B','C','C','C','F','F','B','B',''],
+    ],
+    swaps: [
+      { from:'Russian Sage', myAlts:['Lavender','Catmint','Agastache'], reason:'aromatic silver-blue deer deterrent' },
+      { from:'Baptisia',     myAlts:['Salvia','Coneflower'],            reason:'sturdy native avoided by deer' },
+    ],
+  },
+  {
+    id: 'native',
+    title: 'Native Meadow Bed',
+    tagline: 'A low-maintenance wildflower planting using only plants native to the Northeast US.',
+    categories: ['native','pollinator'],
+    size: '16 × 8 ft', sun: 'Full Sun', zone: '3–8',
+    image: 'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=800&q=80',
+    tags: ['Native', 'Meadow', 'Wildlife Habitat'],
+    care: [
+      { icon:'🌿', label:'Establishment', text:'First year: water weekly. After that: rainfall only.' },
+      { icon:'✂️', label:'Cut back', text:'Cut to 6 inches in late winter. Leave stems for beneficial insects over winter.' },
+      { icon:'🌱', label:'Weeding', text:'Vigilant weeding in year 1–2 until natives fill in' },
+      { icon:'🦋', label:'Wildlife', text:'Leave seed heads through winter for birds and overwintering insects' },
+    ],
+    plants: [
+      { letter:'A', qty:5,  common:'Purple Coneflower',  scientific:'Echinacea purpurea',         zones:'3–9', role:'Iconic native pollinator plant' },
+      { letter:'B', qty:4,  common:'Black-eyed Susan',   scientific:'Rudbeckia hirta',             zones:'3–7', role:'Cheerful native daisy' },
+      { letter:'C', qty:3,  common:'Bee Balm',           scientific:'Monarda fistulosa',           zones:'3–9', role:'Native, hummingbird magnet' },
+      { letter:'D', qty:5,  common:'Goldenrod',          scientific:'Solidago canadensis',         zones:'3–8', role:'Critical fall nectar source' },
+      { letter:'E', qty:3,  common:'Milkweed',           scientific:'Asclepias syriaca',           zones:'3–9', role:'Monarch host plant' },
+      { letter:'F', qty:4,  common:'Wild Bergamot',      scientific:'Monarda fistulosa',           zones:'3–9', role:'Lavender native bee balm' },
+      { letter:'G', qty:3,  common:'Joe Pye Weed',       scientific:'Eutrochium purpureum',        zones:'4–9', role:'Tall late-season nectar' },
+      { letter:'H', qty:6,  common:'Little Bluestem',    scientific:'Schizachyrium scoparium',     zones:'3–9', role:'Native ornamental grass' },
+      { letter:'I', qty:3,  common:'Wild Columbine',     scientific:'Aquilegia canadensis',        zones:'3–8', role:'Spring nectar for hummingbirds' },
+      { letter:'J', qty:4,  common:'Liatris',            scientific:'Liatris spicata',             zones:'3–9', role:'Purple spike, monarch nectar' },
+      { letter:'K', qty:3,  common:'Wild Ginger',        scientific:'Asarum canadense',            zones:'3–7', role:'Groundcover, pipevine swallowtail' },
+      { letter:'L', qty:4,  common:'Aster',              scientific:'Symphyotrichum ericoides',    zones:'3–8', role:'Critical fall butterfly nectar' },
+    ],
+    grid: [
+      ['','G','G','E','E','J','J','A','A','D','D','','','','',''],
+      ['I','','G','','F','F','','A','','D','','','L','L','',''],
+      ['I','C','C','','','B','B','','','','D','H','','L','',''],
+      ['','C','','K','','B','','A','A','','H','H','','','D',''],
+      ['H','','K','K','J','','','','B','','H','','L','L','',''],
+      ['H','H','','','','F','F','','','','','H','','','',''],
+      ['','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','',''],
+    ],
+    swaps: [
+      { from:'Joe Pye Weed',  myAlts:['Goldenrod','Aster'],       reason:'tall late-season native' },
+      { from:'Wild Ginger',   myAlts:['Pachysandra','Ajuga'],     reason:'native groundcover layer' },
+      { from:'Little Bluestem', myAlts:['Fescue','Panicum'],      reason:'ornamental native grass' },
+    ],
+  },
+  {
+    id: 'shade',
+    title: 'Shade Border',
+    tagline: 'A cool, layered planting for the north side of a building or under a tree canopy.',
+    categories: ['shade'],
+    size: '10 × 5 ft', sun: 'Part to Full Shade', zone: '3–8',
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80',
+    tags: ['Shade', 'Woodland', 'Foliage'],
+    care: [
+      { icon:'💧', label:'Water', text:'Keep consistently moist; shade plants rarely tolerate drought' },
+      { icon:'🍂', label:'Mulch', text:'2–3 inches of leaf mulch mimics woodland floor conditions' },
+      { icon:'🌱', label:'Division', text:'Divide hostas and astilbe every 3–4 years to maintain vigor' },
+      { icon:'☀️', label:'Light', text:'Morning sun with afternoon shade is ideal for most of these plants' },
+    ],
+    plants: [
+      { letter:'A', qty:3,  common:'Hosta (large)',    scientific:"Hosta 'Sum and Substance'",   zones:'3–8', role:'Bold anchor foliage' },
+      { letter:'B', qty:4,  common:'Astilbe',          scientific:'Astilbe × arendsii',           zones:'3–8', role:'Feathery plume, midsummer' },
+      { letter:'C', qty:5,  common:'Coral Bells',      scientific:'Heuchera villosa',             zones:'4–8', role:'Colorful foliage, hummingbird' },
+      { letter:'D', qty:3,  common:'Bleeding Heart',   scientific:'Dicentra spectabilis',         zones:'3–9', role:'Spring classic, goes dormant' },
+      { letter:'E', qty:4,  common:'Fern (wood)',      scientific:'Dryopteris marginalis',        zones:'3–8', role:'Structural evergreen fern' },
+      { letter:'F', qty:6,  common:'Hosta (small)',    scientific:"Hosta 'Blue Mouse Ears'",      zones:'3–8', role:'Front edging hosta' },
+      { letter:'G', qty:3,  common:'Solomon\'s Seal',  scientific:'Polygonatum odoratum',         zones:'3–8', role:'Arching woodland native' },
+      { letter:'H', qty:5,  common:'Lungwort',         scientific:'Pulmonaria saccharata',        zones:'3–8', role:'Spring bloom, spotted foliage' },
+      { letter:'I', qty:3,  common:'Ligularia',        scientific:"Ligularia 'The Rocket'",       zones:'3–8', role:'Tall bold accent' },
+      { letter:'J', qty:4,  common:'Wild Ginger',      scientific:'Asarum canadense',             zones:'3–7', role:'Native groundcover' },
+    ],
+    grid: [
+      ['E','I','I','A','A','G','G','B','B',''],
+      ['E','','D','A','','','B','','',''],
+      ['G','H','H','','','','C','C','E',''],
+      ['J','J','','C','C','','B','','E',''],
+      ['F','F','F','H','','F','F','F','J','J'],
+    ],
+    swaps: [
+      { from:'Ligularia',     myAlts:['Hosta','Astilbe'],       reason:'bold tall shade accent' },
+      { from:'Bleeding Heart', myAlts:['Columbine','Foxglove'], reason:'spring shade flower' },
+      { from:'Solomon\'s Seal', myAlts:['Wild Ginger','Fern'],  reason:'arching woodland filler' },
+    ],
+  },
+  {
+    id: 'rain',
+    title: 'Rain Garden',
+    tagline: 'A beautiful depression planted to absorb stormwater runoff and filter pollutants.',
+    categories: ['rain','native'],
+    size: '12 × 6 ft', sun: 'Full Sun to Part Shade', zone: '3–8',
+    image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=80',
+    tags: ['Rain Garden', 'Stormwater', 'Native'],
+    care: [
+      { icon:'🌧', label:'Drainage', text:'Rain garden should drain within 24–48 hours; amend with compost and sand if needed' },
+      { icon:'🌱', label:'Establishment', text:'Water regularly for first season; plants must be established before relying on rainfall' },
+      { icon:'✂️', label:'Cut back', text:'Leave seed heads through winter for wildlife; cut back in early spring' },
+      { icon:'🦟', label:'Mosquitoes', text:'Proper drainage prevents standing water and mosquito breeding' },
+    ],
+    plants: [
+      { letter:'A', qty:3,  common:'Blue Flag Iris',   scientific:'Iris virginica',              zones:'4–9', role:'Spring bloom, wet-tolerant' },
+      { letter:'B', qty:4,  common:'Swamp Milkweed',   scientific:'Asclepias incarnata',         zones:'3–6', role:'Monarch host, loves moisture' },
+      { letter:'C', qty:3,  common:'Joe Pye Weed',     scientific:'Eutrochium purpureum',        zones:'4–9', role:'Tall late-season native' },
+      { letter:'D', qty:5,  common:'Cardinal Flower',  scientific:'Lobelia cardinalis',          zones:'2–9', role:'Red hummingbird magnet' },
+      { letter:'E', qty:4,  common:'Swamp Rose Mallow',scientific:'Hibiscus moscheutos',         zones:'4–9', role:'Dramatic large-flowered native' },
+      { letter:'F', qty:6,  common:'Switchgrass',      scientific:'Panicum virgatum',            zones:'4–9', role:'Structural native grass' },
+      { letter:'G', qty:3,  common:'Buttonbush',       scientific:'Cephalanthus occidentalis',   zones:'4–10',role:'Shrub, incredible for pollinators' },
+      { letter:'H', qty:4,  common:'Cinnamon Fern',    scientific:'Osmundastrum cinnamomeum',    zones:'3–9', role:'Dramatic fern, wet soils' },
+      { letter:'I', qty:5,  common:'Marsh Marigold',   scientific:'Caltha palustris',            zones:'3–7', role:'Early spring color' },
+      { letter:'J', qty:4,  common:'Turtlehead',       scientific:'Chelone glabra',              zones:'3–8', role:'Late-season, Baltimore checkerspot host' },
+    ],
+    grid: [
+      ['','G','G','C','C','E','E','F','F','','',''],
+      ['H','','C','','','','E','','F','','',''],
+      ['H','A','A','B','B','D','D','','F','J','',''],
+      ['','A','','B','','D','','','','J','J',''],
+      ['I','I','','','B','','D','F','F','','',''],
+      ['I','','H','H','','','','F','','','',''],
+    ],
+    swaps: [
+      { from:'Buttonbush',     myAlts:['Inkberry','Winterberry'],  reason:'native wet-tolerant shrub' },
+      { from:'Swamp Milkweed', myAlts:['Butterfly Weed','Milkweed'], reason:'Asclepias species for monarchs' },
+      { from:'Blue Flag Iris', myAlts:['Yellow Iris','Iris sibirica'], reason:'moisture-loving iris' },
+    ],
+  },
 ];
 
-function getUsedLocations() {
-  const custom = myPlants.map(p => p.location).filter(Boolean);
-  const all = [...new Set([...PRESET_LOCATIONS, ...custom])].filter(Boolean);
-  return all.sort((a,b) => {
-    // Preset order first, then alphabetical custom
-    const ai = PRESET_LOCATIONS.indexOf(a), bi = PRESET_LOCATIONS.indexOf(b);
-    if (ai !== -1 && bi !== -1) return ai - bi;
-    if (ai !== -1) return -1;
-    if (bi !== -1) return  1;
-    return a.localeCompare(b);
+// ── My plants state ─────────────────────────────
+const STORE_KEY = 'ghub_my_garden';
+
+async function loadMyPlants() {
+  if (!userId || userId === 'guest') {
+    return JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+  }
+  try {
+    const { data } = await sb.from('garden_plants')
+      .select('name,family,is_native,emoji').eq('user_id', userId);
+    if (data && data.length) return data;
+  } catch(e) {}
+  return JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+}
+
+// ── Match scoring ───────────────────────────────
+function scorePlan(plan, plants) {
+  if (!plants.length) return { pct: 0, owned: [], swapped: [], needed: [] };
+  const owned = [], swapped = [], needed = [];
+
+  plan.plants.forEach(pp => {
+    const myMatch = plants.find(mp =>
+      (mp.name||'').toLowerCase().includes(pp.common.toLowerCase().split(' ')[0]) ||
+      pp.common.toLowerCase().includes((mp.name||'').toLowerCase().split(' ')[0])
+    );
+    if (myMatch) {
+      owned.push({ ...pp, myName: myMatch.name });
+    } else {
+      // Check swap suggestions
+      const swap = plan.swaps?.find(s =>
+        s.myAlts.some(alt =>
+          plants.some(mp => (mp.name||'').toLowerCase().includes(alt.toLowerCase()))
+        )
+      );
+      const swapPlant = swap ? plants.find(mp =>
+        swap.myAlts.some(alt => (mp.name||'').toLowerCase().includes(alt.toLowerCase()))
+      ) : null;
+      if (swap && swapPlant) {
+        swapped.push({ ...pp, swapName: swapPlant.name, swapReason: swap.reason });
+      } else {
+        needed.push(pp);
+      }
+    }
   });
+
+  const pct = Math.round(((owned.length + swapped.length * 0.6) / plan.plants.length) * 100);
+  return { pct, owned, swapped, needed };
 }
 
-function populateLocationSelect() {
-  const sel  = document.getElementById('f-location-select');
-  const locs = getUsedLocations();
-  const cur  = document.getElementById('f-location').value;
-  sel.innerHTML = '<option value="">Select location…</option>' +
-    locs.map(l => `<option value="${l}"${l===cur?' selected':''}>${l}</option>`).join('') +
-    '<option value="__custom__">＋ Type a custom location…</option>';
+// ── Render plan card ────────────────────────────
+function planCard(plan, score) {
+  const hasPlants = myPlants.length > 0;
+  let badgeHtml = '';
+  if (hasPlants) {
+    const cls = score.pct >= 60 ? 'match-high' : score.pct >= 30 ? 'match-med' : 'match-low';
+    badgeHtml = `<div class="match-badge ${cls}">${score.pct}% match</div>`;
+  }
+
+  const tags = plan.tags.map(t => `<span class="plan-tag">${t}</span>`).join('');
+  const scoreBar = hasPlants ? `
+    <div class="match-score-bar">
+      <div class="match-score-label">
+        <span>Garden match</span>
+        <span>${score.pct}%</span>
+      </div>
+      <div class="score-track"><div class="score-fill" style="width:${score.pct}%"></div></div>
+    </div>` : '';
+
+  return `<div class="plan-card" onclick="openModal('${plan.id}')">
+    <div class="plan-img-wrap">
+      <img src="${plan.image}" alt="${plan.title}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div class="plan-img-placeholder" style="display:none">🌿</div>
+      ${badgeHtml}
+      <div class="plan-tags">${tags}</div>
+    </div>
+    <div class="plan-body">
+      <div class="plan-title">${plan.title}</div>
+      <div class="plan-tagline">${plan.tagline}</div>
+      <div class="plan-meta">
+        <div class="plan-meta-item">📐 <span>${plan.size}</span></div>
+        <div class="plan-meta-item">☀️ <span>${plan.sun}</span></div>
+        <div class="plan-meta-item">🌍 <span>Zone ${plan.zone}</span></div>
+      </div>
+      ${scoreBar}
+      <div class="plan-actions">
+        <button class="btn-view" onclick="event.stopPropagation();openModal('${plan.id}')">View Plan</button>
+        <button class="btn-print" onclick="event.stopPropagation();printPlan('${plan.id}')">⎙ Print</button>
+      </div>
+    </div>
+  </div>`;
 }
 
-function onLocationSelect(val) {
-  const custom = document.getElementById('f-location-custom');
-  if (val === '__custom__') {
-    custom.style.display = 'block';
-    custom.focus();
-    document.getElementById('f-location').value = '';
-  } else {
-    custom.style.display = 'none';
-    document.getElementById('f-location').value = val;
+// ── Render all plans ────────────────────────────
+let _scores = {};
+
+function renderPlans() {
+  const grid = document.getElementById('plans-grid');
+  let plans = PLANS.filter(p =>
+    _category === 'all' || p.categories.includes(_category)
+  );
+
+  // Compute scores
+  plans.forEach(p => { _scores[p.id] = scorePlan(p, myPlants); });
+
+  if (_matchSort && myPlants.length) {
+    plans = [...plans].sort((a,b) => (_scores[b.id]?.pct || 0) - (_scores[a.id]?.pct || 0));
+  }
+
+  if (!plans.length) {
+    grid.innerHTML = `<div class="empty-plans" style="grid-column:1/-1">
+      <div class="empty-plans-icon">🌿</div>
+      <div class="empty-plans-msg">No plans in this category yet</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = plans.map(p => planCard(p, _scores[p.id])).join('');
+
+  // Update hero banner
+  if (myPlants.length) {
+    const best = [...plans].sort((a,b) => (_scores[b.id]?.pct||0) - (_scores[a.id]?.pct||0))[0];
+    const bestScore = _scores[best.id];
+    document.getElementById('match-banner').classList.add('show');
+    document.getElementById('match-summary').textContent =
+      `Best match: ${best.title} — ${bestScore.pct}% · ${bestScore.owned.length} plants you already grow`;
   }
 }
 
-function syncLocationVal(val) {
-  document.getElementById('f-location').value = val.trim();
+function setCategory(cat, btn) {
+  _category = cat;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPlans();
 }
 
-// ── Timestamp ──────────────────────────────────
-function setTimestamp() {
-  const el = document.getElementById('sync-timestamp');
-  if (!el) return;
-  const now = new Date();
-  const str = now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) +
-    ' · ' + now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  el.textContent = 'Synced ' + str;
+function toggleMatchSort() {
+  _matchSort = !_matchSort;
+  document.getElementById('match-toggle').classList.toggle('active', _matchSort);
+  renderPlans();
 }
 
-// ── Dynamic filter bar ─────────────────────────
-function renderFilterBar() {
-  const bar  = document.getElementById('filter-bar');
-  if (!bar) return;
+// ── Plan modal ──────────────────────────────────
+function openModal(planId) {
+  const plan  = PLANS.find(p => p.id === planId);
+  if (!plan) return;
+  _activePlan = plan;
+  const score = _scores[planId] || scorePlan(plan, myPlants);
 
-  // Get locations actually used in current garden
-  const usedLocs = [...new Set(myPlants.map(p => p.location).filter(Boolean))];
+  const plantListHtml = plan.plants.map(pp => {
+    const owned   = score.owned.find(o => o.letter === pp.letter);
+    const swapped = score.swapped.find(s => s.letter === pp.letter);
+    let chip = '';
+    if (owned)   chip = `<span class="plant-match-chip chip-owned">✓ You grow this</span>`;
+    else if (swapped) chip = `<span class="plant-match-chip chip-swap">↔ Swap: ${swapped.swapName}</span>`;
+    else if (myPlants.length) chip = `<span class="plant-match-chip chip-needed">Add to garden</span>`;
 
-  // Remove old location buttons (keep All, Blooming, Native)
-  bar.querySelectorAll('[data-filter-loc]').forEach(b => b.remove());
+    return `<div class="plant-list-item">
+      <div class="plant-letter">${pp.letter}</div>
+      <div class="plant-qty">${pp.qty}</div>
+      <div class="plant-names">
+        <div class="plant-common">${pp.common}</div>
+        <div class="plant-sci">${pp.scientific}</div>
+        <div class="plant-zones">Zones ${pp.zones} · ${pp.role}</div>
+      </div>
+      ${chip}
+    </div>`;
+  }).join('');
 
-  // Add one button per real location
-  usedLocs.forEach(loc => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn';
-    btn.dataset.filterLoc = loc;
-    btn.dataset.filter = 'loc:' + loc;
-    btn.textContent = loc;
-    btn.onclick = () => setFilter('loc:' + loc, btn);
-    bar.appendChild(btn);
+  const gridHtml = renderGridDiagram(plan);
+
+  const swapsHtml = score.swapped.length ? `
+    <div class="swap-section">
+      <div class="swap-title">Plants from your garden that fit this plan</div>
+      ${score.swapped.map(s => `
+        <div class="swap-item">
+          <span class="swap-from">${s.common}</span>
+          <span class="swap-arrow">→</span>
+          <span class="swap-to">${s.swapName}</span>
+          <span class="swap-reason">(${s.swapReason})</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  const careHtml = plan.care.map(c => `
+    <div class="care-item">
+      <div class="care-icon">${c.icon}</div>
+      <div class="care-text"><span class="care-label">${c.label}</span>${c.text}</div>
+    </div>`).join('');
+
+  const matchSummary = myPlants.length ? `
+    <div style="background:var(--moss-pale);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:2rem;flex-wrap:wrap;">
+      <div><div style="font-family:var(--serif);font-size:1.8rem;font-weight:300;line-height:1;">${score.pct}%</div><div style="font-size:0.58rem;letter-spacing:0.12rem;text-transform:uppercase;color:var(--muted);">Match</div></div>
+      <div><div style="font-family:var(--serif);font-size:1.8rem;font-weight:300;line-height:1;">${score.owned.length}</div><div style="font-size:0.58rem;letter-spacing:0.12rem;text-transform:uppercase;color:var(--muted);">Plants owned</div></div>
+      <div><div style="font-family:var(--serif);font-size:1.8rem;font-weight:300;line-height:1;">${score.swapped.length}</div><div style="font-size:0.58rem;letter-spacing:0.12rem;text-transform:uppercase;color:var(--muted);">Swap candidates</div></div>
+      <div><div style="font-family:var(--serif);font-size:1.8rem;font-weight:300;line-height:1;">${score.needed.length}</div><div style="font-size:0.58rem;letter-spacing:0.12rem;text-transform:uppercase;color:var(--muted);">Still needed</div></div>
+    </div>` : '';
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-hero">
+      <img src="${plan.image}" alt="${plan.title}" onerror="this.style.display='none'"/>
+      <div class="modal-hero-overlay">
+        <div class="modal-plan-title">${plan.title}</div>
+        <div class="modal-plan-sub">${plan.size} · ${plan.sun} · Zone ${plan.zone}</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      ${matchSummary}
+      <div class="modal-cols">
+        <div>
+          <div class="modal-section-title">Plant List</div>
+          ${plantListHtml}
+          ${swapsHtml}
+        </div>
+        <div>
+          <div class="modal-section-title">Layout Diagram</div>
+          <div style="font-size:0.6rem;color:var(--muted);margin-bottom:0.5rem;">Each square = 1 foot</div>
+          ${gridHtml}
+          <div class="care-section" style="margin-top:1.5rem;">
+            <div class="modal-section-title">Care Guide</div>
+            ${careHtml}
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border);display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button class="btn-view" style="max-width:200px;" onclick="printPlan('${plan.id}')">⎙ Print this plan</button>
+        <button class="btn-print" onclick="closeModal()">Close</button>
+      </div>
+    </div>`;
+
+  document.getElementById('plan-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('plan-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('plan-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('plan-modal')) closeModal();
+});
+
+// ── Grid diagram renderer ───────────────────────
+function renderGridDiagram(plan) {
+  if (!plan.grid || !plan.grid.length) return '<div style="color:var(--muted);font-size:0.72rem;">Grid diagram not available</div>';
+
+  const rows = plan.grid;
+  const cols = Math.max(...rows.map(r => r.length));
+
+  // Letter → color mapping
+  const COLORS = ['#526f45','#b08a28','#b8604a','#7a5898','#4878a0','#2d7a5a','#8a4a18','#5a3a80','#1a6870','#7a5020','#3a6a30','#8a3050'];
+  const letterColor = {};
+  plan.plants.forEach((p, i) => { letterColor[p.letter] = COLORS[i % COLORS.length]; });
+
+  let html = '<table class="grid-table"><tbody>';
+  rows.forEach(row => {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) {
+      const cell = row[c] || '';
+      if (cell === 'R') {
+        html += '<td class="rock">rock</td>';
+      } else if (cell === 'W' || cell === 'H20') {
+        html += '<td class="water">~</td>';
+      } else if (cell === '') {
+        html += '<td class="empty"></td>';
+      } else {
+        const color = letterColor[cell] || '#526f45';
+        html += `<td style="background:${color}18;color:${color};border-color:${color}40;font-weight:600;">${cell}</td>`;
+      }
+    }
+    html += '</tr>';
   });
+  html += '</tbody></table>';
+
+  // Legend
+  html += '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.75rem;">';
+  plan.plants.forEach(p => {
+    const color = letterColor[p.letter];
+    html += `<div style="display:flex;align-items:center;gap:0.25rem;font-size:0.58rem;color:var(--ink);">
+      <div style="width:14px;height:14px;background:${color};border-radius:2px;"></div>
+      <strong style="color:${color};">${p.letter}</strong> ${p.common.split(' ').slice(0,2).join(' ')}
+    </div>`;
+  });
+  html += '</div>';
+
+  return html;
 }
 
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2200);
+// ── Print plan ──────────────────────────────────
+function printPlan(planId) {
+  const plan  = PLANS.find(p => p.id === planId);
+  if (!plan) return;
+  const score = _scores[planId] || scorePlan(plan, myPlants);
+
+  const gridHtml = renderGridDiagram(plan);
+
+  const plantRows = plan.plants.map(pp => {
+    const owned   = score.owned.find(o => o.letter === pp.letter);
+    const swapped = score.swapped.find(s => s.letter === pp.letter);
+    const status  = owned ? '✓ You grow this' : swapped ? `↔ Swap: ${swapped.swapName}` : '+ Add to garden';
+    return `<tr>
+      <td style="font-weight:700;color:#526f45;font-size:1rem;font-family:'Cormorant Garamond',serif;padding:6px 8px;border-bottom:1px solid #e0d4c0;">${pp.letter}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e0d4c0;font-size:0.75rem;">${pp.qty}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e0d4c0;">
+        <div style="font-size:0.8rem;font-weight:500;">${pp.common}</div>
+        <div style="font-size:0.65rem;color:#a09080;font-style:italic;">${pp.scientific}</div>
+      </td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e0d4c0;font-size:0.7rem;color:#a09080;">Zones ${pp.zones}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #e0d4c0;font-size:0.7rem;color:${owned?'#526f45':swapped?'#b08a28':'#a09080'};">${status}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('print-sheet').innerHTML = `
+    <div style="font-family:'Jost',sans-serif;max-width:900px;margin:0 auto;background:white;color:#231c14;">
+      <div style="border-bottom:2px solid #231c14;padding-bottom:0.75rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:baseline;">
+        <span style="font-size:0.65rem;letter-spacing:0.2rem;text-transform:uppercase;color:#a09080;">GardenHub · Garden Plans · Zone 6b</span>
+        <span style="font-size:0.65rem;letter-spacing:0.12rem;text-transform:uppercase;color:#a09080;">${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>
+      </div>
+      <div style="font-size:0.6rem;letter-spacing:0.25rem;text-transform:uppercase;color:#526f45;margin-bottom:0.3rem;">[THE PLAN]</div>
+      <h1 style="font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;letter-spacing:-0.02em;color:#231c14;line-height:1;margin-bottom:0.5rem;">${plan.title.toUpperCase()}</h1>
+      <p style="font-size:0.85rem;color:#5a4a38;margin-bottom:2rem;line-height:1.5;">${plan.tagline}</p>
+
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:2.5rem;margin-bottom:2rem;">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;line-height:1.1;margin-bottom:1.5rem;">PLANT<br>LIST</div>
+          <div style="font-size:0.65rem;color:#a09080;margin-bottom:0.25rem;">📐 ${plan.size}</div>
+          <div style="font-size:0.65rem;color:#a09080;margin-bottom:0.25rem;">☀️ ${plan.sun}</div>
+          <div style="font-size:0.65rem;color:#a09080;margin-bottom:1rem;">🌍 Zone ${plan.zone}</div>
+          ${myPlants.length ? `
+          <div style="background:#eaf2e4;border-radius:4px;padding:0.65rem;margin-top:1rem;">
+            <div style="font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;color:#526f45;margin-bottom:0.3rem;">Your Match</div>
+            <div style="font-size:1.5rem;font-family:'Cormorant Garamond',serif;font-weight:300;color:#526f45;">${score.pct}%</div>
+            <div style="font-size:0.62rem;color:#7a7060;">${score.owned.length} owned · ${score.swapped.length} swappable</div>
+          </div>` : ''}
+        </div>
+        <div>
+          <div style="font-size:0.6rem;letter-spacing:0.15rem;text-transform:uppercase;color:#a09080;margin-bottom:0.5rem;">LAYOUT DIAGRAM (each square = 1 foot)</div>
+          ${gridHtml}
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:2rem;">
+        <thead>
+          <tr style="background:#f5ede0;">
+            <th style="padding:6px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;color:#a09080;border-bottom:2px solid #e0d4c0;">Letter</th>
+            <th style="padding:6px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;color:#a09080;border-bottom:2px solid #e0d4c0;">Qty</th>
+            <th style="padding:6px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;color:#a09080;border-bottom:2px solid #e0d4c0;">Plant</th>
+            <th style="padding:6px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;color:#a09080;border-bottom:2px solid #e0d4c0;">Zones</th>
+            <th style="padding:6px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.15rem;text-transform:uppercase;color:#a09080;border-bottom:2px solid #e0d4c0;">Your Garden</th>
+          </tr>
+        </thead>
+        <tbody>${plantRows}</tbody>
+      </table>
+
+      <div style="border-top:2px dotted #e0d4c0;padding-top:1rem;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1rem;color:#526f45;">GardenHub</span>
+        <span style="font-size:0.6rem;color:#c0b0a0;letter-spacing:0.1rem;text-transform:uppercase;">West Simsbury, CT · Zone 6b</span>
+      </div>
+    </div>`;
+
+  document.getElementById('print-sheet').style.display = 'block';
+  setTimeout(() => { window.print(); document.getElementById('print-sheet').style.display = 'none'; }, 300);
 }
 
-// ── Auth ───────────────────────────────────────
+// ── Auth ────────────────────────────────────────
 document.getElementById('btn-login').onclick = async () => {
   const errEl = document.getElementById('auth-err');
   const btn   = document.getElementById('btn-login');
@@ -890,30 +981,30 @@ document.getElementById('btn-login').onclick = async () => {
   const email = (document.getElementById('a-email').value||'').trim();
   const pass  = document.getElementById('a-pass').value||'';
   errEl.textContent = '';
-  if (!email) { errEl.textContent = 'Enter your email'; return; }
-  if (!pass)  { errEl.textContent = 'Enter your password'; return; }
+  if (!email || !pass) { errEl.textContent = 'Enter email and password'; return; }
   btn.textContent = 'Signing in…'; btn.disabled = true;
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) { errEl.textContent = error.message; btn.textContent = 'Sign In'; btn.disabled = false; return; }
     afterAuth(data.user);
   } catch(e) {
-    errEl.textContent = e.message || 'Network error';
-    btn.textContent = 'Sign In'; btn.disabled = false;
+    errEl.textContent = e.message; btn.textContent = 'Sign In'; btn.disabled = false;
   }
 };
 
 document.getElementById('btn-guest').onclick = () => {
   userId = 'guest';
   document.getElementById('auth-overlay').classList.add('hidden');
-  loadData();
+  init();
 };
+
+async function handleLogout() { await sb.auth.signOut(); location.reload(); }
 
 async function afterAuth(user) {
   if (!user) return;
   userId = user.id;
   document.getElementById('auth-overlay').classList.add('hidden');
-  await loadData();
+  await init();
 }
 
 async function checkSession() {
@@ -921,386 +1012,25 @@ async function checkSession() {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) { afterAuth(session.user); return; }
   } catch(e) {}
-  document.getElementById('auth-overlay').classList.remove('hidden');
-  document.getElementById('plant-list-wrap').innerHTML = '';
-  document.getElementById('species-grid').innerHTML = '';
+  // Allow browsing without login — just no match data
+  userId = 'guest';
+  document.getElementById('auth-overlay').classList.add('hidden');
+  await init();
 }
 
-// ── Load data ──────────────────────────────────
-async function loadData() {
-  try {
-    // Load species library
-    const { data: lib } = await sb.from('garden_library')
-      .select('id,common_name,emoji,plant_family,spread_in,maturity_days,bloom_start_day,is_native,is_host_plant')
-      .order('common_name');
-    library = lib || FALLBACK_LIB;
-  } catch(e) {
-    library = FALLBACK_LIB;
-  }
-
-  // Load my garden plants
-  if (userId === 'guest') {
-    myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-  } else {
-    try {
-      const { data: state } = await sb.from('garden_plants')
-        .select('*').eq('user_id', userId).order('created_at');
-      myPlants = state || [];
-      // If garden_plants table doesn't exist yet, fall back to localStorage
-      if (!state) myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-    } catch(e) {
-      // Table may not exist yet — use localStorage as fallback
-      myPlants = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-    }
-  }
-
-  populateLocationSelect();
-  renderSpeciesGrid(library);
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
+async function init() {
+  myPlants = await loadMyPlants();
+  renderPlans();
 }
 
-function saveLocal() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(myPlants)); } catch(e) {}
+// ── Toast ───────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-async function savePlant(plant) {
-  saveLocal();
-  if (userId === 'guest') return;
-  try {
-    await sb.from('garden_plants').upsert({ ...plant, user_id: userId });
-  } catch(e) {
-    // Table may not exist — silently use localStorage
-  }
-}
-
-async function deletePlantRemote(id) {
-  saveLocal();
-  if (userId === 'guest') return;
-  try {
-    await sb.from('garden_plants').delete().eq('id', id).eq('user_id', userId);
-  } catch(e) {}
-}
-
-// ── Species grid ───────────────────────────────
-let _allSpecies = [];
-
-function renderSpeciesGrid(species) {
-  _allSpecies = species;
-  const grid = document.getElementById('species-grid');
-  if (!species.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;font-size:0.7rem;color:var(--muted);padding:1rem;text-align:center;">No plants found</div>';
-    return;
-  }
-  grid.innerHTML = species.map(s => {
-    const badge = s.is_native ? '<span class="species-badge badge-n">Native</span>' : '';
-    return `<div class="species-tile" onclick="selectSpecies('${s.id}')" data-id="${s.id}">
-      ${badge}
-      <span class="species-emoji">${s.emoji||'🌱'}</span>
-      <div class="species-name">${s.common_name}</div>
-      <div class="species-family">${s.plant_family||''}</div>
-    </div>`;
-  }).join('');
-}
-
-function filterSpecies(q) {
-  const filtered = q.trim()
-    ? _allSpecies.filter(s =>
-        s.common_name.toLowerCase().includes(q.toLowerCase()) ||
-        (s.plant_family||'').toLowerCase().includes(q.toLowerCase())
-      )
-    : _allSpecies;
-  renderSpeciesGrid(filtered);
-}
-
-function selectSpecies(id) {
-  const s = _allSpecies.find(x => x.id === id);
-  if (!s) return;
-  _selSpecies = s;
-
-  // Highlight tile
-  document.querySelectorAll('.species-tile').forEach(t => t.classList.remove('selected'));
-  document.querySelector(`.species-tile[data-id="${id}"]`)?.classList.add('selected');
-
-  // Populate form
-  document.getElementById('sel-emoji').textContent = s.emoji || '🌱';
-  document.getElementById('sel-name').textContent  = s.common_name;
-  document.getElementById('sel-fam').textContent   = s.plant_family || '';
-  document.getElementById('f-qty').value  = 1;
-  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('f-location').value = '';
-
-  document.getElementById('add-form').classList.add('show');
-}
-
-function cancelAdd() {
-  _selSpecies = null;
-  document.querySelectorAll('.species-tile').forEach(t => t.classList.remove('selected'));
-  document.getElementById('add-form').classList.remove('show');
-}
-
-// ── Add plant ──────────────────────────────────
-async function addPlant() {
-  if (!_selSpecies) return;
-  const btn      = document.getElementById('btn-add');
-  const location = document.getElementById('f-location').value;
-  const qty      = parseInt(document.getElementById('f-qty').value) || 1;
-  const dateVal  = document.getElementById('f-date').value;
-  const notes    = (document.getElementById('f-notes').value||'').trim();
-
-  btn.disabled = true; btn.textContent = 'Adding…';
-
-  const plant = {
-    id:         uid(),
-    name:       _selSpecies.common_name,
-    emoji:      _selSpecies.emoji || '🌱',
-    family:     _selSpecies.plant_family || 'Unknown',
-    is_native:  _selSpecies.is_native || false,
-    is_host:    _selSpecies.is_host_plant || false,
-    spread:     _selSpecies.spread_in || 12,
-    dtm:        _selSpecies.maturity_days || 60,
-    location:   location || '',
-    qty:        qty,
-    notes:      notes,
-    date_planted: dateVal || new Date().toISOString().slice(0,10),
-    created_at: new Date().toISOString(),
-  };
-
-  myPlants.push(plant);
-  await savePlant(plant);
-
-  toast(`${plant.emoji} ${plant.name} added`);
-  cancelAdd();
-  populateLocationSelect();
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
-
-  btn.disabled = false; btn.textContent = '+ Add to Garden';
-}
-
-// ── Custom plant ───────────────────────────────
-function toggleCustomForm() {
-  const f = document.getElementById('custom-form');
-  f.classList.toggle('show');
-  if (f.classList.contains('show')) {
-    document.getElementById('cf-name').focus();
-    cancelAdd(); // close library form if open
-  }
-}
-
-function addCustomPlant() {
-  const name   = (document.getElementById('cf-name').value||'').trim();
-  const emoji  = (document.getElementById('cf-emoji').value||'🌱').trim();
-  const family = (document.getElementById('cf-family').value||'').trim();
-  if (!name) { document.getElementById('cf-name').focus(); return; }
-
-  // Treat as a synthetic species entry and open the add form
-  _selSpecies = {
-    common_name: name,
-    emoji: emoji || '🌱',
-    plant_family: family || 'Unknown',
-    spread_in: 12, maturity_days: 60,
-    is_native: false, is_host_plant: false,
-    _custom: true,
-  };
-
-  document.getElementById('sel-emoji').textContent = _selSpecies.emoji;
-  document.getElementById('sel-name').textContent  = _selSpecies.common_name;
-  document.getElementById('sel-fam').textContent   = _selSpecies.plant_family;
-  document.getElementById('f-qty').value  = 1;
-  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('f-notes').value = '';
-  document.getElementById('f-location').value = '';
-  document.getElementById('add-form').classList.add('show');
-  document.getElementById('custom-form').classList.remove('show');
-}
-
-// ── Inline edit ────────────────────────────────
-function toggleEdit(id) {
-  const drawer = document.getElementById(`edit-${id}`);
-  if (!drawer) return;
-  const isOpen = drawer.classList.contains('open');
-  // Close all other open drawers
-  document.querySelectorAll('.edit-drawer.open').forEach(d => d.classList.remove('open'));
-  if (!isOpen) drawer.classList.add('open');
-}
-
-async function saveEdit(id) {
-  const plant = myPlants.find(p => p.id === id);
-  if (!plant) return;
-  plant.qty      = parseInt(document.getElementById(`eq-${id}`).value) || 1;
-  plant.location = document.getElementById(`el-${id}`).value;
-  plant.notes    = (document.getElementById(`en-${id}`).value||'').trim();
-  await savePlant(plant);
-  toast('✓ Saved');
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
-}
-
-// ── Delete plant ───────────────────────────────
-async function deletePlant(id) {
-  myPlants = myPlants.filter(p => p.id !== id);
-  await deletePlantRemote(id);
-  saveLocal();
-  toast('Plant removed');
-  renderGarden();
-  renderFilterBar();
-  setTimestamp();
-}
-
-// ── Filter ─────────────────────────────────────
-function setFilter(f, btn) {
-  _filter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderGarden();
-}
-
-// ── Render garden ──────────────────────────────
-function renderGarden() {
-  // Stats
-  const blooming = myPlants.filter(p => isBlooming(p.name, p.family)).length;
-  const native   = myPlants.filter(p => p.is_native).length;
-  document.getElementById('stat-total').textContent    = myPlants.length;
-  document.getElementById('stat-blooming').textContent = blooming;
-  document.getElementById('stat-native').textContent   = native;
-
-  const subtitle = `West Simsbury, CT · Zone 6b · ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}`;
-  document.getElementById('garden-subtitle').textContent = subtitle;
-
-  // Filter plants
-  let filtered = [...myPlants];
-  if (_filter === 'blooming')        filtered = filtered.filter(p => isBlooming(p.name, p.family));
-  if (_filter === 'native')          filtered = filtered.filter(p => p.is_native);
-  if (_filter.startsWith('loc:'))    filtered = filtered.filter(p => p.location === _filter.slice(4));
-
-  const wrap = document.getElementById('plant-list-wrap');
-
-  if (!myPlants.length) {
-    wrap.innerHTML = `<div class="empty-garden">
-      <div class="empty-icon">🌱</div>
-      <div class="empty-msg">Your garden is empty</div>
-      <div class="empty-sub">Search for a plant on the left to get started</div>
-    </div>`;
-    return;
-  }
-
-  if (!filtered.length) {
-    wrap.innerHTML = `<div class="empty-garden">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-msg">No plants match this filter</div>
-      <div class="empty-sub" style="cursor:pointer;text-decoration:underline;" onclick="setFilter('all', document.querySelector('[data-filter=all]'))">Show all plants</div>
-    </div>`;
-    return;
-  }
-
-  // Group by location
-  const groups = {};
-  filtered.forEach(p => {
-    const loc = p.location || 'Unassigned';
-    if (!groups[loc]) groups[loc] = [];
-    groups[loc].push(p);
-  });
-
-  const locationOrder = ['Patio Bed','Fence Border','Front Garden','Back Garden','Container / Pot','Raised Bed','Window Box','Cutting Garden','Shade Border','Other','Unassigned'];
-  const sortedGroups = Object.entries(groups).sort(([a],[b]) => {
-    const ai = locationOrder.indexOf(a), bi = locationOrder.indexOf(b);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
-
-  wrap.innerHTML = sortedGroups.map(([loc, plants]) => {
-    const cards = plants.map(p => plantCard(p)).join('');
-    return `<div class="group-label">${loc} <span style="opacity:0.5;font-weight:300">(${plants.length})</span></div>
-      <div class="plant-list">${cards}</div>`;
-  }).join('');
-}
-
-function plantCard(p) {
-  const blooming  = isBlooming(p.name, p.family);
-  const color     = bloomColor(p.name);
-  const w         = bloomWin(p.name, p.family);
-  const bloomStr  = w ? `${monthName(w[0])}–${monthName(w[1])}` : null;
-  const dateStr   = p.date_planted
-    ? new Date(p.date_planted).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
-    : null;
-
-  const chips = [
-    p.qty > 1     ? `<span class="meta-chip chip-qty">×${p.qty}</span>` : '',
-    dateStr       ? `<span class="meta-chip chip-date">Planted ${dateStr}</span>` : '',
-    p.is_native   ? `<span class="meta-chip chip-native">Native</span>` : '',
-    p.is_host     ? `<span class="meta-chip chip-host">Host plant</span>` : '',
-    blooming      ? `<span class="meta-chip chip-blooming">🌸 Blooming</span>` : '',
-    bloomStr && !blooming ? `<span class="meta-chip" style="background:var(--gold-pale);color:#6a4810;border:1px solid #d0a850;">Blooms ${bloomStr}</span>` : '',
-  ].filter(Boolean).join('');
-
-  const strip = blooming
-    ? `<div class="bloom-strip" style="background:${color};opacity:0.55;"></div>`
-    : '';
-
-  const notesHtml = p.notes
-    ? `<div class="plant-card-notes">${p.notes}</div>` : '';
-
-  const locationOpts = getUsedLocations()
-    .map(o => `<option${o === p.location ? ' selected' : ''}>${o}</option>`).join('');
-
-  return `<div class="plant-card" id="card-${p.id}">
-    ${strip}
-    <div class="plant-card-emoji">${p.emoji}</div>
-    <div class="plant-card-body">
-      <div class="plant-card-name">${p.name}</div>
-      <div class="plant-card-where">${p.family}</div>
-      <div class="plant-card-meta">${chips}</div>
-      ${notesHtml}
-      <div class="edit-drawer" id="edit-${p.id}">
-        <div class="edit-row">
-          <div><label class="edit-label">Quantity</label>
-            <input class="edit-input" id="eq-${p.id}" type="number" min="1" value="${p.qty||1}"/>
-          </div>
-          <div><label class="edit-label">Location</label>
-            <select class="edit-select" id="el-${p.id}">
-              <option value="">—</option>${locationOpts}
-            </select>
-          </div>
-        </div>
-        <div><label class="edit-label">Notes</label>
-          <textarea class="edit-textarea" id="en-${p.id}" placeholder="Any notes about this plant…">${p.notes||''}</textarea>
-        </div>
-        <button class="edit-save" onclick="saveEdit('${p.id}')">Save changes</button>
-      </div>
-    </div>
-    <div class="plant-card-actions">
-      <button class="card-action edit" onclick="toggleEdit('${p.id}')" title="Edit">✎</button>
-      <button class="card-action del"  onclick="deletePlant('${p.id}')" title="Remove">✕</button>
-    </div>
-  </div>`;
-}
-
-// ── Fallback library ───────────────────────────
-const FALLBACK_LIB = [
-  { id:'t1', common_name:'Tomato',           emoji:'🍅', plant_family:'Solanaceae',    spread_in:24, maturity_days:75,  is_native:false, is_host_plant:false },
-  { id:'z1', common_name:'Zinnia',           emoji:'🌸', plant_family:'Asteraceae',    spread_in:12, maturity_days:60,  is_native:false, is_host_plant:true  },
-  { id:'m1', common_name:'Marigold',         emoji:'🌼', plant_family:'Asteraceae',    spread_in:12, maturity_days:50,  is_native:false, is_host_plant:true  },
-  { id:'b1', common_name:'Bean',             emoji:'🫘', plant_family:'Fabaceae',      spread_in:8,  maturity_days:55,  is_native:false, is_host_plant:false },
-  { id:'c1', common_name:'Carrot',           emoji:'🥕', plant_family:'Apiaceae',      spread_in:4,  maturity_days:70,  is_native:false, is_host_plant:false },
-  { id:'s1', common_name:'Squash',           emoji:'🥒', plant_family:'Cucurbitaceae', spread_in:36, maturity_days:60,  is_native:false, is_host_plant:false },
-  { id:'p1', common_name:'Purple Coneflower',emoji:'🌺', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, is_native:true,  is_host_plant:true  },
-  { id:'o1', common_name:'Milkweed',         emoji:'🌿', plant_family:'Apocynaceae',   spread_in:24, maturity_days:365, is_native:true,  is_host_plant:true  },
-  { id:'l1', common_name:'Lavender',         emoji:'💜', plant_family:'Lamiaceae',     spread_in:24, maturity_days:365, is_native:false, is_host_plant:false },
-  { id:'e1', common_name:'Echinacea',        emoji:'🌸', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, is_native:true,  is_host_plant:true  },
-  { id:'r1', common_name:'Rose',             emoji:'🌹', plant_family:'Rosaceae',      spread_in:36, maturity_days:365, is_native:false, is_host_plant:false },
-  { id:'bb', common_name:'Bee Balm',         emoji:'🌺', plant_family:'Lamiaceae',     spread_in:24, maturity_days:365, is_native:true,  is_host_plant:true  },
-  { id:'sf', common_name:'Sunflower',        emoji:'🌻', plant_family:'Asteraceae',    spread_in:18, maturity_days:80,  is_native:false, is_host_plant:true  },
-  { id:'ca', common_name:'Calendula',        emoji:'🟠', plant_family:'Asteraceae',    spread_in:12, maturity_days:50,  is_native:false, is_host_plant:false },
-  { id:'co', common_name:'Cosmos',           emoji:'🌸', plant_family:'Asteraceae',    spread_in:12, maturity_days:60,  is_native:false, is_host_plant:false },
-  { id:'bk', common_name:'Black-eyed Susan', emoji:'🌼', plant_family:'Asteraceae',    spread_in:18, maturity_days:365, is_native:true,  is_host_plant:false },
-];
-
-// ── Boot ───────────────────────────────────────
-// Set today's date as default
-document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+// ── Boot ────────────────────────────────────────
 checkSession();
 </script>
 </body>
